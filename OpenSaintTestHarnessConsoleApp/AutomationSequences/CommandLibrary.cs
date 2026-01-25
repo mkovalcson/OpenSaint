@@ -181,6 +181,30 @@ namespace OpenSaintTestHarnessConsoleApp
             return commandList;
         }
 
+        /// <summary>
+        /// One brow up  Flaps slightly closed
+        /// </summary>
+        /// <returns></returns>
+        public static List<Command> What()
+        {
+            var commandList = new List<Command>
+            {
+                // Nose in higher home position
+                new Command(RobotControls.NoseBody, ButtonActions.ServoHome, 0),
+                
+                // Left Tilt level
+                new Command(RobotControls.BrowLeftTopTilt, ButtonActions.ServoHome ,0),
+
+                // Right Tilt Angled up
+                new Command(RobotControls.BrowRightTopTilt, ButtonActions.ServoHomeDelta, 40, 0),           
+               
+                  // Brows slightly closed
+               new Command(ButtonActions.ServoGangedDelta, GangedServoNames.FlapsOpen, -20 ,0 ),              
+            };
+
+            return commandList;
+        }
+        
         public static List<Command> WinkRightEye()
         {
             var commandList = (new List<Command>
@@ -188,8 +212,7 @@ namespace OpenSaintTestHarnessConsoleApp
                 // Nose Body down so flaps close more closely.
                 new Command(RobotControls.NoseBody, ButtonActions.ServoModeValue,0),
                 // Tilt level
-                new Command(RobotControls.BrowLeftTopTilt, ButtonActions.ServoHome ,0),
-                new Command(RobotControls.BrowRightTopTilt, ButtonActions.ServoHome ,0),           
+                new Command(ButtonActions.ServoGangedDelta, GangedServoNames.FlapTiltUp, 0 ,0 ),                     
                 // Brow Top closed
                 new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoMax ,0 ),               
                 // Bottom brows closed              
@@ -235,37 +258,24 @@ namespace OpenSaintTestHarnessConsoleApp
         {
             var commandList = new List<Command>
             {             
+                // Open Eye flaps to Home
                 new Command(RobotControls.NoseBody, ButtonActions.ServoHome, 0),
+                new Command(ButtonActions.ServoGangedDelta, GangedServoNames.FlapTiltUp, 0, 0),
+                new Command(ButtonActions.ServoGangedDelta, GangedServoNames.FlapsOpen, 0, 0),                  
 
-                new Command(RobotControls.BrowLeftTopTilt, ButtonActions.ServoHome ,0),
-                new Command(RobotControls.BrowRightTopTilt, ButtonActions.ServoHome ,0),           
-                // Brow Top closed
-                new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoHome ,0 ),
-                new Command(RobotControls.BrowLeftTopOpen,  ButtonActions.ServoHome ,0 ),
-                // Bottom brows closed
-                new Command(RobotControls.BrowLeftBottomOpen, ButtonActions.ServoHome ,0 ),
-                new Command(RobotControls.BrowRightBottomOpen, ButtonActions.ServoHome ,0),         
+                // close Iris after open after opening flaps
+                new Command(ButtonActions.ServoGangedDelta, GangedServoNames.IrisClose, 100, 2000),            
+                // Look Down and left
+                new Command(ButtonActions.ServoGangedDelta, GangedServoNames.EyesVerticalUp, -100, 2000),  
+                new Command(ButtonActions.ServoGangedDelta, GangedServoNames.EyesHorizontalRight, -100, 2000),
 
-                new Command(RobotControls.LeftIris,   ButtonActions.ServoMin, 1000),
-                new Command(RobotControls.RightIris,  ButtonActions.ServoMin, 1000),
+                // Look Right
+                new Command(ButtonActions.ServoGangedDelta, GangedServoNames.EyesHorizontalRight, 100, 2500),             
 
-                new Command(RobotControls.LeftLensVertical,  ButtonActions.ServoMin , 1500),
-                new Command(RobotControls.RightLensVertical,  ButtonActions.ServoMax , 1500),
-
-                new Command(RobotControls.LeftLensHorizontal,  ButtonActions.ServoMin , 2000),
-                new Command(RobotControls.RightLensHorizontal,  ButtonActions.ServoMin , 2000),
-
-                new Command(RobotControls.LeftLensHorizontal,  ButtonActions.ServoMax , 2500),
-                new Command(RobotControls.RightLensHorizontal,  ButtonActions.ServoMax , 2500),
-
-                new Command(RobotControls.LeftLensHorizontal,  ButtonActions.ServoHome , 3000),
-                new Command(RobotControls.RightLensHorizontal,  ButtonActions.ServoHome , 3000),
-                new Command(RobotControls.LeftLensVertical,  ButtonActions.ServoHome , 3000),
-                new Command(RobotControls.RightLensVertical,  ButtonActions.ServoHome , 3000),
-
-                new Command(RobotControls.LeftIris,   ButtonActions.ServoHome, 3000),
-                new Command(RobotControls.RightIris,  ButtonActions.ServoHome, 3000),
-
+                // Center Eyes and return Iris to normal
+                new Command(ButtonActions.ServoGangedDelta, GangedServoNames.EyesHorizontalRight, 0, 3000),
+                new Command(ButtonActions.ServoGangedDelta, GangedServoNames.EyesVerticalUp, 0, 3000),                            
+                new Command(ButtonActions.ServoGangedDelta, GangedServoNames.IrisClose, 0, 3000),
             };
 
             return commandList;
@@ -406,5 +416,59 @@ namespace OpenSaintTestHarnessConsoleApp
             return commandList;
         }
 
+        /// <summary>
+        ///  Whip antenna pop up wiggle back and forth and drop
+        /// </summary>
+        /// <returns></returns>
+        public static List<Command> RaiseWhipRotate()
+        {
+            var commandList = new List<Command>
+            {
+               new Command(RobotControls.Whip_Antenna_RaiseLower, ButtonActions.ServoMax , 1500),
+
+               // Rotate Left Right 3 times
+               new Command(ButtonActions.RepeatCommands, 1500, WhipRotate(), 3, 1000 ),              
+
+               new Command(RobotControls.Whip_Antenna_RaiseLower, ButtonActions.ServoMin ,  5000),
+
+            };
+            return commandList;
+        }
+
+        public static List<Command> WhipRotate()
+        {
+            var commandList = new List<Command>
+            {
+               new Command(RobotControls.Whip_Antenna_Rotate, ButtonActions.ServoHomeDelta , -50, 0), 
+               new Command(RobotControls.Whip_Antenna_Rotate, ButtonActions.ServoHomeDelta , 50, 1000),            
+            };
+            return commandList;
+        }
+
+
+        public static List<Command> RaiseMFRRotate()
+        {
+            var commandList = new List<Command>
+            {
+               new Command(RobotControls.MFR_UpDown, ButtonActions.ServoMax , 1500),
+
+               // Rotate Left Right 3 times
+               new Command(ButtonActions.RepeatCommands, 1500, MFRRotate(), 3, 1000 ),
+
+               new Command(RobotControls.MFR_UpDown, ButtonActions.ServoMin ,  5000),
+
+            };
+            return commandList;
+        }
+
+        public static List<Command> MFRRotate()
+        {
+            var commandList = new List<Command>
+            {
+               new Command(RobotControls.MFR_Rotate, ButtonActions.ServoHomeDelta , -50, 0),
+               new Command(RobotControls.MFR_Rotate, ButtonActions.ServoHomeDelta , 50, 1000),
+            };
+            return commandList;
+        }
     }
 }
