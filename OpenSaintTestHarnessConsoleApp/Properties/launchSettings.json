@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "OpenSaintTestHarnessConsoleApp": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:62831;http://localhost:62832"
+    }
+  }
+}

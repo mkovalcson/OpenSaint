@@ -1,0 +1,12 @@
+X:\Johnny5\Solutions\Johnny5Main\bin\Debug\net8.0\Johnny5Library.deps.json
+X:\Johnny5\Solutions\Johnny5Main\bin\Debug\net8.0\Johnny5Library.dll
+X:\Johnny5\Solutions\Johnny5Main\bin\Debug\net8.0\Johnny5Library.pdb
+X:\Johnny5\Solutions\Johnny5Main\obj\Debug\net8.0\Johnny5Library.csproj.AssemblyReference.cache
+X:\Johnny5\Solutions\Johnny5Main\obj\Debug\net8.0\Johnny5Library.GeneratedMSBuildEditorConfig.editorconfig
+X:\Johnny5\Solutions\Johnny5Main\obj\Debug\net8.0\Johnny5Library.AssemblyInfoInputs.cache
+X:\Johnny5\Solutions\Johnny5Main\obj\Debug\net8.0\Johnny5Library.AssemblyInfo.cs
+X:\Johnny5\Solutions\Johnny5Main\obj\Debug\net8.0\Johnny5Library.csproj.CoreCompileInputs.cache
+X:\Johnny5\Solutions\Johnny5Main\obj\Debug\net8.0\Johnny5Library.dll
+X:\Johnny5\Solutions\Johnny5Main\obj\Debug\net8.0\refint\Johnny5Library.dll
+X:\Johnny5\Solutions\Johnny5Main\obj\Debug\net8.0\Johnny5Library.pdb
+X:\Johnny5\Solutions\Johnny5Main\obj\Debug\net8.0\ref\Johnny5Library.dll
