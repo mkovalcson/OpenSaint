@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "X:\\Johnny5\\Solution\\OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj": {}
+    "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj": {}
   },
   "projects": {
-    "X:\\Johnny5\\Solution\\OpenSaintLib\\OpenSaintLib.csproj": {
+    "X:\\Johnny5\\OpenSaint\\OpenSaintLib\\OpenSaintLib.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "X:\\Johnny5\\Solution\\OpenSaintLib\\OpenSaintLib.csproj",
+        "projectUniqueName": "X:\\Johnny5\\OpenSaint\\OpenSaintLib\\OpenSaintLib.csproj",
         "projectName": "OpenSaintLib",
-        "projectPath": "X:\\Johnny5\\Solution\\OpenSaintLib\\OpenSaintLib.csproj",
+        "projectPath": "X:\\Johnny5\\OpenSaint\\OpenSaintLib\\OpenSaintLib.csproj",
         "packagesPath": "C:\\Users\\mkovalcson\\.nuget\\packages\\",
-        "outputPath": "X:\\Johnny5\\Solution\\OpenSaintLib\\obj\\",
+        "outputPath": "X:\\Johnny5\\OpenSaint\\OpenSaintLib\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
@@ -359,14 +359,14 @@
         }
       }
     },
-    "X:\\Johnny5\\Solution\\OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj": {
+    "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "X:\\Johnny5\\Solution\\OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj",
+        "projectUniqueName": "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj",
         "projectName": "OpenSaintTestHarnessConsoleApp",
-        "projectPath": "X:\\Johnny5\\Solution\\OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj",
+        "projectPath": "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj",
         "packagesPath": "C:\\Users\\mkovalcson\\.nuget\\packages\\",
-        "outputPath": "X:\\Johnny5\\Solution\\OpenSaintTestHarnessConsoleApp\\obj\\",
+        "outputPath": "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
@@ -389,8 +389,8 @@
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
-              "X:\\Johnny5\\Solution\\OpenSaintLib\\OpenSaintLib.csproj": {
-                "projectPath": "X:\\Johnny5\\Solution\\OpenSaintLib\\OpenSaintLib.csproj"
+              "X:\\Johnny5\\OpenSaint\\OpenSaintLib\\OpenSaintLib.csproj": {
+                "projectPath": "X:\\Johnny5\\OpenSaint\\OpenSaintLib\\OpenSaintLib.csproj"
               }
             }
           }

@@ -12,16 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="TIC\ticcmd.exe" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="TIC\ticcmd.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore" Version="2.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
@@ -39,12 +29,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OpenSaintLib\OpenSaintLib.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="TIC\tic_settings.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

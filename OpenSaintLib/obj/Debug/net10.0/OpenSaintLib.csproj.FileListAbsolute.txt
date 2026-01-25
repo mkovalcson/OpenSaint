@@ -10,3 +10,16 @@ X:\Johnny5\Solution\OpenSaintLib\obj\Debug\net10.0\OpenSaintLib.dll
 X:\Johnny5\Solution\OpenSaintLib\obj\Debug\net10.0\refint\OpenSaintLib.dll
 X:\Johnny5\Solution\OpenSaintLib\obj\Debug\net10.0\OpenSaintLib.pdb
 X:\Johnny5\Solution\OpenSaintLib\obj\Debug\net10.0\ref\OpenSaintLib.dll
+X:\Johnny5\OpenSaint\OpenSaintLib\bin\Debug\net10.0\OpenSaintLib.deps.json
+X:\Johnny5\OpenSaint\OpenSaintLib\bin\Debug\net10.0\OpenSaintLib.dll
+X:\Johnny5\OpenSaint\OpenSaintLib\bin\Debug\net10.0\OpenSaintLib.pdb
+X:\Johnny5\OpenSaint\OpenSaintLib\obj\Debug\net10.0\OpenSaintLib.csproj.AssemblyReference.cache
+X:\Johnny5\OpenSaint\OpenSaintLib\obj\Debug\net10.0\OpenSaintLib.GeneratedMSBuildEditorConfig.editorconfig
+X:\Johnny5\OpenSaint\OpenSaintLib\obj\Debug\net10.0\OpenSaintLib.AssemblyInfoInputs.cache
+X:\Johnny5\OpenSaint\OpenSaintLib\obj\Debug\net10.0\OpenSaintLib.AssemblyInfo.cs
+X:\Johnny5\OpenSaint\OpenSaintLib\obj\Debug\net10.0\OpenSaintLib.csproj.CoreCompileInputs.cache
+X:\Johnny5\OpenSaint\OpenSaintLib\obj\Debug\net10.0\OpenSaintLib.sourcelink.json
+X:\Johnny5\OpenSaint\OpenSaintLib\obj\Debug\net10.0\OpenSaintLib.dll
+X:\Johnny5\OpenSaint\OpenSaintLib\obj\Debug\net10.0\refint\OpenSaintLib.dll
+X:\Johnny5\OpenSaint\OpenSaintLib\obj\Debug\net10.0\OpenSaintLib.pdb
+X:\Johnny5\OpenSaint\OpenSaintLib\obj\Debug\net10.0\ref\OpenSaintLib.dll

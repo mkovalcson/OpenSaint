@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OpenSaintTestHarnessConsoleApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ca250ae4359bf086a9496820432375f20e84914e")]
 [assembly: System.Reflection.AssemblyProductAttribute("OpenSaintTestHarnessConsoleApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OpenSaintTestHarnessConsoleApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
