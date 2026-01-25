@@ -565,7 +565,30 @@ namespace OpenSaintTestHarnessConsoleApp
 
         }
 
-   
+        public static List<Command> ExpandCommandsRecursive(List<Command> commandList, TimeSpan delay)
+        {
+            // Calls repeating expansion at the same level first
+            List<Command> cumulativeCommandList = ExpandRepeatCommands(commandList, delay);
+
+            List<Command> cumulativeCommandList2 = new List<Command>();
+
+            foreach (Command c in cumulativeCommandList)
+            {
+                if (c.SubCommands != null)
+                {
+                    var list = ExpandCommandsRecursive(c.SubCommands, c.Delay + delay);
+                    cumulativeCommandList2.AddRange(list);
+                }
+                else
+                {
+                    // Adds non-repeating non-nested Command
+                    var x = c.Clone();
+                    x.Delay = c.Delay + delay;
+                    cumulativeCommandList2.Add(x);
+                }
+            }
+            return cumulativeCommandList2;
+        }
 
         public static List<Command> ExpandRepeatCommands(List<Command> commandList, TimeSpan delay)
         {           
@@ -588,6 +611,7 @@ namespace OpenSaintTestHarnessConsoleApp
 
                     for (int loop = 1; loop <= c.RepeatLoops; loop++)
                     {
+                        // Adds RepeatLoops number of Commands with appropriate offset delay for each loop
                         foreach (Command sub in c.SubCommands)
                         {
                             var y = sub.Clone();
@@ -602,28 +626,7 @@ namespace OpenSaintTestHarnessConsoleApp
             return cumulativeCommandList;
         }
 
-        public static List<Command> ExpandCommandsRecursive(List<Command> commandList, TimeSpan delay)
-        {           
-            List<Command> cumulativeCommandList = ExpandRepeatCommands(commandList, delay);
-
-            List<Command> cumulativeCommandList2 = new List<Command>();
-
-            foreach (Command c in cumulativeCommandList)
-            {
-                if (c.SubCommands != null)
-                {
-                    var list = ExpandCommandsRecursive(c.SubCommands, c.Delay + delay);
-                    cumulativeCommandList2.AddRange(list);
-                }
-                else
-                {
-                    var x = c.Clone();
-                    x.Delay = c.Delay + delay;
-                    cumulativeCommandList2.Add(x);
-                }
-            }
-            return cumulativeCommandList2;
-        }
+    
 
     }
 }
