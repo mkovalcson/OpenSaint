@@ -540,6 +540,7 @@ class Program
                     disableServos.Add(s);
                 }
             }
+
             if (disableServos.Count > 0) disableServos[0].GetPositionCompareDisable(disableServos);
         }
 

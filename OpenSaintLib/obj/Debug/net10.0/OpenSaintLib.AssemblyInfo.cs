@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OpenSaintLib")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ca250ae4359bf086a9496820432375f20e84914e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8622a28a9872f8596106fa5fc660e70bd473c5ba")]
 [assembly: System.Reflection.AssemblyProductAttribute("OpenSaintLib")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OpenSaintLib")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

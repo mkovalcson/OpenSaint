@@ -7,32 +7,32 @@
       "RelativeMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|solutionrelative:opensainttestharnessconsoleapp\\sequencecontrol\\runmovie.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|x:\\johnny5\\opensaint\\opensainttestharnessconsoleapp\\sequencecontrol\\runcommands.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|solutionrelative:opensainttestharnessconsoleapp\\sequencecontrol\\runcommands.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|x:\\johnny5\\opensaint\\opensainttestharnessconsoleapp\\automationsequences\\commandlibrary.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|solutionrelative:opensainttestharnessconsoleapp\\automationsequences\\commandlibrary.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|x:\\johnny5\\opensaint\\opensainttestharnessconsoleapp\\livecontrol\\runactions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|solutionrelative:opensainttestharnessconsoleapp\\livecontrol\\runactions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|x:\\johnny5\\opensaint\\opensainttestharnessconsoleapp\\config\\controllermapping.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|solutionrelative:opensainttestharnessconsoleapp\\config\\controllermapping.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|x:\\johnny5\\opensaint\\opensainttestharnessconsoleapp\\config\\configureservos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|solutionrelative:opensainttestharnessconsoleapp\\config\\configureservos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|x:\\johnny5\\opensaint\\opensainttestharnessconsoleapp\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|solutionrelative:opensainttestharnessconsoleapp\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{BD6B3F44-6AE6-4E7F-9A95-4CD2C8E52D7E}|OpenSaintLib\\OpenSaintLib.csproj|x:\\johnny5\\opensaint\\opensaintlib\\outputdevices\\servos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{BD6B3F44-6AE6-4E7F-9A95-4CD2C8E52D7E}|OpenSaintLib\\OpenSaintLib.csproj|solutionrelative:opensaintlib\\outputdevices\\servos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BD6B3F44-6AE6-4E7F-9A95-4CD2C8E52D7E}|OpenSaintLib\\OpenSaintLib.csproj|x:\\johnny5\\opensaint\\opensaintlib\\utilities\\configureservos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BD6B3F44-6AE6-4E7F-9A95-4CD2C8E52D7E}|OpenSaintLib\\OpenSaintLib.csproj|solutionrelative:opensaintlib\\utilities\\configureservos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|x:\\johnny5\\opensaint\\opensainttestharnessconsoleapp\\livecontrol\\runactions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|solutionrelative:opensainttestharnessconsoleapp\\livecontrol\\runactions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|x:\\johnny5\\opensaint\\opensainttestharnessconsoleapp\\automationsequences\\commandlibrary.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|solutionrelative:opensainttestharnessconsoleapp\\automationsequences\\commandlibrary.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|x:\\johnny5\\opensaint\\opensainttestharnessconsoleapp\\sequencecontrol\\runcommands.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|solutionrelative:opensainttestharnessconsoleapp\\sequencecontrol\\runcommands.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|x:\\johnny5\\opensaint\\opensainttestharnessconsoleapp\\config\\configureservos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|solutionrelative:opensainttestharnessconsoleapp\\config\\configureservos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|x:\\johnny5\\opensaint\\opensainttestharnessconsoleapp\\config\\controllermapping.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|solutionrelative:opensainttestharnessconsoleapp\\config\\controllermapping.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|x:\\johnny5\\opensaint\\opensainttestharnessconsoleapp\\automationsequences\\dalekencounter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -75,10 +75,6 @@
       "RelativeMoniker": "D:0:0:{BD6B3F44-6AE6-4E7F-9A95-4CD2C8E52D7E}|OpenSaintLib\\OpenSaintLib.csproj|solutionrelative:opensaintlib\\outputdevices\\rgblight.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|x:\\johnny5\\opensaint\\opensainttestharnessconsoleapp\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{ECFAED54-9704-4213-8EE8-4C7E0F24D315}|OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj|solutionrelative:opensainttestharnessconsoleapp\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{BD6B3F44-6AE6-4E7F-9A95-4CD2C8E52D7E}|OpenSaintLib\\OpenSaintLib.csproj|x:\\johnny5\\opensaint\\opensaintlib\\outputdevices\\motors.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{BD6B3F44-6AE6-4E7F-9A95-4CD2C8E52D7E}|OpenSaintLib\\OpenSaintLib.csproj|solutionrelative:opensaintlib\\outputdevices\\motors.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -117,15 +113,16 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
               "Title": "ConfigureServos.cs",
               "DocumentMoniker": "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\Config\\ConfigureServos.cs",
               "RelativeDocumentMoniker": "OpenSaintTestHarnessConsoleApp\\Config\\ConfigureServos.cs",
               "ToolTip": "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\Config\\ConfigureServos.cs",
               "RelativeToolTip": "OpenSaintTestHarnessConsoleApp\\Config\\ConfigureServos.cs",
-              "ViewState": "AgIAAN0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAI4AAAAAAAAAAAAgwPgAAAAMAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-25T13:25:54.113Z"
+              "WhenOpened": "2026-01-25T13:25:54.113Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -141,7 +138,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 18,
               "Title": "Motors.cs",
               "DocumentMoniker": "X:\\Johnny5\\OpenSaint\\OpenSaintLib\\OutputDevices\\Motors.cs",
               "RelativeDocumentMoniker": "OpenSaintLib\\OutputDevices\\Motors.cs",
@@ -153,7 +150,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 21,
+              "DocumentIndex": 20,
               "Title": "SteamDeck.cs",
               "DocumentMoniker": "X:\\Johnny5\\OpenSaint\\OpenSaintLib\\InputSources\\SteamDeck.cs",
               "RelativeDocumentMoniker": "OpenSaintLib\\InputSources\\SteamDeck.cs",
@@ -171,14 +168,14 @@
               "RelativeDocumentMoniker": "OpenSaintTestHarnessConsoleApp\\SequenceControl\\RunMovie.cs",
               "ToolTip": "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\SequenceControl\\RunMovie.cs",
               "RelativeToolTip": "OpenSaintTestHarnessConsoleApp\\SequenceControl\\RunMovie.cs",
-              "ViewState": "AgIAAHwCAAAAAAAAAAAAAHwCAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAFACAAAAAAAAAAAcwF8CAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-01-24T16:07:38.093Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "RunActions.cs",
               "DocumentMoniker": "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\LiveControl\\RunActions.cs",
               "RelativeDocumentMoniker": "OpenSaintTestHarnessConsoleApp\\LiveControl\\RunActions.cs",
@@ -186,23 +183,25 @@
               "RelativeToolTip": "OpenSaintTestHarnessConsoleApp\\LiveControl\\RunActions.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAbAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-24T11:38:20.372Z"
+              "WhenOpened": "2026-01-24T11:38:20.372Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 5,
               "Title": "RunCommands.cs",
               "DocumentMoniker": "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\SequenceControl\\RunCommands.cs",
               "RelativeDocumentMoniker": "OpenSaintTestHarnessConsoleApp\\SequenceControl\\RunCommands.cs",
               "ToolTip": "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\SequenceControl\\RunCommands.cs",
               "RelativeToolTip": "OpenSaintTestHarnessConsoleApp\\SequenceControl\\RunCommands.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAbAAAAAAAAAA==",
+              "ViewState": "AgIAAEYAAAAAAAAAAAAgwA0AAAAbAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-24T11:26:23.99Z"
+              "WhenOpened": "2026-01-24T11:26:23.99Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 7,
               "Title": "ControllerMapping.cs",
               "DocumentMoniker": "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\Config\\ControllerMapping.cs",
               "RelativeDocumentMoniker": "OpenSaintTestHarnessConsoleApp\\Config\\ControllerMapping.cs",
@@ -211,18 +210,6 @@
               "ViewState": "AgIAAPsAAAAAAAAAAAAIwEMAAAAMAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-01-24T10:46:55.864Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "CommandLibrary.cs",
-              "DocumentMoniker": "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\AutomationSequences\\CommandLibrary.cs",
-              "RelativeDocumentMoniker": "OpenSaintTestHarnessConsoleApp\\AutomationSequences\\CommandLibrary.cs",
-              "ToolTip": "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\AutomationSequences\\CommandLibrary.cs",
-              "RelativeToolTip": "OpenSaintTestHarnessConsoleApp\\AutomationSequences\\CommandLibrary.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-24T10:07:08.683Z"
             },
             {
               "$type": "Document",
@@ -235,18 +222,6 @@
               "ViewState": "AgIAAPsAAAAAAAAAAAAcwA0BAAADAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-11-14T14:51:56.931Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "ConfigureServos.cs",
-              "DocumentMoniker": "X:\\Johnny5\\OpenSaint\\OpenSaintLib\\Utilities\\ConfigureServos.cs",
-              "RelativeDocumentMoniker": "OpenSaintLib\\Utilities\\ConfigureServos.cs",
-              "ToolTip": "X:\\Johnny5\\OpenSaint\\OpenSaintLib\\Utilities\\ConfigureServos.cs",
-              "RelativeToolTip": "OpenSaintLib\\Utilities\\ConfigureServos.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-10T15:32:17.97Z"
             },
             {
               "$type": "Document",
@@ -286,31 +261,33 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 2,
               "Title": "Program.cs",
               "DocumentMoniker": "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\Program.cs",
               "RelativeDocumentMoniker": "OpenSaintTestHarnessConsoleApp\\Program.cs",
               "ToolTip": "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\Program.cs",
               "RelativeToolTip": "OpenSaintTestHarnessConsoleApp\\Program.cs",
-              "ViewState": "AgIAADQAAAAAAAAAAAAjwFAAAAA1AAAAAAAAAA==",
+              "ViewState": "AgIAAAICAAAAAAAAAAAjwB8CAABIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-14T14:51:57.087Z"
+              "WhenOpened": "2025-11-14T14:51:57.087Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 3,
               "Title": "Servos.cs",
               "DocumentMoniker": "X:\\Johnny5\\OpenSaint\\OpenSaintLib\\OutputDevices\\Servos.cs",
               "RelativeDocumentMoniker": "OpenSaintLib\\OutputDevices\\Servos.cs",
               "ToolTip": "X:\\Johnny5\\OpenSaint\\OpenSaintLib\\OutputDevices\\Servos.cs",
               "RelativeToolTip": "OpenSaintLib\\OutputDevices\\Servos.cs",
-              "ViewState": "AgIAAI4AAAAAAAAAAAAUwGoAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAANICAAAAAAAAAAD4v+wCAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-14T14:51:57.095Z"
+              "WhenOpened": "2025-11-14T14:51:57.095Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 23,
+              "DocumentIndex": 22,
               "Title": "OpenSaintTestHarnessConsoleApp.csproj",
               "DocumentMoniker": "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj",
               "RelativeDocumentMoniker": "OpenSaintTestHarnessConsoleApp\\OpenSaintTestHarnessConsoleApp.csproj",
@@ -334,7 +311,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 22,
+              "DocumentIndex": 21,
               "Title": "OldCode.cs",
               "DocumentMoniker": "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\OldCode.cs",
               "RelativeDocumentMoniker": "OpenSaintTestHarnessConsoleApp\\OldCode.cs",
@@ -394,7 +371,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 20,
+              "DocumentIndex": 19,
               "Title": "XBoxController.cs",
               "DocumentMoniker": "X:\\Johnny5\\OpenSaint\\OpenSaintLib\\InputSources\\XBoxController.cs",
               "RelativeDocumentMoniker": "OpenSaintLib\\InputSources\\XBoxController.cs",
@@ -406,13 +383,47 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 24,
+              "DocumentIndex": 23,
               "Title": "Microsoft.Common.CurrentVersion.targets",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
               "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
               "ViewState": "AgIAAHkUAAAAAAAAAAAewJUUAAAEAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003801|",
               "WhenOpened": "2025-11-14T14:51:57.132Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "FloatingWindowState": {
+        "Id": "088c333c-faa8-4e14-a33f-e74261c7f51a",
+        "Display": 0,
+        "X": 103,
+        "Y": 45,
+        "Width": 1553,
+        "Height": 1074,
+        "WindowState": 0
+      },
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "CommandLibrary.cs",
+              "DocumentMoniker": "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\AutomationSequences\\CommandLibrary.cs",
+              "RelativeDocumentMoniker": "OpenSaintTestHarnessConsoleApp\\AutomationSequences\\CommandLibrary.cs",
+              "ToolTip": "X:\\Johnny5\\OpenSaint\\OpenSaintTestHarnessConsoleApp\\AutomationSequences\\CommandLibrary.cs",
+              "RelativeToolTip": "OpenSaintTestHarnessConsoleApp\\AutomationSequences\\CommandLibrary.cs",
+              "ViewState": "AgIAAGIAAAAAAAAAAAA8wHAAAABFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-24T10:07:08.683Z",
+              "EditorCaption": ""
             }
           ]
         }

@@ -34,7 +34,9 @@ namespace OpenSaintTestHarnessConsoleApp
                 {
                     foreach (Sequence seq in sc.Sequences)
                     {
+                        Console.WriteLine("Command List before: "+ seq.CommandList.Count);
                         var expandedCommandList = ExpandCommandsRecursive(seq.CommandList, seq.MsDelay);
+                        Console.WriteLine("Command List After: " + expandedCommandList.Count);
 
                         seq.CommandList = expandedCommandList;
                     }
@@ -283,16 +285,7 @@ namespace OpenSaintTestHarnessConsoleApp
                 }
             }
             else
-            {
-                var disableServos = new List<Servo>();
-                foreach (Servo s in settings.Servos)
-                {
-                    if (!s.isDisabled)
-                    {
-                        disableServos.Add(s);
-                    }
-                }
-                if (disableServos.Count > 0) disableServos[0].GetPositionCompareDisable(disableServos);
+            {     
 
                 // In loop see if it's time to do something.
                 if (scene.SceneRunning)
@@ -313,6 +306,19 @@ namespace OpenSaintTestHarnessConsoleApp
                         RunBackgroundSequence(m, settings, verbose, now);
                     }
                 }
+
+                // See if any moving servos have reached their end position
+                // If they have disable them.
+                var disableServos = new List<Servo>();
+                foreach (Servo s in settings.Servos)
+                {
+                    if (!s.isDisabled)
+                    {
+                        disableServos.Add(s);
+                    }
+                }
+                if (disableServos.Count > 0) disableServos[0].GetPositionCompareDisable(disableServos);
+
             }
 
 
@@ -562,7 +568,7 @@ namespace OpenSaintTestHarnessConsoleApp
    
 
         public static List<Command> ExpandRepeatCommands(List<Command> commandList, TimeSpan delay)
-        {
+        {           
             // New list with expanded repeating commands.
             List<Command> cumulativeCommandList = new List<Command>();
 
@@ -597,36 +603,23 @@ namespace OpenSaintTestHarnessConsoleApp
         }
 
         public static List<Command> ExpandCommandsRecursive(List<Command> commandList, TimeSpan delay)
-        {
-
+        {           
             List<Command> cumulativeCommandList = ExpandRepeatCommands(commandList, delay);
 
             List<Command> cumulativeCommandList2 = new List<Command>();
 
             foreach (Command c in cumulativeCommandList)
             {
-                if (c.SubCommands != null && c.RepeatLoops == 0)
+                if (c.SubCommands != null)
                 {
-                    var list = ExpandCommandsRecursive(c.SubCommands, c.Delay);
+                    var list = ExpandCommandsRecursive(c.SubCommands, c.Delay + delay);
                     cumulativeCommandList2.AddRange(list);
                 }
                 else
                 {
-                    if (c.SubCommands == null)
-                    {
-                        var x = c.Clone();
-                        cumulativeCommandList2.Add(x);
-                    }
-                    else
-                    {
-                        foreach (Command sub in c.SubCommands)
-                        {
-                            var y = sub.Clone();
-                            var listCommand = y;
-                            listCommand.Delay = sub.Delay + delay;
-                            cumulativeCommandList2.Add(listCommand);
-                        }
-                    }
+                    var x = c.Clone();
+                    x.Delay = c.Delay + delay;
+                    cumulativeCommandList2.Add(x);
                 }
             }
             return cumulativeCommandList2;

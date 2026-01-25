@@ -239,6 +239,8 @@ namespace OpenSaintLib.Utilities
 
             Thread.Sleep(2000);// Wait 4 seconds for all servos to find home.
 
+           // servos[0].SetRangeAll(servos);
+
             foreach (var servo in servos)
             {
                 servo.DisableServo();

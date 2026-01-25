@@ -192,7 +192,6 @@ public class Servo
     }
 
 
-
     /// <summary>
     /// Map Trigger to Servo
     /// </summary>
@@ -657,6 +656,38 @@ public class Servo
         //// Single write call for all channels
         //port.Write(buffer, 0, buffer.Length);
         //port.Close();
+    }
+
+
+    public void SetRangeAll(Servo[] servos)
+    {
+        var port = new SerialPort(servos[0].USBPort, DefaultBaudRate, Parity.None, 8, StopBits.One);
+        port.Open();
+
+        int minUs = 544;
+        int maxUs = 2496;
+
+        int minQ = minUs * 4;
+        int maxQ = maxUs * 4;
+
+        var device = 12;
+
+        foreach (Servo s in servos)
+        {
+            byte[] cmd =
+                {
+                0xAA, (byte)device,
+                0x0E,
+                (byte)s.Channel,
+                (byte)(minQ & 0x7F),
+                (byte)((minQ >> 7) & 0x7F),
+                (byte)(maxQ & 0x7F),
+                (byte)((maxQ >> 7) & 0x7F)
+                };
+
+            port.Write(cmd, 0, cmd.Length);
+        }
+        port.Close();
     }
 
     public static void ConfigureSpeedAll( Servo[] servos, ServoSpeed pickValues)
