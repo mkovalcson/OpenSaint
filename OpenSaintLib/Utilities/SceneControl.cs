@@ -101,16 +101,37 @@ public class Sequence
     public int iterations { get; set; }
     public int iterationCount { get; set; }
 
+    public int AudioIndex { get; set; }
+    public List<string> AudioTracks { get; set; }
+
     [JsonConstructor]
 
-    public Sequence(List<Command> CommandList, int msDelay)   
+    public Sequence(List<Command> CommandList, List<string> audioTracks, double seconds)
+    {
+        StartingServoPosition = new int[24];
+        StartingServoSpeed = new ServoSpeed[24];
+        EyePosition = new int[2];
+        this.CommandList = CommandList;
+        this.MsDelay = TimeSpan.FromSeconds(seconds);
+        this.BackgroundMsDelay = TimeSpan.FromSeconds(1);
+        this.CommandIndex = 0;
+        this.FireTime = DateTime.MinValue;
+        this.IsComplete = false;
+        this.iterations = 0;
+        this.iterationCount = 0;
+        this.AudioIndex = 0;    
+        this.AudioTracks = audioTracks;
+
+    }
+
+    public Sequence(List<Command> CommandList, double seconds)   
     {
         StartingServoPosition = new int[24];
         StartingServoSpeed = new ServoSpeed[24];
         EyePosition = new int[2];
         this.CommandList = CommandList; 
-        this.MsDelay = TimeSpan.FromMilliseconds(msDelay);
-        this.BackgroundMsDelay = TimeSpan.FromMilliseconds(1000);
+        this.MsDelay = TimeSpan.FromSeconds(seconds);
+        this.BackgroundMsDelay = TimeSpan.FromSeconds(1);
         this.CommandIndex = 0;
         this.FireTime = DateTime.MinValue;
         this.IsComplete = false;
@@ -119,14 +140,14 @@ public class Sequence
          
     }
 
-    public Sequence(List<Command> CommandList, int msDelay, int iterations)
+    public Sequence(List<Command> CommandList, double seconds, int iterations)
     {
         StartingServoPosition = new int[24];
         StartingServoSpeed = new ServoSpeed[24];
         EyePosition = new int[2];
         this.CommandList = CommandList;
-        this.MsDelay = TimeSpan.FromMilliseconds(msDelay);
-        this.BackgroundMsDelay = TimeSpan.FromMilliseconds(1000);
+        this.MsDelay = TimeSpan.FromSeconds(seconds);
+        this.BackgroundMsDelay = TimeSpan.FromSeconds(1);
         this.CommandIndex = 0;
         this.FireTime = DateTime.MinValue;
         this.IsComplete = false;
@@ -217,66 +238,81 @@ public class Command
                 : null
         };
     }
+      
 
-    public Command(ButtonActions Action, int msDelay, List<Command> subCommands)
+    public Command(ButtonActions Action, List<Command> subCommands, double seconds)
     {
-        this.Delay = TimeSpan.FromMilliseconds(msDelay);
+        this.Delay = TimeSpan.FromSeconds(seconds);
         this.Action = Action;
         this.SubCommands = subCommands;
         this.RepeatLoops = 0;
         this.RepeatDelay = TimeSpan.FromMilliseconds(0);
         Init();
     }
-    public Command(ButtonActions Action, int msDelay, List<Command> subCommands, int repeatLoops, int repeatdelay)
+
+    public Command(ButtonActions Action, double seconds , List<Command> subCommands, int repeatLoops, double repeatdelay)
     {
-        this.Delay = TimeSpan.FromMilliseconds(msDelay);
+        this.Delay = TimeSpan.FromSeconds(seconds);
         this.Action = Action;
         this.SubCommands = subCommands;
         this.RepeatLoops = repeatLoops;
-        this.RepeatDelay = TimeSpan.FromMilliseconds(repeatdelay);
+        this.RepeatDelay = TimeSpan.FromSeconds(repeatdelay);
         Init();
     }
-    public Command(ButtonActions Action, ServoSpeed Speed, int msDelay)
+    
+    public Command(ButtonActions Action, ServoSpeed Speed, double seconds)
     {
-        this.Delay = TimeSpan.FromMilliseconds(msDelay);
+        this.Delay = TimeSpan.FromSeconds(seconds) ;
         this.Action = Action;
         this.Speed = Speed;
 
         Init();
     }
-    public Command(RobotControls ControlName, ButtonActions Action, ServoSpeed Speed, int msDelay)
+    public Command(ButtonActions Action, string pathname, double seconds)
     {
-        this.robotControl = ControlName;
-        this.Delay = TimeSpan.FromMilliseconds(msDelay);
-        this.Action =  Action;      
-        this.Speed = Speed;
-
-        Init();
-    }
-    public Command(ButtonActions Action, ServoMode mode, int msDelay)
-    {
-        this.Delay = TimeSpan.FromMilliseconds(msDelay);
-        this.Action = Action;     
-        this.Mode = mode;
-       Init();
-    }
-    public Command(ButtonActions Action, string pathname, int msDelay)
-    {
-        this.Delay = TimeSpan.FromMilliseconds(msDelay);
-        this.Action = Action;      
+        this.Delay = TimeSpan.FromSeconds(seconds);
+        this.Action = Action;
         this.pathName = pathname;
-       
+
         Init();
     }
-    public Command(RobotControls ControlName, ButtonActions Action, int msDelay)
+
+    public Command(ButtonActions Action, GangedServoNames gangedServoNames, int Value, double seconds)
     {
-        this.Delay = TimeSpan.FromMilliseconds(msDelay);
-        this.robotControl = ControlName;
+        this.GangedServosName = gangedServoNames;
+        this.Delay = TimeSpan.FromSeconds(seconds);
+        this.Action = Action;
+        this.Value = Value;
+
+        Init();
+    }
+
+    public Command(ButtonActions Action, double seconds)
+    {
+        this.Delay = TimeSpan.FromSeconds(seconds);
         this.Action = Action;
 
         Init();
     }
 
+    public Command(RobotControls ControlName, ButtonActions Action, ServoSpeed Speed, double seconds)
+    {
+        this.robotControl = ControlName;
+        this.Delay = TimeSpan.FromSeconds(seconds);
+        this.Action = Action;
+        this.Speed = Speed;
+
+        Init();
+    }           
+ 
+    public Command(RobotControls ControlName, ButtonActions Action, double seconds)
+    {
+        this.Delay = TimeSpan.FromSeconds(seconds) ;
+        this.robotControl = ControlName;
+        this.Action = Action;
+
+        Init();
+    }
     public Command(RobotControls ControlName, ButtonActions Action)
     {
         this.Delay = TimeSpan.FromMilliseconds(0);
@@ -284,61 +320,17 @@ public class Command
         this.Action = Action;
 
         Init();
-    }
+    }     
 
-    public Command(RobotControls ControlName, ButtonActions Action, double Percent, int msDelay)
+    public Command(RobotControls ControlName, ButtonActions Action, int Value, double seconds)
     {
-        this.Delay = TimeSpan.FromMilliseconds(msDelay);
-        this.robotControl = ControlName;
-        this.Action = Action;
-        this.Percent = Percent;
-
-        Init();
-    }
-    public Command(RobotControls ControlName, ButtonActions Action, int Value, int msDelay)
-    {
-        this.Delay = TimeSpan.FromMilliseconds(msDelay);
+        this.Delay = TimeSpan.FromSeconds(seconds);
         this.robotControl = ControlName;
         this.Action = Action;
         this.Value = Value;
 
         Init();
-    }
-
-    public Command(RobotControls ControlName, ButtonActions Action, int Value, int msDelay, bool offsetDelay)
-    {
-        this.Delay = TimeSpan.FromMilliseconds(msDelay);
-        this.robotControl = ControlName;
-        this.Action = Action;
-        this.Value = Value;
-        this.OffsetDelay = offsetDelay;
-        Init();
-    }
-    public Command(ButtonActions Action, GangedServoNames gangedServoNames, int Value, int msDelay)
-    {
-        this.GangedServosName = gangedServoNames;
-        this.Delay = TimeSpan.FromMilliseconds(msDelay);
-        this.Action = Action;
-        this.Value = Value;
-
-        Init();
-    }
-    public Command(ButtonActions Action, int Value, int msDelay)
-    {
-        this.Delay = TimeSpan.FromMilliseconds(msDelay);
-        this.Action = Action;     
-        this.Value =  Value;
-
-      Init();
-    }   
-
-    public Command(ButtonActions Action, int msDelay)
-    {
-        this.Delay = TimeSpan.FromMilliseconds(msDelay);
-        this.Action = Action;
-
-        Init();
-    }  
+    } 
 
     internal void Init()
     {

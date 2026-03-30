@@ -317,7 +317,7 @@ namespace OpenSaintTestHarnessConsoleApp
                         disableServos.Add(s);
                     }
                 }
-                if (disableServos.Count > 0) disableServos[0].GetPositionCompareDisable(disableServos);
+               // if (disableServos.Count > 0) disableServos[0].GetPositionCompareDisable(disableServos);
 
             }
 
@@ -367,6 +367,7 @@ namespace OpenSaintTestHarnessConsoleApp
                 Servo.SetTargetsBatch(results.deltaServos, results.DeltaValues.ToArray());
 
             }
+
             if (results.TicDeltas.Count > 0)
             {
                 foreach (TicDeltas ticDeltas in results.TicDeltas)
@@ -428,19 +429,21 @@ namespace OpenSaintTestHarnessConsoleApp
                     switch (c.Action)
                     {
                         case ButtonActions.PlayFirst:
-
-                            alternateCommand = new Command(ButtonActions.PlayThis, scene.AudioTracks[0], c.Delay.Milliseconds);
+                            alternateCommand = new Command(ButtonActions.PlayThis, scene.Sequences[scene.SequenceIndex].AudioTracks[0] , c.Delay.Milliseconds); //scene.AudioTracks[0]
                             break;
                         case ButtonActions.PlayCurrent:
-                            alternateCommand = new Command(ButtonActions.PlayThis, scene.AudioTracks[scene.AudioIndex], c.Delay.Milliseconds);
+                            
+                            alternateCommand = new Command(ButtonActions.PlayThis, scene.AudioTracks[scene.Sequences[scene.SequenceIndex].AudioIndex], c.Delay.Milliseconds);
                             break;
                         case ButtonActions.PlayPrevious:
                             scene.AudioIndex--;
-                            alternateCommand = new Command(ButtonActions.PlayThis, scene.AudioTracks[scene.AudioIndex], c.Delay.Milliseconds);
+                            scene.Sequences[scene.SequenceIndex].AudioIndex--;
+                            alternateCommand = new Command(ButtonActions.PlayThis, scene.AudioTracks[scene.Sequences[scene.SequenceIndex].AudioIndex], c.Delay.Milliseconds);
                             break;
                         case ButtonActions.PlayNext:
                             scene.AudioIndex++;
-                            alternateCommand = new Command(ButtonActions.PlayThis, scene.AudioTracks[scene.AudioIndex], c.Delay.Milliseconds);
+                            scene.Sequences[scene.SequenceIndex].AudioIndex++;
+                            alternateCommand = new Command(ButtonActions.PlayThis, scene.AudioTracks[scene.Sequences[scene.SequenceIndex].AudioIndex], c.Delay.Milliseconds);
                             break;
                     }
 
@@ -468,7 +471,7 @@ namespace OpenSaintTestHarnessConsoleApp
                 if (reEnableServos.Count > 0)
                 {
                     Servo.SetTargetsLast(reEnableServos); // Reenables any disabled servos, by sending their current position 
-                    Servo.ConfigureSpeedLast(reEnableServos); // Resets the speed after they are re-enabled by sending a position
+                  //  Servo.ConfigureSpeedLast(reEnableServos); // Resets the speed after they are re-enabled by sending a position
                 }
 
                 Servo.SetTargetsBatch(results.deltaServos, results.DeltaValues.ToArray());
@@ -483,7 +486,7 @@ namespace OpenSaintTestHarnessConsoleApp
                         disableServos.Add(s);
                     }
                 }
-                if (disableServos.Count > 0) disableServos[0].GetPositionCompareDisable(disableServos);
+             //  if (disableServos.Count > 0) disableServos[0].GetPositionCompareDisable(disableServos);
             }
 
             if (results.TicDeltas.Count > 0)

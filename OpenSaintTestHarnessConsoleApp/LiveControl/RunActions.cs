@@ -43,22 +43,16 @@ namespace OpenSaintTestHarnessConsoleApp
                         break;
 
                     case ButtonActions.ServoValue:
-                        thisServo = settings.Servos[(int)output.robotControl];
-                        if (!thisServo.EyePopSensitive || !settings.EyesPopped)
-                        {
-                            results.deltaServos.Add(thisServo);
-                            results.DeltaValues.Add((int)value);
-                        }
+                        thisServo = settings.Servos[(int)output.robotControl];                      
+                        results.deltaServos.Add(thisServo);
+                        results.DeltaValues.Add((int)value);                       
                         break;
 
                     case ButtonActions.ServoHomeDelta:
                         thisServo = settings.Servos[(int)output.robotControl];
-
                         results.deltaServos.Add(thisServo);
                         results.DeltaValues.Add(thisServo.HomeValue + (int)value);
-
                         if (verbose) Console.WriteLine("Output: " + thisServo.Name + " Value: " + (int)value);
-
                         break;
 
 
@@ -154,14 +148,11 @@ namespace OpenSaintTestHarnessConsoleApp
                         break;
 
                     case ButtonActions.ServoMin:
-                        thisServo = settings.Servos[(int)output.robotControl];
-                        if (!thisServo.EyePopSensitive || !settings.EyesPopped)
-                        {
-                            // output.Servo.GoMin();
+                        thisServo = settings.Servos[(int)output.robotControl];                      
                             results.deltaServos.Add(thisServo);
                             results.DeltaValues.Add(thisServo.Reverse ? thisServo.LimitUpper : thisServo.LimitLower);
                             if (verbose) Console.WriteLine("Output: " + thisServo.Name + "Min");
-                        }
+                        
                         break;
 
                     case ButtonActions.ServoModeValue:
@@ -174,24 +165,21 @@ namespace OpenSaintTestHarnessConsoleApp
                         break;
 
                     case ButtonActions.ServoMax:
-                        thisServo = settings.Servos[(int)output.robotControl];
-                        if (!thisServo.EyePopSensitive || !settings.EyesPopped)
-                        {
-                            // output.Servo.GoMax();
+                        thisServo = settings.Servos[(int)output.robotControl];                    
+                          
                             results.deltaServos.Add(thisServo);
                             results.DeltaValues.Add((thisServo.Reverse ? thisServo.LimitLower : thisServo.LimitUpper));
                             if (verbose) Console.WriteLine("Output: " + thisServo.Name + "Max");
-                        }
+                        
                         break;
                     case ButtonActions.ServoHome:
                         thisServo = settings.Servos[(int)output.robotControl];
-                        if (!thisServo.EyePopSensitive || !settings.EyesPopped)
-                        {
+                      
                             results.deltaServos.Add(thisServo);
                             results.DeltaValues.Add(thisServo.HomeValue);
                             //output.Servo.GoHome();
                             if (verbose) Console.WriteLine("Output: " + thisServo.Name + " Home");
-                        }
+                        
                         break;
 
                     case ButtonActions.PlayFirst:
@@ -226,30 +214,13 @@ namespace OpenSaintTestHarnessConsoleApp
                     case ButtonActions.MaestroSet:
                         thisServo = settings.Servos[(int)output.robotControl];
                         thisServo.ConfigureSpeed(output.Speed);
-                        //if (output.RunOrder == RunOrder.Before)
-                        //{
-                        //    results.SetBeforeSpeed = true;
-                        //    results.BeforeSpeed = output.Speed;
-                        //}
-                        //else
-                        //{
-                        //    results.MaestroSettingsAfter.Add(output.Servo);
-                        //    results.AfterSpeed = output.Speed;
-                        //}
+                       
                         break;
 
                     case ButtonActions.MaestroSetAll:
-
                         Servo.ConfigureSpeedAll(settings.Servos, output.Speed);
-
-                        //foreach (Servo s1 in settings.Servos)
-                        //{
-                        //   s1.ConfigureSpeed(output.Speed);
-                        //}
-
                         if (verbose) Console.WriteLine("Set Speed " + output.Speed.ToString());
-                        //results.SetBeforeSpeed = true;
-                        //results.BeforeSpeed = output.Speed;
+                       
                         break;
 
                     case ButtonActions.DisableServo:

@@ -67,19 +67,33 @@ class Program
                 //outputDevices.LeftTic.MoveToPosition(-100);
                 //outputDevices.LeftTic.SetCurrentPositionZero();
 
-                outputDevices.LeftTic.MoveToPosition(0);
+                //outputDevices.LeftTic.MoveToPosition(0);
+                //outputDevices.LeftTic.MoveToPosition(2000);
+                //outputDevices.LeftTic.MoveToPosition(0);
+                //outputDevices.LeftTic.MoveToPosition(2000);
+                //outputDevices.LeftTic.MoveToPosition(0);
+                //outputDevices.LeftTic.MoveToPosition(2000);
+                //outputDevices.LeftTic.MoveToPosition(0);
             }
             if (outputDevices.RightTic != null)
             {
                 // Creep backwards to zero
-                //outputDevices.RightTic.MoveToPosition(-100);
+
+                //outputDevices.RightTic.MoveToPosition(-500);
                 //outputDevices.RightTic.SetCurrentPositionZero();
 
-                outputDevices.RightTic.MoveToPosition(0);
+                //outputDevices.RightTic.MoveToPosition(0);
+
+                //outputDevices.RightTic.MoveToPosition(2000);
+                //outputDevices.RightTic.MoveToPosition(0);
+
             }
 
+            
             outputDevices.lights.Command("ClearAll");
 
+           // outputDevices.lights.Command("RAINBOWCYCLE,200,LR,5");
+           
             // Sets all 24 servo channels, Min, Max, Home, speed accel ranges etc..
             // RobotControl enum names all servos
             Servo[] servos = ServoConfig.ConfigureServos(outputDevices.headPort);  // 24 servos for desktop J5          
@@ -91,7 +105,7 @@ class Program
             // load everything configured into the settings.
             var settings = new SettingsObject(mappings, servos, outputDevices.LeftTic, outputDevices.RightTic, outputDevices.lights);
 
-            var newMovie = CL.CreateUnitTests();
+            var newMovie = CL.HeadsetvsBrain();
             settings.SelectedMovie= newMovie;
 
             //var movieName = "HappyBDayKatya";          
@@ -541,7 +555,7 @@ class Program
                 }
             }
 
-            if (disableServos.Count > 0) disableServos[0].GetPositionCompareDisable(disableServos);
+           // if (disableServos.Count > 0) disableServos[0].GetPositionCompareDisable(disableServos);
         }
 
         return servoWrite;

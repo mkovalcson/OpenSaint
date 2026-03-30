@@ -44,7 +44,7 @@ public enum ServoSpeed
 
 public enum RobotControls
 {
-    None,
+    None = 1000,
 
     // These enumerations directly map to a Servo Array when driving the entire robot.
     //
@@ -225,7 +225,7 @@ public class Servo
         return Convert.ToInt32(adjustedValue);
     }
 
-    public static int MapDeltatoServo(int deltaValue, Servo servo, bool isReversed, bool isCentered)
+    public static int MapDeltatoServo(int deltaValue, Servo servo, bool isGangReversed, bool isCentered)
     {
 
         double outMin = servo.LimitLower;
@@ -235,14 +235,14 @@ public class Servo
         double inMin = -100; 
         double value = deltaValue;               
 
-        double adjustedValue = 0;
+        double adjustedValue = 0;            
 
-        if(isCentered)  // -100 to 100
+        if (isCentered)  // -100 to 100
         {
             // if 50  not reversed  
-            if (isReversed) value = -value;
+            if (isGangReversed) value = -value;
 
-            if (!isReversed)
+            if (!servo.Reverse)
             {
                 if (value < 0)
                 {
@@ -257,7 +257,7 @@ public class Servo
             }
             else
             {
-                if (value < 0)
+                if (value > 0)
                 {
                     // if outHome = 1200  Value = 50/100 = .5 * (1800 - 1200 )
                     adjustedValue = outHome + (value / 100) * (outMax - outHome);
@@ -271,14 +271,16 @@ public class Servo
         }
         else // not centered only 0-100
         {
-            if (isReversed)
-            {
-                value = 100 - value;
+            
+            if (servo.Reverse)
+            {              
+                adjustedValue = outMax - (value / 100) * (outMax - outMin);
             }
-
-            inMin = 0;
-            // if outMin == 550  Value = 50/100 = .5 * ( 2200-550 )
-            adjustedValue = outHome + (value / 100) * (outMax - outHome);
+            else
+            {
+                adjustedValue = outHome + (value / 100) * (outMax - outMin);
+            }          
+          
         } 
       
         return Convert.ToInt32(adjustedValue);
@@ -692,7 +694,7 @@ public class Servo
 
     public static void ConfigureSpeedAll( Servo[] servos, ServoSpeed pickValues)
     {
-        var port = new SerialPort(servos[0].USBPort, DefaultBaudRate, Parity.None, 8, StopBits.One);
+        var port = new SerialPort(servos[0].USBPort, 9600, Parity.None, 8, StopBits.One);
         port.Open();              
 
         // Each command is 2 bytes; buffer holds all at once
@@ -710,6 +712,9 @@ public class Servo
             buffer[offset + index++] = (byte)(s.Accel[(int)pickValues] & 0x7F);
             buffer[index] = (byte)(s.Speed[(int)pickValues] >> 7 & 0x7F);
             buffer[offset + index] = (byte)(s.Accel[(int)pickValues] >> 7 & 0x7F);
+
+            s.currentSpeed = pickValues;   
+           
         }
         // Single write call for all channels
         port.Write(buffer, 0, buffer.Length);
@@ -777,10 +782,10 @@ public class Servo
 
 
 
-    public void ResetServo()
+    public void ResetServo(int setSpeed)
     {       
         GoValue(CurrentPosition);
-        ConfigureSpeed(Speed[(int)currentSpeed], Accel[(int)currentSpeed]);
+        ConfigureSpeed(Speed[(int)setSpeed], Accel[(int)setSpeed]);
         isDisabled = false;
     }
 

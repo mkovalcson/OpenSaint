@@ -84,19 +84,19 @@ public class RGBLight
         Out = 1
     }
 
-    public void ClearAll()
+    public static string ClearAll()
     {
-        Command("ClearAll");
+        return "ClearAll";
     }
     /// <summary>
     /// Clear - clears specified ring(s)
     /// </summary>
     /// <param name="ring"></param>
     /// <param name="side"></param>
-    public void Clear(Ring ring, Side side) {
+    public static string Clear(Ring ring, Side side) {
 
-        var command = string.Format("Clear,{0},{1}",ring.ToString(),side.ToString());    
-        Command(command);
+        var command = string.Format("Clear,{0},{1}",ring.ToString(),side.ToString());
+        return command;
     }
 
     /// <summary>
@@ -108,9 +108,9 @@ public class RGBLight
     /// <param name="brightness">0-255</param>
     /// <param name="ring"></param>
     /// <param name="side"></param>   
-    public void SetRGBColor(byte red, byte green, byte blue, byte brightness, Ring ring, Side side) {
+    public static string SetRGBColor(byte red, byte green, byte blue, byte brightness, Ring ring, Side side) {
         var command = string.Format("SetRGBColor,{0},{1},{2},{3},{4},{5}",red,green,blue,brightness,ring.ToString(),side.ToString());
-        Command(command);
+        return (command);
     }
 
     /// <summary>
@@ -123,10 +123,10 @@ public class RGBLight
     /// <param name="ring"></param>
     /// <param name="side"></param>
     /// <param name="delayms">mSec</param>
-    public void ColorWipeEyes(byte red, byte green, byte blue, byte brightness, Ring ring, Side side, uint delayms)
+    public static string ColorWipeEyes(byte red, byte green, byte blue, byte brightness, Ring ring, Side side, uint delayms)
     {
         var command = string.Format("ColorWipeEyes,{0},{1},{2},{3},{4},{5},{6}", red, green, blue, brightness, ring.ToString(), side.ToString(), delayms);
-        Command(command);
+        return (command);
     }
 
     /// <summary>
@@ -142,10 +142,10 @@ public class RGBLight
     /// <param name="fadeDirection">In/Out</param>
     /// <param name="step">0-255</param>
     /// <param name="lowestBrightness">0-255</param>
-    public void Fade(byte red, byte green, byte blue, byte brightness, Ring ring, Side side, uint delayms, FadeDirection fadeDirection, byte step, byte lowestBrightness )
+    public static string Fade(byte red, byte green, byte blue, byte brightness, Ring ring, Side side, uint delayms, FadeDirection fadeDirection, byte step, byte lowestBrightness )
     {
         var command = string.Format("Fade,{0},{1},{2},{3},{4},{5},{6},{7},{8},{9}", red, green, blue, brightness, ring.ToString(), side.ToString(), delayms, fadeDirection.ToString(),step,lowestBrightness);
-        Command(command);
+        return (command);
     }
 
     /// <summary>
@@ -161,10 +161,10 @@ public class RGBLight
     /// <param name="numberPulses">How many pulse cycles</param>
     /// <param name="step">0-255</param>
     /// <param name="lowestBrightness">0-255</param>
-    public void Pulse(byte red, byte green, byte blue, byte brightness, Ring ring, Side side, uint delayms, uint numberPulses, byte brightnessStep, byte lowestBrightness)
+    public static string Pulse(byte red, byte green, byte blue, byte brightness, Ring ring, Side side, uint delayms, uint numberPulses, byte brightnessStep, byte lowestBrightness)
     {
         var command = string.Format("Pulse,{0},{1},{2},{3},{4},{5},{6},{7},{8},{9}", red, green, blue, brightness, ring.ToString(), side.ToString(), delayms, numberPulses, brightnessStep, lowestBrightness);
-        Command(command);
+        return command;
     }
 
     // eyes only below this
@@ -180,10 +180,10 @@ public class RGBLight
     /// <param name="side"></param>
     /// <param name="delayms">mSec ex(40)</param>
     /// <param name="cycles">How many times the chase circles ex(10)</param>
-    public void TheaterChase(byte red, byte green, byte blue, byte brightness, Ring ring, Side side, uint delayms, uint cycles)
+    public static string TheaterChase(byte red, byte green, byte blue, byte brightness, Ring ring, Side side, uint delayms, uint cycles)
     {
         var command = string.Format("TheaterChase,{0},{1},{2},{3},{4},{5},{6},{7}", red, green, blue, brightness, ring.ToString(), side.ToString(), delayms, cycles);
-        Command(command);
+        return command;
     }
 
     /// <summary>
@@ -192,10 +192,10 @@ public class RGBLight
     /// <param name="brightness">0-255</param> 
     /// <param name="side"></param>
     /// <param name="delayms">mSec ex(20)</param>   
-    public void Rainbow(byte brightness, Side side, uint delayms)
+    public static string Rainbow(byte brightness, Side side, uint delayms)
     {
         var command = string.Format("Rainbow,{0},{1},{2}", brightness, side.ToString(), delayms);
-        Command(command);
+        return command;
     }
 
     /// <summary>
@@ -205,10 +205,10 @@ public class RGBLight
     /// <param name="side"></param>
     /// <param name="delayms">mSec ex(20)</param> 
     /// <param name="cycles">number of cycles</param>
-    public void RainbowWipe(byte brightness, Side side, uint delayms, uint cycles)
+    public static string RainbowWipe(byte brightness, Side side, uint delayms, uint cycles)
     {
         var command = string.Format("RainbowWipe,{0},{1},{2}", brightness, side.ToString(), delayms, cycles);
-        Command(command);
+        return command;
     }
 
     /// <summary>
@@ -217,11 +217,23 @@ public class RGBLight
     /// <param name="brightness">0-255</param> 
     /// <param name="side"></param>
     /// <param name="delayms">mSec ex(20)</param>   
-    public void RainbowChase(byte brightness, Side side, uint delayms)
+    //public void RainbowChase(byte brightness, Side side, uint delayms)
+    //{
+    //    var command = string.Format("RainbowChase,{0},{1},{2}", brightness, side.ToString(), delayms);
+    //    Command(command);
+    //}
+   
+    public static string RainbowCycle(byte brightness, Side side, uint delayms)
+    {
+        var command = string.Format("RAINBOWCYCLE,{0},{1},{2}", brightness, side.ToString(), delayms);
+        return command;
+    }
+
+    public static string RainbowChase(byte brightness, Side side, uint delayms)
     {
         var command = string.Format("RainbowChase,{0},{1},{2}", brightness, side.ToString(), delayms);
-        Command(command);
-    }   
-      
+        return command;
+    }
+
 }
 

@@ -35,8 +35,7 @@ namespace OpenSaintTestHarnessConsoleApp
                     var gangedList = settings.GangedServoList[(int)command.GangedServosName];
 
                     foreach (GangedServo o in gangedList.list)
-                    {
-                       
+                    {                       
                         var servo = settings.Servos[(int)o.control];
                         var servoValue = Servo.MapDeltatoServo(command.Value, servo, (o.orientation == MultiOutput.Reversed), gangedList.isCentered);
                         if (verbose) Console.WriteLine("Output: " + servo.Name + " Command Value: " + command.Value + " Servo Value: " + servoValue);
@@ -62,16 +61,7 @@ namespace OpenSaintTestHarnessConsoleApp
 
                     Random rand = new Random();
                     command.Value = rand.Next(command.BottomValue, command.TopValue);
-
-                    //foreach (GangedServo o in command.GangedServos)
-                    //{
-                    //    var isRaw = true;
-                    //    dummycontrol.Value = command.Value;
-                    //    var servo = settings.Servos[(int)o.control];
-                    //    var servoValue = Servo.MapAxis(dummycontrol, servo, (o.orientation == MultiOutput.Reversed),isRaw);
-                    //    results.deltaServos.Add(servo);
-                    //    results.DeltaValues.Add((int)servoValue);
-                    //}
+                   
                     break;
 
                 case ButtonActions.ServoSetMode:
@@ -82,106 +72,57 @@ namespace OpenSaintTestHarnessConsoleApp
 
                 #region Single / Multi Servo Commands
 
-                case ButtonActions.ServoMin:
-                    //if (command.GangedServos.Count > 0)
-                    //{
-                    //    foreach (GangedServo gs in command.GangedServos)
-                    //    {
-                    //        thisServo = settings.Servos[(int)gs.control];
-                    //        results.deltaServos.Add(thisServo);
-                    //        results.DeltaValues.Add(thisServo.Reverse ? thisServo.LimitUpper : thisServo.LimitLower);
-
-                    //        if (verbose) Console.WriteLine("Output: " + thisServo.Name + " Value: " + "Min");
-                    //    }
-                    //}
-                    //else
-                    //{
+                case ButtonActions.ServoMin:                   
                     thisServo = settings.Servos[(int)command.robotControl];
-                    if (!thisServo.EyePopSensitive || !settings.EyesPopped)
-                    {
+                  
                         if (command.robotControl == RobotControls.NoseBody) settings.NoseUp = false;
-                        // output.Servo.GoMin();
+                       
                         results.deltaServos.Add(thisServo);
                         results.DeltaValues.Add(thisServo.Reverse ? thisServo.LimitUpper : thisServo.LimitLower);
-                        if (verbose) Console.WriteLine("Output: " + thisServo.Name + "Min");
-                    }
-                    //}
+                        if (verbose) Console.WriteLine("Output: " + thisServo.Name + "Min" + " Value " + (thisServo.Reverse ? thisServo.LimitLower : thisServo.LimitUpper));
+                    
+                   
                     break;
-                case ButtonActions.ServoMax:
-                    //if (command.GangedServos.Count > 0)
-                    //{
-                    //    foreach (GangedServo gs in command.GangedServos)
-                    //    {
-                    //        thisServo = settings.Servos[(int)gs.control];
-                    //        results.deltaServos.Add(thisServo);
-                    //        results.DeltaValues.Add(thisServo.Reverse ? thisServo.LimitLower : thisServo.LimitUpper);
-
-                    //        if (verbose) Console.WriteLine("Output: " + thisServo.Name + " Value: " + "Max");
-                    //    }
-                    //}
-                    //else
-                    //{
+                case ButtonActions.ServoMax:                   
                     thisServo = settings.Servos[(int)command.robotControl];
-                    if (!thisServo.EyePopSensitive || !settings.EyesPopped)
-                    {
-                        // output.Servo.GoMax();
+                    
                         results.deltaServos.Add(thisServo);
                         results.DeltaValues.Add((thisServo.Reverse ? thisServo.LimitLower : thisServo.LimitUpper));
-                        if (verbose) Console.WriteLine("Output: " + thisServo.Name + "Max");
-                    }
-                    //}
+                        if (verbose) Console.WriteLine("Output: " + thisServo.Name + "Max" + " Value "+ (thisServo.Reverse ? thisServo.LimitLower : thisServo.LimitUpper));
+                    
+                    
                     break;
-                case ButtonActions.ServoHome:
-                    //if (command.GangedServos.Count > 0)
-                    //{
-                    //    foreach (GangedServo gs in command.GangedServos)
-                    //    {
-                    //        thisServo = settings.Servos[(int)gs.control];
-                    //        results.deltaServos.Add(thisServo);
-                    //        results.DeltaValues.Add(thisServo.HomeValue);
 
-                    //        if (verbose) Console.WriteLine("Output: " + thisServo.Name + " Value: " + "Home");
-                    //    }
-                    //}
-                    //else
-                    //{
+                case ButtonActions.ServoModeValue:                   
+                    thisServo = settings.Servos[(int)command.robotControl];   
+                    results.deltaServos.Add(thisServo);
+                    results.DeltaValues.Add(thisServo.ModeValue);
+                    if (verbose) Console.WriteLine("Output: " + thisServo.Name + "Mode");
+                   
+                    break;
+                
+
+                case ButtonActions.ServoHome:                  
                     thisServo = settings.Servos[(int)command.robotControl];
-                    if (!thisServo.EyePopSensitive || !settings.EyesPopped)
-                    {
+                  
                         results.deltaServos.Add(thisServo);
                         results.DeltaValues.Add(thisServo.HomeValue);
+
                         if (command.robotControl == RobotControls.NoseBody) settings.NoseUp = false;
-                        //output.Servo.GoHome();
+                        
                         if (verbose) Console.WriteLine("Output: " + thisServo.Name + " Home");
-                    }
-                    //}
-                    break;
+                     break;
 
 
                 case ButtonActions.ServoHomeDelta:
-
-                    //if (command.GangedServos.Count > 0)
-                    //{
-                    //    foreach (GangedServo gs in command.GangedServos)
-                    //    {
-                    //        thisServo = settings.Servos[(int)gs.control];
-                    //        results.deltaServos.Add(thisServo);
-
-                    //        var delta = (gs.orientation == MultiOutput.Reversed) ? -command.Value : command.Value;
-                    //        results.DeltaValues.Add(thisServo.HomeValue + delta);
-
-                    //        if (verbose) Console.WriteLine("Output: " + thisServo.Name + " Value: " + delta);
-                    //    }
-                    //}
-                    //else
-                    //{
+                    
                     thisServo = settings.Servos[(int)command.robotControl];
 
                     results.deltaServos.Add(thisServo);
                     results.DeltaValues.Add(thisServo.HomeValue + command.Value);
 
                     if (verbose) Console.WriteLine("Output: " + thisServo.Name + " Value: " + command.Value);
-                    //}
+                    
 
                     break;
                                    
@@ -191,13 +132,12 @@ namespace OpenSaintTestHarnessConsoleApp
 
                 case ButtonActions.ServoValue:
                     thisServo = settings.Servos[(int)command.robotControl];
-                    if (!thisServo.EyePopSensitive || !settings.EyesPopped)
-                    {
+                   
                         results.deltaServos.Add(thisServo);
                         results.DeltaValues.Add((int)command.Value);
                         if (command.robotControl == RobotControls.NoseBody) settings.NoseUp = (command.Value <= thisServo.ModeValue);
                         if (verbose) Console.WriteLine("Output: " + thisServo.Name + " Value: " + command.Value);
-                    }
+                   
                     break;
 
                 #region Eye Pop Commands
@@ -206,6 +146,11 @@ namespace OpenSaintTestHarnessConsoleApp
                     var ticValue = command.Value;
                     results.TicDeltas.Add(new TicDeltas(true, ticValue));
                     results.TicDeltas.Add(new TicDeltas(false, ticValue));
+                    break;
+
+                case ButtonActions.EyePopLeftHalfOpen:
+                    results.TicDeltas.Add(new TicDeltas(true, settings.LTicController.maxValue/2));             
+                    if (verbose) Console.WriteLine("EyePop Left Half-Open");
                     break;
 
 
@@ -240,22 +185,22 @@ namespace OpenSaintTestHarnessConsoleApp
                     results.SetBeforeSpeed = true;
                     results.BeforeSpeed = ServoSpeed.Default;
 
-                    servoList = new List<RobotControls> { RobotControls.BrowLeftTopTilt, RobotControls.BrowRightTopTilt,
-                    RobotControls.BrowRightTopOpen, RobotControls.BrowLeftTopOpen,
-                    RobotControls.BrowLeftBottomOpen,  RobotControls.BrowRightBottomOpen};
+                    //servoList = new List<RobotControls> { RobotControls.BrowLeftTopTilt, RobotControls.BrowRightTopTilt,
+                    //RobotControls.BrowRightTopOpen, RobotControls.BrowLeftTopOpen,
+                    //RobotControls.BrowLeftBottomOpen,  RobotControls.BrowRightBottomOpen};
 
-
-                    foreach (var control in servoList)
-                    {
-                        results.deltaServos.Add(settings.Servos[(int)control]);
-                        results.DeltaValues.Add(settings.Servos[(int)control].HomeValue);
-                    }
-                    results.deltaServos.Add(settings.Servos[(int)RobotControls.NoseBody]);
-                    results.DeltaValues.Add(settings.Servos[(int)RobotControls.NoseBody].ModeValue);
+                    //foreach (var control in servoList)
+                    //{
+                    //    results.deltaServos.Add(settings.Servos[(int)control]);
+                    //    results.DeltaValues.Add(settings.Servos[(int)control].HomeValue);
+                    //}
+                    //results.deltaServos.Add(settings.Servos[(int)RobotControls.NoseBody]);
+                    //results.DeltaValues.Add(settings.Servos[(int)RobotControls.NoseBody].ModeValue);
 
                     settings.EyesPopped = true;
                     settings.EyesUnpopped = DateTime.MinValue;
-                    results.TicDeltas.Add(new TicDeltas(true, settings.LTicController.maxValue));
+                    if(settings.LTicController != null)
+                        results.TicDeltas.Add(new TicDeltas(true, settings.LTicController.maxValue));
                     results.TicDeltas.Add(new TicDeltas(false, settings.RTicController.maxValue));
 
                     if (verbose) Console.WriteLine("EyePop Open ");
@@ -308,14 +253,7 @@ namespace OpenSaintTestHarnessConsoleApp
                     settings.Lights.Command(command.pathName);
                     break;
 
-                case ButtonActions.ServoModeValue:
-                    thisServo = settings.Servos[(int)command.robotControl];
-                    results.deltaServos.Add(thisServo);
-                    results.DeltaValues.Add(thisServo.ModeValue);
-                    if (command.robotControl == RobotControls.NoseBody) settings.NoseUp = true;
-                    if (verbose) Console.WriteLine("Output: " + thisServo.Name + "Mode");
-
-                    break;
+             
 
                 #region Audio Commands
 
@@ -331,7 +269,6 @@ namespace OpenSaintTestHarnessConsoleApp
 
                 case ButtonActions.PlayFirst:
                     settings.SoundBiteIndex = 0;
-
                     if (verbose) Console.WriteLine("Play First sound " + settings.SoundBites[settings.SoundBiteIndex]);
                     var pf = new Sounds(settings.SoundBites[settings.SoundBiteIndex]);
                     pf.PlayMp3Async();
@@ -363,6 +300,7 @@ namespace OpenSaintTestHarnessConsoleApp
 
                 case ButtonActions.MaestroSet:
                     thisServo = settings.Servos[(int)command.robotControl];
+                    thisServo.GoValue(thisServo.CurrentPosition);
                     thisServo.ConfigureSpeed(command.Speed);
                     //if (output.RunOrder == RunOrder.Before)
                     //{

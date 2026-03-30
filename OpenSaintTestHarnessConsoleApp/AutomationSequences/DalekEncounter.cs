@@ -53,8 +53,8 @@ namespace OpenSaintTestHarnessConsoleApp
             var commandList = (new List<Command>
             {
               new Command(ButtonActions.ServoAllGoHome, 0),
-              new Command(ButtonActions.MaestroSetAll, ServoSpeed.Slow, 2000),
-              new Command(ButtonActions.DisableAllServos, 2500),
+              new Command(ButtonActions.MaestroSetAll, ServoSpeed.Slow, 2.000),
+              new Command(ButtonActions.DisableAllServos, 2.500),
             });
 
             return commandList;
@@ -73,12 +73,12 @@ namespace OpenSaintTestHarnessConsoleApp
                 
                // new Command(ButtonActions.MaestroSetAll, ServoSpeed.Slow, 1000),  // Set Slow Movement     
                 // Close Irises
-                new Command(RobotControls.LeftIris,   ButtonActions.ServoValue, 1775 , 3500), // 5 sec move
-                new Command(RobotControls.RightIris,  ButtonActions.ServoValue,  1100 , 3500),
+                new Command(RobotControls.LeftIris,   ButtonActions.ServoValue, 1775 , 3.500), // 5 sec move
+                new Command(RobotControls.RightIris,  ButtonActions.ServoValue,  1100 , 3.500),
                
                 // tilt eye flaps down
-               new Command(RobotControls.BrowLeftTopTilt,  ButtonActions.ServoValue ,1820, 4000),
-               new Command(RobotControls.BrowRightTopTilt,  ButtonActions.ServoValue ,1020, 4000),
+               new Command(RobotControls.BrowLeftTopTilt,  ButtonActions.ServoValue ,1820, 4.000),
+               new Command(RobotControls.BrowRightTopTilt,  ButtonActions.ServoValue ,1020, 4.000),
 
                 new Command(ButtonActions.DisableAllServos, 4500),
 
@@ -116,7 +116,6 @@ namespace OpenSaintTestHarnessConsoleApp
             var commandList = new List<Command>
             {
 
-
             new Command(RobotControls.LeftEyeVent, ButtonActions.ServoHome, 0),
             new Command(RobotControls.RightEyeVent,  ButtonActions.ServoHome , 0),
             new Command(RobotControls.LeftIris,  ButtonActions.ServoHome , 0),
@@ -137,17 +136,17 @@ namespace OpenSaintTestHarnessConsoleApp
 
             new Command( ButtonActions.RGBCommand , "ClearAll" , 0),
 
-            new Command(ButtonActions.EyePopNoSafety, 2000),  // Eye Pop Open                                 
+            new Command(ButtonActions.EyePopNoSafety, 2.000),  // Eye Pop Open                                 
                              
-            new Command(RobotControls.LeftIris, ButtonActions.ServoMin, 4000),
-            new Command(RobotControls.RightIris, ButtonActions.ServoMin, 4000),
+            new Command(RobotControls.LeftIris, ButtonActions.ServoMin, 4.000),
+            new Command(RobotControls.RightIris, ButtonActions.ServoMin, 4.000),
 
-            new Command(ButtonActions.EyePopClosed, 7000),
+            new Command(ButtonActions.EyePopClosed, 7.000),
 
-            new Command(RobotControls.LeftIris, ButtonActions.ServoHome, 9000),
-            new Command(RobotControls.RightIris, ButtonActions.ServoHome, 9000),
+            new Command(RobotControls.LeftIris, ButtonActions.ServoHome, 9.000),
+            new Command(RobotControls.RightIris, ButtonActions.ServoHome, 9.000),
 
-            new Command(ButtonActions.DisableAllServos, 10000),
+            new Command(ButtonActions.DisableAllServos, 10.000),
 
             };
 
@@ -188,23 +187,23 @@ namespace OpenSaintTestHarnessConsoleApp
                 new Command(ButtonActions.PlayNext, 1500),  //  Hmmmm
 
                 // Unthinking
-            new Command(ButtonActions.MaestroSetAll, ServoSpeed.Default,2500),
-            new Command(RobotControls.NeckTiltRight,ButtonActions.ServoHome  , 2500),
-            new Command(RobotControls.NeckTiltLeft,ButtonActions.ServoHome , 2500),
-            new Command(RobotControls.LeftIris, ButtonActions.ServoHome, 2500),
-            new Command(RobotControls.RightIris, ButtonActions.ServoHome, 2500),
-            new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHome , 2500),
-            new Command(RobotControls.LeftLensVertical, ButtonActions.ServoHome , 2500),
-            new Command(RobotControls.RightLensHorizontal, ButtonActions.ServoHome , 2500),
-            new Command(RobotControls.RightLensVertical,  ButtonActions.ServoHome , 2500),         
+            new Command(ButtonActions.MaestroSetAll, ServoSpeed.Default,2.500),
+            new Command(RobotControls.NeckTiltRight,ButtonActions.ServoHome  , 2.500),
+            new Command(RobotControls.NeckTiltLeft,ButtonActions.ServoHome , 2.500),
+            new Command(RobotControls.LeftIris, ButtonActions.ServoHome, 2.500),
+            new Command(RobotControls.RightIris, ButtonActions.ServoHome, 2.500),
+            new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHome , 2.500),
+            new Command(RobotControls.LeftLensVertical, ButtonActions.ServoHome , 2.500),
+            new Command(RobotControls.RightLensHorizontal, ButtonActions.ServoHome , 2.500),
+            new Command(RobotControls.RightLensVertical,  ButtonActions.ServoHome , 2.500),         
             // low blue
-            new Command(ButtonActions.RGBCommand , "Fade,0,0,255,30,eyes,lr,90,OUT,1,0", 2500),
+            new Command(ButtonActions.RGBCommand , "Fade,0,0,255,30,eyes,lr,90,OUT,1,0", 2.500),
 
                  // Tilt neck down left
-                new Command(RobotControls.NeckTiltRight,  ButtonActions.ServoMin,  3500), // 3 sec move
-                new Command(RobotControls.NeckTiltLeft,  ButtonActions.ServoMin, 3500),
+                new Command(RobotControls.NeckTiltRight,  ButtonActions.ServoMin,  3.500), // 3 sec move
+                new Command(RobotControls.NeckTiltLeft,  ButtonActions.ServoMin, 3.500),
 
-                new Command(ButtonActions.PlayNext, 5000), // I think I  will help you
+                new Command(ButtonActions.PlayNext, 5.000), // I think I  will help you
             };
 
 
@@ -215,7 +214,7 @@ namespace OpenSaintTestHarnessConsoleApp
         {
             var commandList = (new List<Command>
             {
-            new Command(RobotControls.NeckTurn, ButtonActions.ServoValue , 1600, 500),
+            new Command(RobotControls.NeckTurn, ButtonActions.ServoValue , 1600, .500),
             });
 
             return commandList;
@@ -247,7 +246,7 @@ namespace OpenSaintTestHarnessConsoleApp
             var commandList = new List<Command>
             {
                 new Command(ButtonActions.PlayNext,0),
-                new Command(ButtonActions.RGBCommand,  "RainbowCycle,150,lr,6", 2000),  // Set Slow Movement        
+                new Command(ButtonActions.RGBCommand,  "RainbowCycle,150,lr,6", 2.000),  // Set Slow Movement        
                 new Command(ButtonActions.PlayNext, 4000),
             };
 
@@ -260,9 +259,9 @@ namespace OpenSaintTestHarnessConsoleApp
             {
                 new Command(RobotControls.NeckTurn,ButtonActions.ServoValue, 1500, 0 ), //Left
                 new Command(ButtonActions.PlayNext, 500),
-                new Command(RobotControls.NeckTurn,ButtonActions.ServoValue, 1600, 1000 ),
-                new Command(RobotControls.NeckTurn,ButtonActions.ServoValue, 1500, 1500 ),
-                new Command(RobotControls.NeckTurn,ButtonActions.ServoValue, 1600, 1500),
+                new Command(RobotControls.NeckTurn,ButtonActions.ServoValue, 1600, 1.000 ),
+                new Command(RobotControls.NeckTurn,ButtonActions.ServoValue, 1500, 1.500 ),
+                new Command(RobotControls.NeckTurn,ButtonActions.ServoValue, 1600, 1.500),
             };
 
             return commandList;
@@ -303,9 +302,9 @@ namespace OpenSaintTestHarnessConsoleApp
             // Fadein to red over a couple seconds           
             new Command(ButtonActions.RGBCommand , "Fade,255,0,0,100,eyes,lr,40,IN,1,0" , 0),
             //"SetRGBColor, 255,0,0,50,eyes,lr,0" }), //"Fade,255,0,0,100,eyes,lr,40,IN,1,0"})
-            new Command(ButtonActions.DisableAllRunningServos, 1500),
+            new Command(ButtonActions.DisableAllRunningServos, 1.500),
             new Command(ButtonActions.PlayNext, 2500),
-            new Command(ButtonActions.MaestroSetAll, ServoSpeed.Slow, 2500),
+            new Command(ButtonActions.MaestroSetAll, ServoSpeed.Slow, 2.500),
             };
             return commandList;
         }
@@ -336,7 +335,7 @@ namespace OpenSaintTestHarnessConsoleApp
 
                 new Command(ButtonActions.DisableAllRunningServos, 1500),
                 new Command(ButtonActions.PlayNext, 2000),
-                new Command(ButtonActions.MaestroSetAll, ServoSpeed.Slow, 2000),
+                new Command(ButtonActions.MaestroSetAll, ServoSpeed.Slow, 2.000),
 
           //   new Command(ButtonActions.DisableAllRunningServos, 500, 0)
             };
@@ -389,13 +388,13 @@ namespace OpenSaintTestHarnessConsoleApp
             {
                 new Command(ButtonActions.EyePopNoSafety, 0),  // Eye Pop Open                                 
                              
-                new Command(RobotControls.LeftIris,   ButtonActions.ServoMin, 3000),
-                new Command(RobotControls.RightIris,  ButtonActions.ServoMin, 3000),
+                new Command(RobotControls.LeftIris,   ButtonActions.ServoMin, 3.000),
+                new Command(RobotControls.RightIris,  ButtonActions.ServoMin, 3.000),
 
                 new Command(ButtonActions.EyePopClosed, 6000),
 
-                new Command(RobotControls.LeftIris,   ButtonActions.ServoHome, 7000),
-                new Command(RobotControls.RightIris,  ButtonActions.ServoHome, 7000),
+                new Command(RobotControls.LeftIris,   ButtonActions.ServoHome, 7.000),
+                new Command(RobotControls.RightIris,  ButtonActions.ServoHome, 7.000),
             };
 
             return commandList;
@@ -472,20 +471,20 @@ namespace OpenSaintTestHarnessConsoleApp
 
                   new Command(ButtonActions.PlayNext, 6000),  // I think I will help you
            
-                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMax, 3000),
-                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMin, 3000),
+                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMax, 3.000),
+                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMin, 3.000),
 
-                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMax, 3000),
-                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMin, 3000),
+                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMax, 3.000),
+                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMin, 3.000),
 
-                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMax, 3000),
-                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMin, 3000),
+                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMax, 3.000),
+                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMin, 3.000),
 
-                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMax, 3000),
-                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMin, 3000),
+                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMax, 3.000),
+                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMin, 3.000),
 
-                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMax, 3000),
-                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMin, 3000),
+                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMax, 3.000),
+                  new Command(RobotControls.MFR_Rotate,ButtonActions.ServoMin, 3.000),
 
                    new Command(RobotControls.MFR_UpDown,ButtonActions.ServoMin,0),
             };

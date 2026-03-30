@@ -292,6 +292,7 @@ public enum ButtonActions
    EyePopOpen,
    EyePopNoSafety,
    EyePopLeftOpen,
+   EyePopLeftHalfOpen,
    EyePopHalfOpen,
    EyePopClosed,
    EyePopLeftClosed,

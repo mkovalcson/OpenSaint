@@ -22,7 +22,6 @@ namespace OpenSaintLib.Utilities
             // Fast servos
             // Fast: Iris, Vent, Gaze, MFRC rotate, Whip rotate
             // 
-
             // Servo Speed/Accel  Default, Slow, Fast, Crawl
 
             // Nose
@@ -32,7 +31,7 @@ namespace OpenSaintLib.Utilities
             servos[(int)RobotControls.NoseBody] = new Servo(RobotControls.NoseBody, headPort, ServoMode.Stay, StartPosition.Home, Reversed, 1200, 1000, 1500, NoseSpeed, NoseAccel);
 
             servos[(int)RobotControls.NoseBody].ModeValue = 1430; // mode is down    // Nose Body down to shut eyes 1430            
-            servos[(int)RobotControls.NoseBody].EyePopSensitive = true;
+         
             servos[(int)RobotControls.NoseBasket].ConfigureSpeed(initialSpeed);
             servos[(int)RobotControls.NoseBody].ConfigureSpeed(initialSpeed);
             servos[(int)RobotControls.NoseBasket].GoHome();
@@ -41,8 +40,21 @@ namespace OpenSaintLib.Utilities
             // Neck
             int[] NeckSpeed = { 20, 10, 0, 0 };
             int[] NeckAccel = { 10, 5, 0, 0 }; // Left 370  Right 204 range... Left 1596  1336 ( 260) Right 1645 1400  ( 245 )  Left 276, Right 274
-            var neckLeftTilt = new Servo(RobotControls.NeckTiltLeft, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1464, 1320, 1596, NeckSpeed, NeckAccel); // 1626 down  1156 up  center  1391 }   
-            var neckRightTilt = new Servo(RobotControls.NeckTiltRight, headPort, ServoMode.Stay, StartPosition.Home, Reversed, 1550, 1409, 1683, NeckSpeed, NeckAccel);// 1687 down  1440 up  Center 1564      
+            var neckLeftTilt = new Servo(RobotControls.NeckTiltLeft, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1533, 1445, 1594, NeckSpeed, NeckAccel); // 1453 down  1594 up  center  1533 }   
+            var neckRightTilt = new Servo(RobotControls.NeckTiltRight, headPort, ServoMode.Stay, StartPosition.Home, Reversed, 1480, 1400, 1564, NeckSpeed, NeckAccel);// 1687 down  1440 up  Center 1564      
+         
+            //neckLeftTilt.GoHome();
+            //neckRightTilt.GoHome();
+            //while (true)
+            //{
+            //    neckLeftTilt.GoValue(1594);
+            //    neckRightTilt.GoValue(1440);
+            //    Thread.Sleep(1500);
+            //    neckLeftTilt.GoValue(1445);
+            //    neckRightTilt.GoValue(1564);
+            //    Thread.Sleep(1500);
+            //}
+           
 
             int[] NeckRSpeed = { 90, 3, 0, 45 };
             int[] NeckRAccel = { 10, 1, 0, 15 };
@@ -63,12 +75,34 @@ namespace OpenSaintLib.Utilities
             // Eye Gaze
             //int[] EyeGazeSpeed = { 40, 20, 0, 20 }; // Maestro Speed ms  (Default, Slow, Fast, crawl)
             //int[] EyeGazeAccel = { 15, 5, 0, 5 };  // Maestro Accel ms  (Default, Slow, Fast)
-            int[] EyeGazeSpeed = { 0, 0, 0, 20 }; // Maestro Speed ms  (Default, Slow, Fast, crawl)
-            int[] EyeGazeAccel = { 0, 0, 0, 5 };  // Maestro Accel ms  (Default, Slow, Fast)
-            var leftLensH = new Servo(RobotControls.LeftLensHorizontal, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1350, 550, 2280, EyeGazeSpeed, EyeGazeAccel);
-            var rightLensH = new Servo(RobotControls.RightLensHorizontal, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1480, 650, 2250, EyeGazeSpeed, EyeGazeAccel);
-            var leftLensV = new Servo(RobotControls.LeftLensVertical, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1350, 550, 2250, EyeGazeSpeed, EyeGazeAccel);
-            var rightLensV = new Servo(RobotControls.RightLensVertical, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1500, 550, 2250, EyeGazeSpeed, EyeGazeAccel);
+            int[] EyeGazeSpeed = { 0, 60, 0, 20 }; // Maestro Speed ms  (Default, Slow, Fast, crawl)
+            int[] EyeGazeAccel = { 0, 25, 0, 5 };  // Maestro Accel ms  (Default, Slow, Fast)
+
+            var leftLensH = new Servo(RobotControls.LeftLensHorizontal, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1450, 650, 2250, EyeGazeSpeed, EyeGazeAccel);
+            var rightLensH = new Servo(RobotControls.RightLensHorizontal, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1450, 650, 2250, EyeGazeSpeed, EyeGazeAccel);
+           
+            leftLensH.GoHome();
+            rightLensH.GoHome();
+
+            //leftLensH.GoValue(650);
+            //rightLensH.GoValue(650);
+
+            //leftLensH.GoValue(2250);
+            //rightLensH.GoValue(2250);
+
+            var leftLensV = new Servo(RobotControls.LeftLensVertical, headPort, ServoMode.Stay, StartPosition.Home, Reversed, 1400, 600, 2200, EyeGazeSpeed, EyeGazeAccel);
+            var rightLensV = new Servo(RobotControls.RightLensVertical, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1520, 720, 2320, EyeGazeSpeed, EyeGazeAccel);
+
+            rightLensV.GoHome();   
+            leftLensV.GoHome();
+
+            //leftLensV.GoValue(600);
+            //rightLensV.GoValue(2320);
+         
+
+            //leftLensV.GoValue(2200);
+            //rightLensV.GoValue(720);
+
 
             servos[(int)RobotControls.RightLensHorizontal] = rightLensH;
             servos[(int)RobotControls.LeftLensHorizontal] = leftLensH;
@@ -80,21 +114,25 @@ namespace OpenSaintLib.Utilities
             rightLensH.ConfigureSpeed(initialSpeed);
             rightLensV.ConfigureSpeed(initialSpeed);
 
-            leftLensH.GoHome();
-            leftLensV.GoHome();
-            rightLensH.GoHome();
-            rightLensV.GoHome();
+          
 
+          
             // Iris
             //int[] IrisSpeed = { 30, 10, 0, 10 };
             //int[] IrisAccel = { 12, 3, 0, 5 };
-            int[] IrisSpeed = { 0, 0, 0, 10 };
-            int[] IrisAccel = { 0, 0, 0, 5 };
-            var leftIris = new Servo(RobotControls.LeftIris, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1575, 1350, 2000, IrisSpeed, IrisAccel);
-            var rightIris = new Servo(RobotControls.RightIris, headPort, ServoMode.Stay, StartPosition.Home, Normal, 975, 650, 1350, IrisSpeed, IrisAccel);
+            int[] IrisSpeed = { 90, 90, 0, 10 };
+            int[] IrisAccel = { 15, 15, 0, 5 };
+            var leftIris = new Servo(RobotControls.LeftIris, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1575, 1350, 1950, IrisSpeed, IrisAccel);
+            var rightIris = new Servo(RobotControls.RightIris, headPort, ServoMode.Stay, StartPosition.Home, Normal, 975, 750, 1350, IrisSpeed, IrisAccel);
             // 650/2 = 325.   Left 1675, Right 975
             // 
             // Old Iris home  Left=1525, Right = 925
+
+            //leftIris.GoValue(1350);
+            //rightIris.GoValue(750);
+
+            //leftIris.GoValue(1950);
+            //rightIris.GoValue(1350);
 
             servos[(int)RobotControls.RightIris] = rightIris;
             servos[(int)RobotControls.LeftIris] = leftIris;
@@ -108,8 +146,8 @@ namespace OpenSaintLib.Utilities
             // Brows
             int[] BrowsSpeed = { 60, 10, 0, 2 };
             int[] BrowsAccel = { 15, 5, 0, 3 };
-            var browLeftTop = new Servo(RobotControls.BrowLeftTopOpen, headPort, ServoMode.Stay, StartPosition.Home, Reversed, 1513, 870, 1740, BrowsSpeed, BrowsAccel);//850
-            var browRightTop = new Servo(RobotControls.BrowRightTopOpen, headPort, ServoMode.Stay, StartPosition.Home, Normal, 777, 550, 1330, BrowsSpeed, BrowsAccel);
+            var browLeftTop = new Servo(RobotControls.BrowLeftTopOpen, headPort, ServoMode.Stay, StartPosition.Home, Reversed, 1523, 920, 1770, BrowsSpeed, BrowsAccel); //1513, 910, 1760,
+            var browRightTop = new Servo(RobotControls.BrowRightTopOpen, headPort, ServoMode.Stay, StartPosition.Home, Normal, 827, 600, 1380, BrowsSpeed, BrowsAccel); //777, 550, 1330,827, 600, 1330,
 
             // Brow Left 1740 level with nose down
             // Brow Right 550 level with nose down
@@ -118,9 +156,31 @@ namespace OpenSaintLib.Utilities
             // Left 1533
             // Right 757  
 
+            //neckLeftTilt.DisableServo();
+            //neckRightTilt.DisableServo();   
 
-            browLeftTop.EyePopSensitive = true;
-            browRightTop.EyePopSensitive = true;
+            //browLeftTop.GoHome();
+            //browRightTop.GoHome();
+
+            //browLeftTop.GoValue(1513);
+            //browRightTop.GoValue(777);
+
+            //browLeftTop.GoValue(1634);
+            //browRightTop.GoValue(666);
+
+            //browLeftTop.GoValue(1392);
+            //browRightTop.GoValue(888);
+
+            //browLeftTop.GoValue(1760);
+            //browRightTop.GoValue(550);
+
+            //browLeftTop.GoValue(910);
+            //browRightTop.GoValue(1330);
+
+            //browLeftTop.GoValue(1513);
+            //browRightTop.GoValue(777);           
+
+
 
             servos[(int)RobotControls.BrowLeftTopOpen] = browLeftTop;
             servos[(int)RobotControls.BrowRightTopOpen] = browRightTop;
@@ -133,8 +193,20 @@ namespace OpenSaintLib.Utilities
 
             int[] bBrowsSpeed = { 40, 10, 0, 2 };
             int[] bBrowsAccel = { 10, 5, 0, 3 };
-            var browLeftTilt = new Servo(RobotControls.BrowLeftTopTilt, headPort, ServoMode.Stay, StartPosition.Home, Reversed, 1780, 900, 1820, bBrowsSpeed, bBrowsAccel);  // 1750
-            var browRightTilt = new Servo(RobotControls.BrowRightTopTilt, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1100, 1020, 1970, bBrowsSpeed, bBrowsAccel);  // 1970)
+            var browLeftTilt = new Servo(RobotControls.BrowLeftTopTilt, headPort, ServoMode.Stay, StartPosition.Home, Reversed, 1800, 910, 1900, bBrowsSpeed, bBrowsAccel);  // 1750
+            var browRightTilt = new Servo(RobotControls.BrowRightTopTilt, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1100, 1000, 1990, bBrowsSpeed, bBrowsAccel);  // 1970)
+
+          
+
+            //browLeftTilt.GoHome();
+            //browRightTilt.GoHome();
+
+            //browLeftTilt.GoValue(1900);
+            //browRightTilt.GoValue(1000);
+
+            //browLeftTilt.GoValue(910);
+            //browRightTilt.GoValue(1990);
+
 
             browLeftTilt.LimitUpper = 1950; // 180
             browRightTilt.LimitLower = 950; // 220
@@ -144,8 +216,7 @@ namespace OpenSaintLib.Utilities
                                             //browRightTilt.ModeLower =
                                             //browRightTilt.ModeUpper =
 
-            browLeftTilt.EyePopSensitive = true;
-            browRightTilt.EyePopSensitive = true;
+        
             servos[(int)RobotControls.BrowLeftTopTilt] = browLeftTilt;
             servos[(int)RobotControls.BrowRightTopTilt] = browRightTilt;
 
@@ -155,9 +226,17 @@ namespace OpenSaintLib.Utilities
             browLeftTilt.GoHome();
             browRightTilt.GoHome();
 
-            var browLeftBottom = new Servo(RobotControls.BrowLeftBottomOpen, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1800, 930, 2200, BrowsSpeed, BrowsAccel);
-            //1236, 782, 2083,  -16
-            var browRightBottom = new Servo(RobotControls.BrowRightBottomOpen, headPort, ServoMode.Stay, StartPosition.Home, Reversed, 1100, 662, 1963, BrowsSpeed, BrowsAccel);
+            var browLeftBottom = new Servo(RobotControls.BrowLeftBottomOpen, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1750, 940, 2050, BrowsSpeed, BrowsAccel);           
+            var browRightBottom = new Servo(RobotControls.BrowRightBottomOpen, headPort, ServoMode.Stay, StartPosition.Home, Reversed, 1100, 700, 1910, BrowsSpeed, BrowsAccel);
+
+            browLeftBottom.GoHome();
+            browRightBottom.GoHome();
+
+            //browLeftBottom.GoValue(2050);
+            //browRightBottom.GoValue(700);
+
+            //browLeftBottom.GoValue(930);
+            //browRightBottom.GoValue(1920);
 
             // Different limits for Eye Pop don't allow closing all the way will be upper limit for one and lower limit for the other
             // Left 1363
@@ -167,8 +246,7 @@ namespace OpenSaintLib.Utilities
             //browRightBottom.ModeLower =
             //browRightBottom.ModeUpper =
 
-            browLeftBottom.EyePopSensitive = true;
-            browRightBottom.EyePopSensitive = true;
+         
 
             servos[(int)RobotControls.BrowLeftBottomOpen] = browLeftBottom;
             servos[(int)RobotControls.BrowRightBottomOpen] = browRightBottom;
@@ -181,9 +259,16 @@ namespace OpenSaintLib.Utilities
             int[] VentAccel = { 20, 5, 0, 5 };
             var leftVent = new Servo(RobotControls.LeftEyeVent, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1765, 1765, 2086, VentSpeed, VentAccel);   // Closed Left Vent 1765 OPen 2086 closed
             var rightVent = new Servo(RobotControls.RightEyeVent, headPort, ServoMode.Stay, StartPosition.Home, Reversed, 1125, 835, 1125, VentSpeed, VentAccel);// Closed Right Vent 1125 Open 835
-            leftVent.GoHome();
+            
+            leftVent.GoHome();         
+            //leftVent.GoValue(2086);
+            //leftVent.GoHome();
+
             rightVent.GoHome();
-            Thread.Sleep(500);
+            //rightVent.GoValue(835);
+            //rightVent.GoHome();
+
+           
 
             servos[(int)RobotControls.LeftEyeVent] = leftVent;
             servos[(int)RobotControls.RightEyeVent] = rightVent;
@@ -195,12 +280,12 @@ namespace OpenSaintLib.Utilities
             rightVent.DisableServo();
 
             // MFRC
-            int[] MFRCHSpeed = { 20, 40, 0, 10 };
-            int[] MFRCHAccel = { 30, 20, 0, 20 };
+            int[] MFRCHSpeed = { 0, 1, 0, 10 };
+            int[] MFRCHAccel = { 0, 1, 0, 20 };
             var mfrcRotate = new Servo(RobotControls.MFR_Rotate, headPort, ServoMode.Stay, StartPosition.Home, Reversed, 1320, 800, 1865, MFRCHSpeed, MFRCHAccel);// 500 full left 2212 rull right  1320 centered dish front        
             int[] MFRCVSpeed = { 100, 50, 0, 50 };
             int[] MFRCVAccel = { 30, 25, 0, 25 };
-            var mfrcUpDown = new Servo(RobotControls.MFR_UpDown, headPort, ServoMode.Stay, StartPosition.Home, Reversed, 530, 530, 1100, MFRCVSpeed, MFRCVAccel);// 550 all the way down  1170 all the way up.
+            var mfrcUpDown = new Servo(RobotControls.MFR_UpDown, headPort, ServoMode.Stay, StartPosition.Home, Reversed, 550, 550, 1070, MFRCVSpeed, MFRCVAccel);// 550 all the way down  1170 all the way up.
             servos[(int)RobotControls.MFR_UpDown] = mfrcUpDown;
             servos[(int)RobotControls.MFR_Rotate] = mfrcRotate;
 
@@ -208,18 +293,20 @@ namespace OpenSaintLib.Utilities
             mfrcUpDown.ConfigureSpeed(initialSpeed);
 
             mfrcRotate.GoHome();
+            //mfrcRotate.DisableServo();
+            //mfrcUpDown.GoHome();
+            //mfrcUpDown.GoValue(1070);
             mfrcUpDown.GoHome();
 
             // Whip Antenna
-            int[] WhipVSpeed = { 100, 50, 0, 50 };
-            int[] WhipVAccel = { 30, 25, 0, 25 };
+            int[] WhipVSpeed = { 100, 20, 0, 50 };
+            int[] WhipVAccel = { 30, 5, 0, 25 };
             var whipUpDown = new Servo(RobotControls.Whip_Antenna_RaiseLower, headPort, ServoMode.Stay, StartPosition.Home, Reversed, 2200, 1620, 2200, WhipVSpeed, WhipVAccel);//the way up 1560,  down 2200           
 
             int[] WhipHSpeed = { 0, 0, 0, 10 };
             int[] WhipHAccel = { 0, 0, 0, 20 };
-            var whipRotate = new Servo(RobotControls.Whip_Antenna_Rotate, headPort, ServoMode.Stay, StartPosition.Home, Normal, 500, 500, 2300, WhipHSpeed, WhipHAccel);// 500 full left 2300 rull right 1400 Center
-            whipUpDown.EyePopSensitive = true;
-            whipRotate.EyePopSensitive = true;
+            var whipRotate = new Servo(RobotControls.Whip_Antenna_Rotate, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1400, 500, 2300, WhipHSpeed, WhipHAccel);// 500 full left 2300 rull right 1400 Center
+           
             servos[(int)RobotControls.Whip_Antenna_Rotate] = whipRotate;
             servos[(int)RobotControls.Whip_Antenna_RaiseLower] = whipUpDown;
 
@@ -227,14 +314,18 @@ namespace OpenSaintLib.Utilities
             whipRotate.ConfigureSpeed(initialSpeed);
 
             whipUpDown.GoHome();
+            //whipUpDown.GoValue(1620);
+            //whipUpDown.GoHome();
             whipRotate.GoHome();
 
             // Mic
             int[] micSpeed = { 60, 50, 0, 50 };
             int[] micAccel = { 25, 25, 0, 25 };
-            var microphone = new Servo(RobotControls.Microphone_RaiseLower, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1681, 1681, 2298, micSpeed, micAccel);  //Mic          
+            var microphone = new Servo(RobotControls.Microphone_RaiseLower, headPort, ServoMode.Stay, StartPosition.Home, Normal, 1625, 1625, 2298, micSpeed, micAccel);  //Mic          
             servos[(int)RobotControls.Microphone_RaiseLower] = microphone;
             microphone.ConfigureSpeed(initialSpeed);
+            microphone.GoHome();
+            microphone.GoValue(2298);
             microphone.GoHome();
 
             Thread.Sleep(2000);// Wait 4 seconds for all servos to find home.

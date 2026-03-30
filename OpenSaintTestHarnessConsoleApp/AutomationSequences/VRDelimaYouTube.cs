@@ -62,7 +62,7 @@ namespace OpenSaintTestHarnessConsoleApp
               new Command(ButtonActions.ServoAllGoHome, 0),
               new Command(ButtonActions.MaestroSetAll, ServoSpeed.Slow, 500),
               new Command(RobotControls.NeckTurn,ButtonActions.MaestroSet, ServoSpeed.Default, 750),
-              new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1600,1000 ),
+              new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1600,1.0 ),
 
               new Command(ButtonActions.DisableAllServos, 1800),
             });
@@ -78,8 +78,8 @@ namespace OpenSaintTestHarnessConsoleApp
               new Command(RobotControls.RightLensHorizontal,  ButtonActions.ServoMax , 0),
               new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1451, 100 ),
 
-              new Command(RobotControls.LeftLensHorizontal,  ButtonActions.ServoHome,  1000),
-              new Command(RobotControls.RightLensHorizontal,  ButtonActions.ServoHome , 1000),
+              new Command(RobotControls.LeftLensHorizontal,  ButtonActions.ServoHome,  1.0),
+              new Command(RobotControls.RightLensHorizontal,  ButtonActions.ServoHome , 1.0),
 
               new Command(RobotControls.LeftIris, ButtonActions.ServoHomeDelta, 220, 1100 ),
               new Command(RobotControls.RightIris, ButtonActions.ServoHomeDelta, 200, 1100 ),
@@ -97,8 +97,8 @@ namespace OpenSaintTestHarnessConsoleApp
               new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoValue, 1475, 4100 ),
               new Command(RobotControls.NeckTiltRight, ButtonActions.ServoValue, 1600, 4100 ),
 
-              new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoHome, 5500 ),
-              new Command(RobotControls.NeckTiltRight, ButtonActions.ServoHome, 5500 ),
+              new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoHome, 5.5 ),
+              new Command(RobotControls.NeckTiltRight, ButtonActions.ServoHome, 5.5 ),
 
                  new Command(ButtonActions.DisableAllServos, 7000),
             });
@@ -149,8 +149,8 @@ namespace OpenSaintTestHarnessConsoleApp
 
             
                 // tilt up
-              new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoValue, 1481, 1000 ),
-              new Command(RobotControls.NeckTiltRight, ButtonActions.ServoValue, 1533, 1000 ),
+              new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoValue, 1481, 1.0 ),
+              new Command(RobotControls.NeckTiltRight, ButtonActions.ServoValue, 1533, 1.0 ),
 
               new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoHome, 1500 ),
               new Command(RobotControls.NeckTiltRight, ButtonActions.ServoHome, 1500 ),
@@ -201,23 +201,23 @@ namespace OpenSaintTestHarnessConsoleApp
                 new Command(ButtonActions.PlayNext, 1500),
              
                 //  return to normal.
-            new Command(ButtonActions.MaestroSetAll, ServoSpeed.Default,4500),
-            new Command(RobotControls.NeckTiltRight,ButtonActions.ServoHome  ,4500),
-            new Command(RobotControls.NeckTiltLeft,ButtonActions.ServoHome , 4500),
-            new Command(RobotControls.LeftIris, ButtonActions.ServoHome, 4500),
-            new Command(RobotControls.RightIris, ButtonActions.ServoHome, 4500),
-            new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHome ,4500),
-            new Command(RobotControls.LeftLensVertical, ButtonActions.ServoHome ,4500),
-            new Command(RobotControls.RightLensHorizontal, ButtonActions.ServoHome ,4500),
-            new Command(RobotControls.RightLensVertical,  ButtonActions.ServoHome ,4500),
+            new Command(ButtonActions.MaestroSetAll, ServoSpeed.Default,4.5),
+            new Command(RobotControls.NeckTiltRight,ButtonActions.ServoHome  ,4.5),
+            new Command(RobotControls.NeckTiltLeft,ButtonActions.ServoHome , 4.5),
+            new Command(RobotControls.LeftIris, ButtonActions.ServoHome, 4.5),
+            new Command(RobotControls.RightIris, ButtonActions.ServoHome, 4.5),
+            new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHome ,4.5),
+            new Command(RobotControls.LeftLensVertical, ButtonActions.ServoHome ,4.5),
+            new Command(RobotControls.RightLensHorizontal, ButtonActions.ServoHome ,4.5),
+            new Command(RobotControls.RightLensVertical,  ButtonActions.ServoHome ,4.5),
 
-            new Command(RobotControls.RightLensHorizontal,ButtonActions.DisableServo, 5000),
-            new Command(RobotControls.RightIris,ButtonActions.DisableServo, 5000),
+            new Command(RobotControls.RightLensHorizontal,ButtonActions.DisableServo, 5.000),
+            new Command(RobotControls.RightIris,ButtonActions.DisableServo, 5.000),
 
             // low blue
-            new Command(ButtonActions.RGBCommand , "Clear,eyes,lr", 4500),
+            new Command(ButtonActions.RGBCommand , "Clear,eyes,lr", 4.500),
 
-             new Command(ButtonActions.DisableAllServos, 5250),
+             new Command(ButtonActions.DisableAllServos, 5.250),
 
             });
             return commandList;
@@ -241,11 +241,11 @@ namespace OpenSaintTestHarnessConsoleApp
             new Command(RobotControls.BrowRightBottomOpen,  ButtonActions.ServoMax , 0),
 
             // return to normal
-            new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoHome , 1000),
-            new Command(RobotControls.BrowLeftTopOpen, ButtonActions.ServoHome ,1000),
+            new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoHome , 1.0),
+            new Command(RobotControls.BrowLeftTopOpen, ButtonActions.ServoHome ,1.0),
            
-            new Command(RobotControls.BrowLeftBottomOpen, ButtonActions.ServoHome , 1000),
-            new Command(RobotControls.BrowRightBottomOpen,  ButtonActions.ServoHome , 1000),
+            new Command(RobotControls.BrowLeftBottomOpen, ButtonActions.ServoHome , 1.0),
+            new Command(RobotControls.BrowRightBottomOpen,  ButtonActions.ServoHome , 1.0),
 
 
               // tilt left First frustration
@@ -255,16 +255,16 @@ namespace OpenSaintTestHarnessConsoleApp
               new Command(RobotControls.LeftLensVertical,ButtonActions.ServoHomeDelta, 200 , 3500),
               new Command(RobotControls.RightLensVertical,ButtonActions.ServoHomeDelta, -200 , 3500),
 
-              new Command(RobotControls.BrowLeftTopTilt,  ButtonActions.ServoHomeDelta , -100, 4500),
-              new Command(RobotControls.BrowRightTopTilt,  ButtonActions.ServoHomeDelta ,100, 4500),
+              new Command(RobotControls.BrowLeftTopTilt,  ButtonActions.ServoHomeDelta , -100, 4.5),
+              new Command(RobotControls.BrowRightTopTilt,  ButtonActions.ServoHomeDelta ,100, 4.5),
 
-              new Command(RobotControls.BrowLeftBottomOpen, ButtonActions.ServoHomeDelta , -300,5000),
-              new Command(RobotControls.BrowRightBottomOpen, ButtonActions.ServoHomeDelta , 300,5000),
-              new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoHomeDelta , 300, 5000 ),
-              new Command(RobotControls.BrowLeftTopOpen,  ButtonActions.ServoHomeDelta , -300, 5000),
+              new Command(RobotControls.BrowLeftBottomOpen, ButtonActions.ServoHomeDelta , -300,5.0),
+              new Command(RobotControls.BrowRightBottomOpen, ButtonActions.ServoHomeDelta , 300,5.0),
+              new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoHomeDelta , 300, 5.0 ),
+              new Command(RobotControls.BrowLeftTopOpen,  ButtonActions.ServoHomeDelta , -300, 5.0),
 
-              new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHomeDelta, 200 , 5500),
-              new Command(RobotControls.RightLensHorizontal,ButtonActions.ServoHomeDelta, 200 , 5500),
+              new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHomeDelta, 200 , 5.5),
+              new Command(RobotControls.RightLensHorizontal,ButtonActions.ServoHomeDelta, 200 , 5.5),
 
               new Command(RobotControls.BrowLeftTopTilt,  ButtonActions.ServoHomeDelta , 100, 6500),
               new Command(RobotControls.BrowRightTopTilt,  ButtonActions.ServoHomeDelta ,-100, 6500),
@@ -278,14 +278,14 @@ namespace OpenSaintTestHarnessConsoleApp
               new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHomeDelta, -200 , 9500),
               new Command(RobotControls.RightLensHorizontal,ButtonActions.ServoHomeDelta, -200 , 9500),
 
-              new Command(RobotControls.BrowLeftTopTilt,  ButtonActions.ServoValue ,1880, 10000),
-              new Command(RobotControls.BrowRightTopTilt,  ButtonActions.ServoValue ,1020, 10000),
+              new Command(RobotControls.BrowLeftTopTilt,  ButtonActions.ServoValue ,1880, 1.00),
+              new Command(RobotControls.BrowRightTopTilt,  ButtonActions.ServoValue ,1020, 1.00),
 
-              new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHome , 11000),
-              new Command(RobotControls.RightLensHorizontal,ButtonActions.ServoHome , 11000),
+              new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHome , 11.0),
+              new Command(RobotControls.RightLensHorizontal,ButtonActions.ServoHome , 11.0),
 
-              new Command(RobotControls.LeftLensVertical,ButtonActions.ServoHome , 11000),
-              new Command(RobotControls.RightLensVertical,ButtonActions.ServoHome ,11000),
+              new Command(RobotControls.LeftLensVertical,ButtonActions.ServoHome , 11.0),
+              new Command(RobotControls.RightLensVertical,ButtonActions.ServoHome ,11.0),
 
               // tilt right 2nd frustration
               new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoValue, 1475, 12000 ),
@@ -302,8 +302,8 @@ namespace OpenSaintTestHarnessConsoleApp
               new Command(RobotControls.BrowLeftTopOpen,  ButtonActions.ServoHomeDelta , -200, 3500+13000),
 
 
-              new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHomeDelta, 200 , 5500+13000),
-              new Command(RobotControls.RightLensHorizontal,ButtonActions.ServoHomeDelta, 200 , 5500+13000),
+              new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHomeDelta, 200 , 5.5+13000),
+              new Command(RobotControls.RightLensHorizontal,ButtonActions.ServoHomeDelta, 200 , 5.5+13000),
 
               new Command(RobotControls.LeftLensVertical,ButtonActions.ServoHomeDelta, -200 , 7500+13000),
               new Command(RobotControls.RightLensVertical,ButtonActions.ServoHomeDelta, 200 , 7500+13000),
@@ -315,22 +315,22 @@ namespace OpenSaintTestHarnessConsoleApp
               new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHomeDelta, -200 , 9500+13000),
               new Command(RobotControls.RightLensHorizontal,ButtonActions.ServoHomeDelta, -200 , 9500+13000),
 
-              new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHome , 11000+13000),
-              new Command(RobotControls.RightLensHorizontal,ButtonActions.ServoHome , 11000+13000),
-              new Command(RobotControls.LeftLensVertical,ButtonActions.ServoHome , 11000+13000),
-              new Command(RobotControls.RightLensVertical,ButtonActions.ServoHome ,11000+13000),
+              new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHome , 11.0+13000),
+              new Command(RobotControls.RightLensHorizontal,ButtonActions.ServoHome , 11.0+13000),
+              new Command(RobotControls.LeftLensVertical,ButtonActions.ServoHome , 11.0+13000),
+              new Command(RobotControls.RightLensVertical,ButtonActions.ServoHome ,11.0+13000),
 
-              new Command(RobotControls.BrowLeftBottomOpen, ButtonActions.ServoHome , 11000+13000),
-              new Command(RobotControls.BrowRightBottomOpen, ButtonActions.ServoHome ,11000+13000),
-              new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoHome ,  11000+13000 ),
-              new Command(RobotControls.BrowLeftTopOpen,  ButtonActions.ServoHome , 11000+13000),
+              new Command(RobotControls.BrowLeftBottomOpen, ButtonActions.ServoHome , 11.0+13000),
+              new Command(RobotControls.BrowRightBottomOpen, ButtonActions.ServoHome ,11.0+13000),
+              new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoHome ,  11.0+13000 ),
+              new Command(RobotControls.BrowLeftTopOpen,  ButtonActions.ServoHome , 11.0+13000),
 
               // 4th frustration
-              new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoHome, 21000 ),
-              new Command(RobotControls.NeckTiltRight, ButtonActions.ServoHome, 21000 ),
+              new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoHome, 21.0 ),
+              new Command(RobotControls.NeckTiltRight, ButtonActions.ServoHome, 21.0 ),
 
-            new Command(RobotControls.BrowLeftTopTilt, ButtonActions.MaestroSet, ServoSpeed.Slow, 25000),
-            new Command(RobotControls.BrowRightTopTilt, ButtonActions.MaestroSet, ServoSpeed.Slow, 25000),
+            new Command(RobotControls.BrowLeftTopTilt, ButtonActions.MaestroSet, ServoSpeed.Slow, 25.0),
+            new Command(RobotControls.BrowRightTopTilt, ButtonActions.MaestroSet, ServoSpeed.Slow, 25.0),
 
             new Command(RobotControls.NoseBody,  ButtonActions.ServoModeValue, 29500),
              // 30 seconds Angry Face
@@ -387,7 +387,7 @@ namespace OpenSaintTestHarnessConsoleApp
 
                new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1451, 500 ),
 
-               new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1600, 1000 ),
+               new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1600, 1.0 ),
 
                new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1451, 1500 ),
 
@@ -408,11 +408,11 @@ namespace OpenSaintTestHarnessConsoleApp
               new Command(ButtonActions.PlayNext, 0),
 
             // return to normal
-            new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoHome , 1000),
-            new Command(RobotControls.BrowLeftTopOpen, ButtonActions.ServoHome ,1000),
+            new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoHome , 1.0),
+            new Command(RobotControls.BrowLeftTopOpen, ButtonActions.ServoHome ,1.0),
 
-            new Command(RobotControls.BrowLeftBottomOpen, ButtonActions.ServoHome , 1000),
-            new Command(RobotControls.BrowRightBottomOpen,  ButtonActions.ServoHome , 1000),          
+            new Command(RobotControls.BrowLeftBottomOpen, ButtonActions.ServoHome , 1.0),
+            new Command(RobotControls.BrowRightBottomOpen,  ButtonActions.ServoHome , 1.0),          
               
 
             };
@@ -430,8 +430,8 @@ namespace OpenSaintTestHarnessConsoleApp
                new Command(ButtonActions.PlayNext, 0),
 
                   // tilt down
-              new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoHome, 1000 ),
-              new Command(RobotControls.NeckTiltRight, ButtonActions.ServoHome, 1000 ),
+              new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoHome, 1.0 ),
+              new Command(RobotControls.NeckTiltRight, ButtonActions.ServoHome, 1.0 ),
             };
             return commandList;
         }
@@ -453,7 +453,7 @@ namespace OpenSaintTestHarnessConsoleApp
 
                new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1600, 750 ),
 
-               new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1451, 1000 ),
+               new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1451, 1.0 ),
 
                new Command(RobotControls.LeftIris,   ButtonActions.ServoValue, 1775 , 1250),
                new Command(RobotControls.RightIris,  ButtonActions.ServoValue,  1100 , 1250),
@@ -471,8 +471,8 @@ namespace OpenSaintTestHarnessConsoleApp
               new Command(RobotControls.NeckTiltRight, ButtonActions.ServoValue, 1509, 4000),
 
               // tilt right
-              new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoValue, 1475, 5500 ),
-              new Command(RobotControls.NeckTiltRight, ButtonActions.ServoValue, 1561, 5500 ),
+              new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoValue, 1475, 5.5 ),
+              new Command(RobotControls.NeckTiltRight, ButtonActions.ServoValue, 1561, 5.5 ),
 
                     // tilt down (home)
               new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoHome, 7000 ),
@@ -483,13 +483,13 @@ namespace OpenSaintTestHarnessConsoleApp
               new Command(RobotControls.NeckTiltRight, ButtonActions.ServoValue, 1533, 8500 ),          
 
                   // tilt down (home)
-              new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoHome, 10000 ),
-              new Command(RobotControls.NeckTiltRight, ButtonActions.ServoHome, 10000),
+              new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoHome, 1.00 ),
+              new Command(RobotControls.NeckTiltRight, ButtonActions.ServoHome, 1.00),
 
-               new Command(RobotControls.LeftIris,   ButtonActions.ServoHome, 10000 ),
-               new Command(RobotControls.RightIris,  ButtonActions.ServoHome, 10000 ),
+               new Command(RobotControls.LeftIris,   ButtonActions.ServoHome, 1.00 ),
+               new Command(RobotControls.RightIris,  ButtonActions.ServoHome, 1.00 ),
 
-               new Command(ButtonActions.DisableAllServos, 11000),
+               new Command(ButtonActions.DisableAllServos, 11.0),
             };
             return commandList;
         }
@@ -514,13 +514,13 @@ namespace OpenSaintTestHarnessConsoleApp
 
                new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1451, 750 ),
 
-               new Command(ButtonActions.PlayNext, 1000),
+               new Command(ButtonActions.PlayNext, 1.0),
 
                new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1600, 2500 ),
 
                new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1451, 8000),
 
-               new Command(ButtonActions.DisableAllServos, 1000),
+               new Command(ButtonActions.DisableAllServos, 1.0),
             };
             return commandList;
         }
@@ -574,16 +574,16 @@ namespace OpenSaintTestHarnessConsoleApp
               new Command(RobotControls.LeftLensVertical,ButtonActions.ServoHomeDelta, 200 , 3500),
               new Command(RobotControls.RightLensVertical,ButtonActions.ServoHomeDelta, -200 , 3500),
 
-              new Command(RobotControls.BrowLeftTopTilt,  ButtonActions.ServoHomeDelta , -100, 4500),
-              new Command(RobotControls.BrowRightTopTilt,  ButtonActions.ServoHomeDelta ,100, 4500),
+              new Command(RobotControls.BrowLeftTopTilt,  ButtonActions.ServoHomeDelta , -100, 4.5),
+              new Command(RobotControls.BrowRightTopTilt,  ButtonActions.ServoHomeDelta ,100, 4.5),
 
-              new Command(RobotControls.BrowLeftBottomOpen, ButtonActions.ServoHomeDelta , -300,5000),
-              new Command(RobotControls.BrowRightBottomOpen, ButtonActions.ServoHomeDelta , 300,5000),
-              new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoHomeDelta , 300, 5000 ),
-              new Command(RobotControls.BrowLeftTopOpen,  ButtonActions.ServoHomeDelta , -300, 5000),
+              new Command(RobotControls.BrowLeftBottomOpen, ButtonActions.ServoHomeDelta , -300,5.0),
+              new Command(RobotControls.BrowRightBottomOpen, ButtonActions.ServoHomeDelta , 300,5.0),
+              new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoHomeDelta , 300, 5.0 ),
+              new Command(RobotControls.BrowLeftTopOpen,  ButtonActions.ServoHomeDelta , -300, 5.0),
 
-              new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHomeDelta, 200 , 5500),
-              new Command(RobotControls.RightLensHorizontal,ButtonActions.ServoHomeDelta, 200 , 5500),
+              new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHomeDelta, 200 , 5.5),
+              new Command(RobotControls.RightLensHorizontal,ButtonActions.ServoHomeDelta, 200 , 5.5),
 
 
               new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoValue, 1475, 6000 ),
@@ -601,19 +601,19 @@ namespace OpenSaintTestHarnessConsoleApp
               new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHomeDelta, -200 , 9500),
               new Command(RobotControls.RightLensHorizontal,ButtonActions.ServoHomeDelta, -200 , 9500),
 
-              new Command(RobotControls.BrowLeftTopTilt,  ButtonActions.ServoValue ,1880, 10000),
-              new Command(RobotControls.BrowRightTopTilt,  ButtonActions.ServoValue ,1020, 10000),
+              new Command(RobotControls.BrowLeftTopTilt,  ButtonActions.ServoValue ,1880, 1.00),
+              new Command(RobotControls.BrowRightTopTilt,  ButtonActions.ServoValue ,1020, 1.00),
 
-              new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHome , 11000),
-              new Command(RobotControls.RightLensHorizontal,ButtonActions.ServoHome , 11000),
+              new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHome , 11.0),
+              new Command(RobotControls.RightLensHorizontal,ButtonActions.ServoHome , 11.0),
 
-              new Command(RobotControls.LeftLensVertical,ButtonActions.ServoHome , 11000),
-              new Command(RobotControls.RightLensVertical,ButtonActions.ServoHome ,11000),
+              new Command(RobotControls.LeftLensVertical,ButtonActions.ServoHome , 11.0),
+              new Command(RobotControls.RightLensVertical,ButtonActions.ServoHome ,11.0),
 
                 new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoHome, 12000 ),
               new Command(RobotControls.NeckTiltRight, ButtonActions.ServoHome, 12000 ),
 
-                new Command(ButtonActions.DisableAllServos, 14500),
+                new Command(ButtonActions.DisableAllServos, 14.5),
             };
             return commandList;
         }
@@ -654,8 +654,8 @@ namespace OpenSaintTestHarnessConsoleApp
             var commandList = new List<Command>
             {
                new Command(ButtonActions.PlayNext, 0),
-              new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoValue, 1423, 1000 ),
-              new Command(RobotControls.NeckTiltRight, ButtonActions.ServoValue, 1509, 1000 ),
+              new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoValue, 1423, 1.0 ),
+              new Command(RobotControls.NeckTiltRight, ButtonActions.ServoValue, 1509, 1.0 ),
 
               new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoValue, 1475, 2000 ),
               new Command(RobotControls.NeckTiltRight, ButtonActions.ServoValue, 1561, 2000 ),
@@ -684,12 +684,12 @@ namespace OpenSaintTestHarnessConsoleApp
             var commandList = new List<Command>
             {
                new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1600, 0 ),
-               new Command(ButtonActions.PlayNext, 1000),
+               new Command(ButtonActions.PlayNext, 1.0),
 
-              new Command(RobotControls.BrowLeftBottomOpen, ButtonActions.ServoHomeDelta , -300, 1000),
-              new Command(RobotControls.BrowRightBottomOpen, ButtonActions.ServoHomeDelta , 300,1000),
-              new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoHomeDelta , 300, 1000 ),
-              new Command(RobotControls.BrowLeftTopOpen,  ButtonActions.ServoHomeDelta , -300, 1000),
+              new Command(RobotControls.BrowLeftBottomOpen, ButtonActions.ServoHomeDelta , -300, 1.0),
+              new Command(RobotControls.BrowRightBottomOpen, ButtonActions.ServoHomeDelta , 300,1.0),
+              new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoHomeDelta , 300, 1.0 ),
+              new Command(RobotControls.BrowLeftTopOpen,  ButtonActions.ServoHomeDelta , -300, 1.0),
 
 
              new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1451, 6000 ),
@@ -706,7 +706,7 @@ namespace OpenSaintTestHarnessConsoleApp
 
                new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1500, 8000 ),
 
-               new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1400, 10000 ),
+               new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1400, 1.00 ),
 
                new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1500, 12000 ), 
 
@@ -726,10 +726,10 @@ namespace OpenSaintTestHarnessConsoleApp
             {
                new Command(ButtonActions.PlayNext, 0),
 
-              new Command(RobotControls.BrowLeftBottomOpen, ButtonActions.ServoHomeDelta , -300, 1000),
-              new Command(RobotControls.BrowRightBottomOpen, ButtonActions.ServoHomeDelta , 300,1000),
-              new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoHomeDelta , 300, 1000 ),
-              new Command(RobotControls.BrowLeftTopOpen,  ButtonActions.ServoHomeDelta , -300, 1000),
+              new Command(RobotControls.BrowLeftBottomOpen, ButtonActions.ServoHomeDelta , -300, 1.0),
+              new Command(RobotControls.BrowRightBottomOpen, ButtonActions.ServoHomeDelta , 300,1.0),
+              new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoHomeDelta , 300, 1.0 ),
+              new Command(RobotControls.BrowLeftTopOpen,  ButtonActions.ServoHomeDelta , -300, 1.0),
 
               new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHomeDelta, -200 , 2000),
               new Command(RobotControls.RightLensHorizontal,ButtonActions.ServoHomeDelta, -200 , 2000),
@@ -741,8 +741,8 @@ namespace OpenSaintTestHarnessConsoleApp
               new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHomeDelta, 200 , 4000),
               new Command(RobotControls.RightLensHorizontal,ButtonActions.ServoHomeDelta, 200 , 4000),
 
-              new Command(RobotControls.LeftIris,   ButtonActions.ServoHome, 5000 ),
-              new Command(RobotControls.RightIris,  ButtonActions.ServoHome,5000 ),
+              new Command(RobotControls.LeftIris,   ButtonActions.ServoHome, 5.0 ),
+              new Command(RobotControls.RightIris,  ButtonActions.ServoHome,5.0 ),
 
               new Command(RobotControls.LeftLensHorizontal,ButtonActions.ServoHomeDelta, -200 , 6000),
               new Command(RobotControls.RightLensHorizontal,ButtonActions.ServoHomeDelta, -200 , 6000),
@@ -772,26 +772,26 @@ namespace OpenSaintTestHarnessConsoleApp
 
               new Command(ButtonActions.PlayNext,500),         
 
-              new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoValue, 1417, 1000 ),
-              new Command(RobotControls.NeckTiltRight, ButtonActions.ServoValue, 1597, 1000),
+              new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoValue, 1417, 1.0 ),
+              new Command(RobotControls.NeckTiltRight, ButtonActions.ServoValue, 1597, 1.0),
 
                 //Whip antenna pop up wiggle back and forth and drop
                new Command(RobotControls.Whip_Antenna_RaiseLower,  ButtonActions.ServoMax , 1500),
                new Command(RobotControls.Whip_Antenna_Rotate,  ButtonActions.ServoValue , 1000, 1500), //1400 Center
                new Command(RobotControls.Whip_Antenna_Rotate,  ButtonActions.ServoValue , 1800, 2500), //1400 Center
                new Command(RobotControls.Whip_Antenna_Rotate,  ButtonActions.ServoValue , 1000, 3500), //1400 Center
-               new Command(RobotControls.Whip_Antenna_Rotate,  ButtonActions.ServoValue , 1800, 4500), //1400 Center
-               new Command(RobotControls.Whip_Antenna_RaiseLower,  ButtonActions.ServoMin ,  5000),
+               new Command(RobotControls.Whip_Antenna_Rotate,  ButtonActions.ServoValue , 1800, 4.5), //1400 Center
+               new Command(RobotControls.Whip_Antenna_RaiseLower,  ButtonActions.ServoMin ,  5.0),
 
 
-              new Command(RobotControls.BrowLeftBottomOpen, ButtonActions.ServoHome, 4500),
-              new Command(RobotControls.BrowRightBottomOpen, ButtonActions.ServoHome,4500),
-              new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoHome, 4500),
-              new Command(RobotControls.BrowLeftTopOpen,  ButtonActions.ServoHome, 4500),
+              new Command(RobotControls.BrowLeftBottomOpen, ButtonActions.ServoHome, 4.5),
+              new Command(RobotControls.BrowRightBottomOpen, ButtonActions.ServoHome,4.5),
+              new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoHome, 4.5),
+              new Command(RobotControls.BrowLeftTopOpen,  ButtonActions.ServoHome, 4.5),
 
-              new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoHome, 4500),
-              new Command(RobotControls.NeckTiltRight, ButtonActions.ServoHome, 4500),
-              new Command(RobotControls.NoseBody, ButtonActions.ServoHome, 4500),
+              new Command(RobotControls.NeckTiltLeft, ButtonActions.ServoHome, 4.5),
+              new Command(RobotControls.NeckTiltRight, ButtonActions.ServoHome, 4.5),
+              new Command(RobotControls.NoseBody, ButtonActions.ServoHome, 4.5),
 
                 new Command(ButtonActions.DisableAllServos, 6500),
             };
@@ -815,7 +815,7 @@ namespace OpenSaintTestHarnessConsoleApp
             {
                new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1600, 0 ),
                new Command(ButtonActions.PlayNext, 500),
-               new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1450, 4500),
+               new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1450, 4.5),
             };
             return commandList;
         }
@@ -833,7 +833,7 @@ namespace OpenSaintTestHarnessConsoleApp
               new Command(RobotControls.BrowLeftTopOpen,  ButtonActions.ServoHomeDelta , -200, 0),
               new Command(ButtonActions.PlayNext, 500),
               new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1550, 3000 ),
-              new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1450, 4500),
+              new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1450, 4.5),
               new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1550, 6000 ),
               new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1450, 7500),
 
@@ -877,7 +877,7 @@ namespace OpenSaintTestHarnessConsoleApp
               new Command(RobotControls.BrowRightTopOpen, ButtonActions.ServoHomeDelta , -300, 500),
               new Command(RobotControls.BrowLeftTopOpen,  ButtonActions.ServoHomeDelta , 300, 500),
 
-              new Command(ButtonActions.PlayNext, 1000),
+              new Command(ButtonActions.PlayNext, 1.0),
               new Command(RobotControls.NeckTurn, ButtonActions.ServoValue, 1450, 2500),
 
               new Command(RobotControls.BrowLeftBottomOpen, ButtonActions.ServoHome, 3500),

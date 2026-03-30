@@ -69,8 +69,8 @@ public class SettingsObject
 
         var neckTilt = new List<GangedServo>
         {
-            new GangedServo(RobotControls.NeckTiltLeft, MultiOutput.Reversed),
-            new GangedServo(RobotControls.NeckTiltRight, MultiOutput.Reversed)
+            new GangedServo(RobotControls.NeckTiltLeft, MultiOutput.Normal),
+            new GangedServo(RobotControls.NeckTiltRight, MultiOutput.Normal)
         };
         list[(int)GangedServoNames.NeckTiltRight] = new GangedServoList(neckTilt, true);
 
@@ -99,8 +99,8 @@ public class SettingsObject
 
         var eyesVertical = new List<GangedServo>
         {
-            new GangedServo(RobotControls.LeftLensVertical, MultiOutput.Reversed),
-            new GangedServo(RobotControls.RightLensVertical, MultiOutput.Normal)
+            new GangedServo(RobotControls.LeftLensVertical, MultiOutput.Normal),
+            new GangedServo(RobotControls.RightLensVertical, MultiOutput.Reversed)
         };
         list[(int)GangedServoNames.EyesVerticalUp] = new GangedServoList(eyesVertical, true);
 
@@ -114,7 +114,7 @@ public class SettingsObject
         var ventsOpen = new List<GangedServo>
         {
             new GangedServo(RobotControls.LeftEyeVent, MultiOutput.Normal),
-            new GangedServo(RobotControls.RightEyeVent, MultiOutput.Reversed)
+            new GangedServo(RobotControls.RightEyeVent, MultiOutput.Normal)
         };
         list[(int)GangedServoNames.VentsOpen] = new GangedServoList(ventsOpen, false);
 
