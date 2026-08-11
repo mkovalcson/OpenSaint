@@ -30,7 +30,7 @@ export default defineConfig({
         // squashfs mount. Tauri's webview cache helps on subsequent
         // launches, but first launch is fastest with fewer + smaller
         // assets to fault in.
-        target: 'esnext',
+        target: 'es2020',
         sourcemap: true,
     },
 
