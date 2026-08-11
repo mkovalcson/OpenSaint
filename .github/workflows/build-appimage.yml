@@ -1,0 +1,74 @@
+name: Build Steam Controller AppImage
+
+on:
+  workflow_dispatch:
+
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  appimage:
+    runs-on: ubuntu-24.04
+
+    defaults:
+      run:
+        working-directory: controller
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential curl wget file pkg-config patchelf \
+            libssl-dev libgtk-3-dev libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev librsvg2-dev libudev-dev \
+            libasound2-dev libxdo-dev
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: controller/package-lock.json
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build AppImage
+        run: npm run tauri:build
+
+      - name: Normalize AppImage filename
+        shell: bash
+        run: |
+          mkdir -p release
+
+          appimage="$(find src-tauri/target/release/bundle/appimage \
+            -maxdepth 1 \
+            -type f \
+            -name '*.AppImage' \
+            -print \
+            -quit)"
+
+          test -n "$appimage"
+
+          cp "$appimage" release/SAINT-Controller.AppImage
+          chmod +x release/SAINT-Controller.AppImage
+
+          sha256sum release/SAINT-Controller.AppImage \
+            > release/SAINT-Controller.AppImage.sha256
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: SAINT-Controller-AppImage
+          path: |
+            controller/release/SAINT-Controller.AppImage
+            controller/release/SAINT-Controller.AppImage.sha256
+          if-no-files-found: error
