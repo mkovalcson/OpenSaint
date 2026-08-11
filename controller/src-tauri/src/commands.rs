@@ -4,7 +4,7 @@ use crate::input::InputManager;
 use crate::protocol::{ConnectionState, WebSocketClient};
 use parking_lot::RwLock;
 use serde_json::Value;
-use std::sync::Arc;
+use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
 use std::time::Duration;
 use tauri::{AppHandle, Runtime, State, WebviewWindow};
 
@@ -12,6 +12,9 @@ pub struct AppState {
     pub input_manager: InputManager,
     pub ws_client: WebSocketClient,
     pub mapper: RwLock<InputMapper>,
+    /// Raw full-controller streaming is the default transport mode.
+    /// Bindings remain active independently when configured.
+    pub raw_streaming_enabled: AtomicBool,
     /// mDNS discovery / resolution helper. Optional because the daemon
     /// can fail to bind its UDP socket on locked-down hosts (the
     /// Steam Deck Game Mode sandbox notably) — in that case we still
@@ -35,6 +38,7 @@ impl AppState {
             input_manager: InputManager::new(),
             ws_client: WebSocketClient::new(),
             mapper: RwLock::new(InputMapper::new()),
+            raw_streaming_enabled: AtomicBool::new(true),
             discovery,
         }
     }
@@ -44,6 +48,22 @@ impl Default for AppState {
     fn default() -> Self {
         Self::new()
     }
+}
+
+
+#[tauri::command]
+pub fn get_raw_streaming_enabled(state: State<'_, Arc<AppState>>) -> bool {
+    state.raw_streaming_enabled.load(Ordering::Relaxed)
+}
+
+#[tauri::command]
+pub fn set_raw_streaming_enabled(
+    state: State<'_, Arc<AppState>>,
+    enabled: bool,
+) -> bool {
+    state.raw_streaming_enabled.store(enabled, Ordering::Relaxed);
+    log::info!("Raw controller streaming {}", if enabled { "enabled" } else { "disabled" });
+    enabled
 }
 
 /// Connect to the SAINT.OS server.

@@ -148,6 +148,19 @@ impl OutgoingMessage {
         }
     }
 
+    /// Stream one coherent snapshot of the physical controller state.
+    /// This path is independent of configurable bindings and is enabled
+    /// by default by the controller application.
+    pub fn raw_controller_state(state: Value) -> Self {
+        Self {
+            id: next_id(),
+            msg_type: "controller".to_string(),
+            action: "raw_state".to_string(),
+            params: Some(state),
+            password: None,
+        }
+    }
+
     /// Push a single scalar onto a ROS topic channel. The server-side
     /// `set_topic_channel` handler maintains a per-topic buffer so we
     /// only need to send the one field that changed; the merged

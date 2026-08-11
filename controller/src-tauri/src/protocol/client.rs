@@ -409,6 +409,41 @@ impl WebSocketClient {
         }
     }
 
+    /// Stream a complete raw controller-state snapshot. This is a single
+    /// message at the normal 50 Hz wire cadence, rather than one message
+    /// per axis/button. It intentionally remains active during E-Stop so a
+    /// host UI can always observe the operator's physical controls.
+    pub fn send_raw_controller_state(&self, state: Value) -> Result<(), String> {
+        const RAW_KEY: &str = "raw_controller_state";
+        {
+            let mut times = self.last_command_times.write();
+            let now = Instant::now();
+            if let Some(last_time) = times.get(RAW_KEY) {
+                if now.duration_since(*last_time) < Duration::from_millis(THROTTLE_MS) {
+                    return Ok(());
+                }
+            }
+            times.insert(RAW_KEY.to_string(), now);
+        }
+
+        let tx = self
+            .command_tx
+            .read()
+            .clone()
+            .ok_or_else(|| "Not connected".to_string())?;
+
+        match tx.try_send(OutgoingMessage::raw_controller_state(state)) {
+            Ok(()) => Ok(()),
+            Err(tokio::sync::mpsc::error::TrySendError::Full(_)) => {
+                self.note_dropped_write("raw controller state");
+                Ok(())
+            }
+            Err(tokio::sync::mpsc::error::TrySendError::Closed(_)) => {
+                Err("Connection closed".to_string())
+            }
+        }
+    }
+
     /// Push a single scalar onto a ROS topic channel. Used by the
     /// bindings runtime: a joystick axis movement results in
     /// `set_topic_channel(topic, channel, value)` which the server

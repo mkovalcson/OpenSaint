@@ -53,6 +53,7 @@ const keyboard = useKeyboard();
 const config = ref<ConnectionConfig>({ host: 'localhost', port: 80, password: '' });
 const pollingRate = ref(16);
 const throttleMs = ref(50);
+const rawStreamingEnabled = ref(true);
 const devtoolsOpen = ref(false);
 const uiScale = ref(1.0);
 
@@ -171,6 +172,16 @@ async function doConnect(): Promise<void> {
 
 async function doDisconnect(): Promise<void> {
     await conn.disconnect();
+}
+
+async function setRawStreaming(enabled: boolean): Promise<void> {
+    rawStreamingEnabled.value = enabled;
+    localStorage.setItem('saint-controller-raw-streaming', enabled ? 'true' : 'false');
+    try {
+        await invoke<boolean>('set_raw_streaming_enabled', { enabled });
+    } catch (err) {
+        console.error('Failed to update raw controller streaming:', err);
+    }
 }
 
 function selectDiscoveredServer(server: DiscoveredServer): void {
@@ -427,6 +438,10 @@ watch(() => conn.isConnected.value, (connected) => {
 });
 
 onMounted(() => {
+    const savedRawStreaming = localStorage.getItem('saint-controller-raw-streaming');
+    rawStreamingEnabled.value = savedRawStreaming === null ? true : savedRawStreaming === 'true';
+    void invoke<boolean>('set_raw_streaming_enabled', { enabled: rawStreamingEnabled.value });
+
     void refreshDiscoveredServers();
     discoveryPollHandle = setInterval(() => {
         if (!conn.isConnected.value) void refreshDiscoveredServers();
@@ -554,6 +569,20 @@ onBeforeUnmount(() => {
         <div class="card">
             <h2 class="text-lg font-semibold mb-4">Input Settings</h2>
             <div class="space-y-4">
+                <div>
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" class="mt-1 w-4 h-4 rounded"
+                               :checked="rawStreamingEnabled"
+                               @change="setRawStreaming(($event.target as HTMLInputElement).checked)">
+                        <span>
+                            <span class="block text-sm">Raw controller streaming</span>
+                            <span class="block text-xs text-saint-text-muted mt-0.5">
+                                Enabled by default. Streams the complete controller state to the connected
+                                WebSocket receiver without requiring bindings.
+                            </span>
+                        </span>
+                    </label>
+                </div>
                 <div>
                     <label class="block text-sm text-saint-text-muted mb-1">Polling Rate</label>
                     <SaintSelect v-model="pollingRate" :options="pollingRateOptions" />

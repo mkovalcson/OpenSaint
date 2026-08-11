@@ -6,7 +6,7 @@ mod protocol;
 
 use bindings::mapper::ActionEvent;
 use commands::AppState;
-use std::sync::Arc;
+use std::sync::{Arc, atomic::Ordering};
 use std::thread;
 use std::time::Duration;
 use tauri::{Emitter, Manager};
@@ -56,6 +56,23 @@ pub fn run() {
                 loop {
                     // Get current input state
                     let input_state = state_for_processing.input_manager.get_state();
+
+                    // Raw controller streaming is ON by default and does not
+                    // require any binding configuration. Send one coherent
+                    // full-state snapshot at the WebSocket client's 50 Hz
+                    // throttle cadence.
+                    if state_for_processing.raw_streaming_enabled.load(Ordering::Relaxed) {
+                        match serde_json::to_value(&input_state) {
+                            Ok(raw_state) => {
+                                if let Err(e) = state_for_processing.ws_client.send_raw_controller_state(raw_state) {
+                                    if !e.contains("Not connected") {
+                                        log::error!("Failed to stream raw controller state: {}", e);
+                                    }
+                                }
+                            }
+                            Err(e) => log::error!("Failed to serialize raw controller state: {}", e),
+                        }
+                    }
 
                     // Process through mapper to generate action events
                     let events = {
@@ -129,6 +146,8 @@ pub fn run() {
             commands::disconnect,
             commands::get_connection_status,
             commands::get_input_state,
+            commands::get_raw_streaming_enabled,
+            commands::set_raw_streaming_enabled,
             commands::get_binding_profiles,
             commands::set_binding_profiles,
             commands::set_active_profile,
