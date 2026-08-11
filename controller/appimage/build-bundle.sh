@@ -236,8 +236,10 @@ export PATH="$APPDIR/usr/bin:$PATH"
 # Debian-multiarch path (Steam Deck / Arch). See path-shim.c.
 export LD_PRELOAD="$APPDIR/usr/lib/libpath-shim.so${LD_PRELOAD:+:$LD_PRELOAD}"
 export GIO_MODULE_DIR="$APPDIR/usr/lib/x86_64-linux-gnu/gio/modules"
-exec "$APPDIR/usr/bin/saint-controller" "$@"
-APPRUN
+
+# linuxdeploy rewrites embedded /usr paths to ././ paths.
+# Those paths expect the working directory to be AppDir/usr.
+cd "$APPDIR/usr"APPRUN
 chmod +x "$APPDIR/AppRun"
 
 # 5. Seal the modified AppDir into the final AppImage. Delete any
