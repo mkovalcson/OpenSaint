@@ -23,26 +23,90 @@ jobs:
           chmod +x controller/appimage/build-docker.sh
           chmod +x controller/appimage/build-bundle.sh
 
-      - name: Build Steam Deck AppImage
+      - name: Build Steam Deck compatible AppImage
         run: |
           controller/appimage/build-docker.sh --rebuild-image
 
-      - name: Normalize AppImage filename
+      - name: Locate and prepare AppImage
         shell: bash
         run: |
+          set -euo pipefail
+
           mkdir -p controller/release
 
-          appimage="$(find server/resources/firmware/controller \
-            -maxdepth 1 \
-            -type f \
-            -name '*.AppImage' \
-            -print \
-            -quit)"
+          CACHE_OUTPUT="$HOME/.cache/saint-os/controller-appimage/target/release/bundle/appimage"
+          STAGED_OUTPUT="$GITHUB_WORKSPACE/server/resources/firmware/controller"
+
+          echo "Searching for completed AppImage..."
+          echo
+          echo "Cache output:"
+          echo "  $CACHE_OUTPUT"
+          echo
+          echo "Staged output:"
+          echo "  $STAGED_OUTPUT"
+          echo
+
+          echo "Contents of cache output:"
+          if [ -d "$CACHE_OUTPUT" ]; then
+            find "$CACHE_OUTPUT" \
+              -maxdepth 1 \
+              -type f \
+              -name '*.AppImage' \
+              -ls || true
+          else
+            echo "  Directory does not exist."
+          fi
+
+          echo
+          echo "Contents of staged output:"
+          if [ -d "$STAGED_OUTPUT" ]; then
+            find "$STAGED_OUTPUT" \
+              -maxdepth 1 \
+              -type f \
+              -name '*.AppImage' \
+              -ls || true
+          else
+            echo "  Directory does not exist."
+          fi
+
+          appimage=""
+
+          # Prefer the final AppImage staged by build-bundle.sh.
+          if [ -d "$STAGED_OUTPUT" ]; then
+            appimage="$(find "$STAGED_OUTPUT" \
+              -maxdepth 1 \
+              -type f \
+              -name '*.AppImage' \
+              -print \
+              -quit || true)"
+          fi
+
+          # Fall back to the custom builder's Cargo target directory.
+          if [ -z "$appimage" ] && [ -d "$CACHE_OUTPUT" ]; then
+            appimage="$(find "$CACHE_OUTPUT" \
+              -maxdepth 1 \
+              -type f \
+              -name '*.AppImage' \
+              -print \
+              -quit || true)"
+          fi
 
           if [ -z "$appimage" ]; then
-            echo "No AppImage produced"
+            echo
+            echo "ERROR: No AppImage was produced."
+            echo
+            echo "Searching workspace and controller build cache for diagnostics:"
+            find "$GITHUB_WORKSPACE" \
+              "$HOME/.cache/saint-os/controller-appimage" \
+              -type f \
+              -name '*.AppImage' \
+              -print 2>/dev/null || true
             exit 1
           fi
+
+          echo
+          echo "Using AppImage:"
+          echo "  $appimage"
 
           cp "$appimage" controller/release/SAINT-Controller.AppImage
           chmod +x controller/release/SAINT-Controller.AppImage
@@ -50,8 +114,81 @@ jobs:
           sha256sum controller/release/SAINT-Controller.AppImage \
             > controller/release/SAINT-Controller.AppImage.sha256
 
-          echo "Built:"
-          ls -lh controller/release/SAINT-Controller.AppImage
+          echo
+          echo "Release files:"
+          ls -lh controller/release/
+
+      - name: Verify Steam Deck WebKit helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cd controller/release
+
+          rm -rf squashfs-root
+
+          APPIMAGE_EXTRACT_AND_RUN=1 \
+            ./SAINT-Controller.AppImage --appimage-extract >/dev/null
+
+          WEB_PROCESS="$(find squashfs-root \
+            -type f \
+            -name 'WebKitWebProcess' \
+            -print \
+            -quit)"
+
+          NETWORK_PROCESS="$(find squashfs-root \
+            -type f \
+            -name 'WebKitNetworkProcess' \
+            -print \
+            -quit)"
+
+          SHIM="$(find squashfs-root \
+            -type f \
+            -name 'libpath-shim.so' \
+            -print \
+            -quit)"
+
+          echo "WebKitWebProcess:"
+          echo "  ${WEB_PROCESS:-NOT FOUND}"
+
+          echo "WebKitNetworkProcess:"
+          echo "  ${NETWORK_PROCESS:-NOT FOUND}"
+
+          echo "Path shim:"
+          echo "  ${SHIM:-NOT FOUND}"
+
+          if [ -z "$WEB_PROCESS" ]; then
+            echo "ERROR: WebKitWebProcess is missing."
+            exit 1
+          fi
+
+          if [ -z "$NETWORK_PROCESS" ]; then
+            echo "ERROR: WebKitNetworkProcess is missing."
+            exit 1
+          fi
+
+          if [ -z "$SHIM" ]; then
+            echo "ERROR: libpath-shim.so is missing."
+            exit 1
+          fi
+
+          echo
+          echo "Checking AppRun configuration..."
+
+          if ! grep -q 'LD_PRELOAD' squashfs-root/AppRun; then
+            echo "ERROR: AppRun does not configure LD_PRELOAD."
+            exit 1
+          fi
+
+          if ! grep -q 'cd "$APPDIR/usr"' squashfs-root/AppRun; then
+            echo "ERROR: AppRun does not change working directory to APPDIR/usr."
+            exit 1
+          fi
+
+          echo
+          echo "Steam Deck AppImage packaging verification passed."
+
+          rm -rf squashfs-root
 
       - name: Upload AppImage
         uses: actions/upload-artifact@v4
