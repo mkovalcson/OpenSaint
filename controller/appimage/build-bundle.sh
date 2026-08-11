@@ -239,7 +239,9 @@ export GIO_MODULE_DIR="$APPDIR/usr/lib/x86_64-linux-gnu/gio/modules"
 
 # linuxdeploy rewrites embedded /usr paths to ././ paths.
 # Those paths expect the working directory to be AppDir/usr.
-cd "$APPDIR/usr"APPRUN
+cd "$APPDIR/usr"
+exec "$APPDIR/usr/bin/saint-controller" "$@"
+
 chmod +x "$APPDIR/AppRun"
 
 # 5. Seal the modified AppDir into the final AppImage. Delete any
