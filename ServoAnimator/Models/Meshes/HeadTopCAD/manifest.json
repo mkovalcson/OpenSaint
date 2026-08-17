@@ -1,0 +1,413 @@
+{
+  "version": "1.1.11",
+  "cadToUrdf": "(x,y,z)_cad -> (z,x,y)_urdf; millimeters retained; URDF mesh scale=0.001",
+  "source": "Colored STEP assemblies; XCAF surface/general appearance colors preserved per component",
+  "assemblies": {
+    "MFRC": {
+      "source": "MFRCColor.step",
+      "groups": {
+        "404040": {
+          "mesh": "Meshes/HeadTopCAD/MFRC_404040.stl",
+          "rgb": [
+            0.25015828,
+            0.25015828,
+            0.25015828
+          ],
+          "hex": "#404040",
+          "material": "cad_404040",
+          "triangles": 31348,
+          "boundsMm": {
+            "xmin": -24.612599999999997,
+            "xmax": 23.6474,
+            "ymin": -24.13,
+            "ymax": 24.13,
+            "zmin": 22.224999999999994,
+            "zmax": 29.970246977405978
+          },
+          "components": [
+            "[HEAD-G-A-05] Top Hat"
+          ]
+        },
+        "97a3da": {
+          "mesh": "Meshes/HeadTopCAD/MFRC_97a3da.stl",
+          "rgb": [
+            0.590618849,
+            0.637596846,
+            0.854992628
+          ],
+          "hex": "#97A3DA",
+          "material": "cad_97a3da",
+          "triangles": 8766,
+          "boundsMm": {
+            "xmin": -3.657600000000002,
+            "xmax": 21.843999999999998,
+            "ymin": -3.175,
+            "ymax": 3.175,
+            "zmin": -13.843000000000005,
+            "zmax": 25.781000000000002
+          },
+          "components": [
+            "[HEAD-G-A-01] Inner Tube",
+            "[HEAD-G-A-04] Feedhorn"
+          ]
+        },
+        "f6f4e9": {
+          "mesh": "Meshes/HeadTopCAD/MFRC_f6f4e9.stl",
+          "rgb": [
+            0.964686275,
+            0.955973327,
+            0.913098633
+          ],
+          "hex": "#F6F4E9",
+          "material": "cad_f6f4e9",
+          "triangles": 16148,
+          "boundsMm": {
+            "xmin": -4.054475000001856,
+            "xmax": 15.213878093901878,
+            "ymin": -15.875000000000025,
+            "ymax": 15.875000000000025,
+            "zmin": -17.145,
+            "zmax": 25.907999999999998
+          },
+          "components": [
+            "[HEAD-G-A-00] Outer Tube",
+            "[HEAD-G-A-02] Wideband Dish",
+            "[HEAD-G-A-03] Shortband Dish",
+            "[HEAD-G-A-06] Upper Tube"
+          ]
+        }
+      },
+      "triangleCount": 56262
+    },
+    "WhipAntenna": {
+      "source": "Whip AntennaColor.step",
+      "groups": {
+        "080b4e": {
+          "mesh": "Meshes/HeadTopCAD/WhipAntenna_080b4e.stl",
+          "rgb": [
+            0.029556835,
+            0.043735031,
+            0.304987311
+          ],
+          "hex": "#080B4E",
+          "material": "cad_080b4e",
+          "triangles": 13674,
+          "boundsMm": {
+            "xmin": -8.788447056111096,
+            "xmax": 8.788447056111107,
+            "ymin": -8.788447056111101,
+            "ymax": 8.788447056111101,
+            "zmin": 42.22750000000025,
+            "zmax": 51.549300000000244
+          },
+          "components": [
+            "[HEAD-H-A-00] Skirt_Standard"
+          ]
+        },
+        "97a3da": {
+          "mesh": "Meshes/HeadTopCAD/WhipAntenna_97a3da.stl",
+          "rgb": [
+            0.590618849,
+            0.637596846,
+            0.854992628
+          ],
+          "hex": "#97A3DA",
+          "material": "cad_97a3da",
+          "triangles": 75694,
+          "boundsMm": {
+            "xmin": -2.413,
+            "xmax": 2.413,
+            "ymin": -3.175,
+            "ymax": 3.175,
+            "zmin": -21.971,
+            "zmax": 48.577500000000256
+          },
+          "components": [
+            "[HDWR-FSTR-ROD] Fully Threaded Stud #4-40 x 1 \u0338 2",
+            "ASME B18.8.2 - 0.0627x0.25_ASME B18.8.2 - 0.0627x0.25",
+            "[HDWR-FSTR-PIN] Precision Perforator Pin 0.030 x 2-1 \u0338 2_Modified",
+            "[HDWR-SPNG] Precision Compression Spring 1 \u0338 4 x .12 x 0.016_Relaxed",
+            "SSFLATSKT 0.19-24x0.1875-HX-N_SSFLATSKT 0.19-24x0.1875-HX-N"
+          ]
+        },
+        "e7c863": {
+          "mesh": "Meshes/HeadTopCAD/WhipAntenna_e7c863.stl",
+          "rgb": [
+            0.904661179,
+            0.783537805,
+            0.386429429
+          ],
+          "hex": "#E7C863",
+          "material": "cad_e7c863",
+          "triangles": 65424,
+          "boundsMm": {
+            "xmin": -5.8379147173738115,
+            "xmax": 5.837914717373839,
+            "ymin": -5.837914717373824,
+            "ymax": 5.837914717373824,
+            "zmin": 51.549300000000244,
+            "zmax": 59.804300000000254
+          },
+          "components": [
+            "[DTL-KNOB-WHIP] Knob (Whip Antenna)"
+          ]
+        },
+        "f6f4e9": {
+          "mesh": "Meshes/HeadTopCAD/WhipAntenna_f6f4e9.stl",
+          "rgb": [
+            0.964686275,
+            0.955973327,
+            0.913098633
+          ],
+          "hex": "#F6F4E9",
+          "material": "cad_f6f4e9",
+          "triangles": 15837,
+          "boundsMm": {
+            "xmin": -3.175000000000017,
+            "xmax": 3.1749999999999825,
+            "ymin": -3.175,
+            "ymax": 3.175,
+            "zmin": -24.511,
+            "zmax": 42.22749999999998
+          },
+          "components": [
+            "[HEAD-H-B-00-LWR] Linkage (Lower)",
+            "[HEAD-H-B-00-UPR] Linkage (Upper)"
+          ]
+        }
+      },
+      "triangleCount": 170629,
+      "v1.2.5Articulation": {
+        "description": "Whip antenna split at the CAD ASME B18.8.2 hinge so the upper linkage assembly can pivot independently after it clears the SimplifiedHead2 top surface.",
+        "cadToUrdfBasis": "(X,Y,Z) CAD -> (Z,X,Y) URDF",
+        "hingeCenterLocalMm": [
+          0.0,
+          0.0,
+          2.921
+        ],
+        "hingeAxisUrdf": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "upperMeshesRecenteredAtHinge": true,
+        "meshes": [
+          {
+            "filename": "WhipAntenna_lower_linkage.stl",
+            "sourceComponent": "[HEAD-H-B-00-LWR] Linkage (Lower):1",
+            "side": "lower",
+            "material": "cad_f6f4e9",
+            "triangles": 2280,
+            "boundsMm": {
+              "xmin": -3.174999952316284,
+              "ymin": -3.174999952316284,
+              "zmin": -24.51099967956543,
+              "xmax": 3.174999952316284,
+              "ymax": 3.174999952316284,
+              "zmax": 5.8420000076293945
+            }
+          },
+          {
+            "filename": "WhipAntenna_upper_linkage.stl",
+            "sourceComponent": "[HEAD-H-B-00-UPR] Linkage (Upper):1",
+            "side": "upper",
+            "material": "cad_f6f4e9",
+            "triangles": 13585,
+            "boundsMm": {
+              "xmin": -3.1115000247955322,
+              "ymin": -3.1115000247955322,
+              "zmin": -2.893956422805786,
+              "xmax": 3.1115000247955322,
+              "ymax": 3.1115000247955322,
+              "zmax": 39.30649948120117
+            }
+          },
+          {
+            "filename": "WhipAntenna_upper_stud.stl",
+            "sourceComponent": "[HDWR-FSTR-ROD] Fully Threaded Stud #4-40 x 1/2:1",
+            "side": "upper",
+            "material": "cad_97a3da",
+            "triangles": 1004,
+            "boundsMm": {
+              "xmin": -1.4223999977111816,
+              "ymin": -1.4223999977111816,
+              "zmin": 32.95650100708008,
+              "xmax": 1.4223999977111816,
+              "ymax": 1.4223999977111816,
+              "zmax": 45.65650177001953
+            }
+          },
+          {
+            "filename": "WhipAntenna_upper_skirt.stl",
+            "sourceComponent": "[HEAD-H-A-00] Skirt_Standard:1",
+            "side": "upper",
+            "material": "cad_080b4e",
+            "triangles": 14826,
+            "boundsMm": {
+              "xmin": -8.788447380065918,
+              "ymin": -8.788447380065918,
+              "zmin": 39.30649948120117,
+              "xmax": 8.788447380065918,
+              "ymax": 8.788447380065918,
+              "zmax": 48.628299713134766
+            }
+          },
+          {
+            "filename": "WhipAntenna_upper_knob.stl",
+            "sourceComponent": "[DTL-KNOB-WHIP] Knob (Whip Antenna):1",
+            "side": "upper",
+            "material": "cad_e7c863",
+            "triangles": 121196,
+            "boundsMm": {
+              "xmin": -5.837914943695068,
+              "ymin": -5.837914943695068,
+              "zmin": 48.628299713134766,
+              "xmax": 5.837914943695068,
+              "ymax": 5.837914943695068,
+              "zmax": 56.88330078125
+            }
+          },
+          {
+            "filename": "WhipAntenna_hinge_pin.stl",
+            "sourceComponent": "ASME B18.8.2 - 0.0627x0.25:1",
+            "side": "lower",
+            "material": "cad_97a3da",
+            "triangles": 2698,
+            "boundsMm": {
+              "xmin": -0.7962899804115295,
+              "ymin": -3.174999952316284,
+              "zmin": 2.1247100830078125,
+              "xmax": 0.7962899804115295,
+              "ymax": 3.174999952316284,
+              "zmax": 3.717289924621582
+            }
+          },
+          {
+            "filename": "WhipAntenna_lower_perforator_pin.stl",
+            "sourceComponent": "[HDWR-FSTR-PIN] Precision Perforator Pin...:1",
+            "side": "lower",
+            "material": "cad_97a3da",
+            "triangles": 668,
+            "boundsMm": {
+              "xmin": -2.3177499771118164,
+              "ymin": -0.793749988079071,
+              "zmin": -10.858499526977539,
+              "xmax": -0.7302500009536743,
+              "ymax": 0.793749988079071,
+              "zmax": 6.667500019073486
+            }
+          },
+          {
+            "filename": "WhipAntenna_lower_spring.stl",
+            "sourceComponent": "[HDWR-SPNG] Precision Compression Spring...:1",
+            "side": "lower",
+            "material": "cad_97a3da",
+            "triangles": 81462,
+            "boundsMm": {
+              "xmin": -1.5240570306777954,
+              "ymin": -1.523982048034668,
+              "zmin": -17.208499908447266,
+              "xmax": 1.5239850282669067,
+              "ymax": 1.5239900350570679,
+              "zmax": -10.858499526977539
+            }
+          },
+          {
+            "filename": "WhipAntenna_lower_screw.stl",
+            "sourceComponent": "SSFLATSKT 0.19-24x0.1875-HX-N:1",
+            "side": "lower",
+            "material": "cad_97a3da",
+            "triangles": 1028,
+            "boundsMm": {
+              "xmin": -2.4130001068115234,
+              "ymin": -2.4130001068115234,
+              "zmin": -21.97100067138672,
+              "xmax": 2.4130001068115234,
+              "ymax": 2.4130001068115234,
+              "zmax": -17.208499908447266
+            }
+          }
+        ]
+      }
+    },
+    "Microphone": {
+      "source": "MicrophoneColor.step",
+      "groups": {
+        "97a3da": {
+          "mesh": "Meshes/HeadTopCAD/Microphone_97a3da.stl",
+          "rgb": [
+            0.590618849,
+            0.637596846,
+            0.854992628
+          ],
+          "hex": "#97A3DA",
+          "material": "cad_97a3da",
+          "triangles": 23470,
+          "boundsMm": {
+            "xmin": -38.35399999999999,
+            "xmax": 45.16399999999999,
+            "ymin": -5.334,
+            "ymax": 5.334,
+            "zmin": -5.334,
+            "zmax": 5.334
+          },
+          "components": [
+            "[ELEC-MISC] Electret Condenser Microphone",
+            "[HEAD-F-A-04] Wire Passthrough",
+            "[HEAD-F-A-05] Spacer",
+            "[HEAD-F-A-05] Spacer"
+          ]
+        },
+        "b5afa6": {
+          "mesh": "Meshes/HeadTopCAD/Microphone_b5afa6.stl",
+          "rgb": [
+            0.708375752,
+            0.686685324,
+            0.651405632
+          ],
+          "hex": "#B5AFA6",
+          "material": "cad_b5afa6",
+          "triangles": 5710,
+          "boundsMm": {
+            "xmin": 38.480999999999995,
+            "xmax": 48.006,
+            "ymin": -6.985,
+            "ymax": 6.985,
+            "zmin": -6.985,
+            "zmax": 6.985
+          },
+          "components": [
+            "[HEAD-F-A-01] Front Cap",
+            "[HEAD-F-A-02] Mesh"
+          ]
+        },
+        "e9e9eb": {
+          "mesh": "Meshes/HeadTopCAD/Microphone_e9e9eb.stl",
+          "rgb": [
+            0.913098633,
+            0.913098633,
+            0.921581864
+          ],
+          "hex": "#E9E9EB",
+          "material": "cad_e9e9eb",
+          "triangles": 6940,
+          "boundsMm": {
+            "xmin": -47.607646969892244,
+            "xmax": 44.830999999999996,
+            "ymin": -7.112,
+            "ymax": 7.112,
+            "zmin": -13.453584000186009,
+            "zmax": 7.112
+          },
+          "components": [
+            "[HEAD-F-A-00] Tube",
+            "[HEAD-F-A-03] Rear Cap",
+            "[HEAD-F-B-01] Hinge",
+            "[HEAD-F-B-01] Hinge"
+          ]
+        }
+      },
+      "triangleCount": 36120
+    }
+  }
+}

@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    ServoAnimator
+    =============
+    A WPF (Windows-only) application that edits servo animation timelines
+    against an audio waveform.
+
+    Dependencies:
+      * NAudio            - audio file decoding + playback (mp3/wav/etc.)
+      * SkiaSharp.Views.WPF - hardware-friendly 2D canvas used to draw the
+                              waveform, time axis, command markers and cursor.
+
+    Build:  dotnet build       (requires the .NET 10 SDK on Windows)
+    Run:    dotnet run
+  -->
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>AnimationEditorPlayer</AssemblyName>
+    <AssemblyTitle>Animation Editor &amp; Player</AssemblyTitle>
+    <Product>Animation Editor &amp; Player</Product>
+    <RootNamespace>ServoAnimator</RootNamespace>
+    <Version>1.7.5</Version>
+    <AssemblyVersion>1.7.5.0</AssemblyVersion>
+    <FileVersion>1.7.5.0</FileVersion>
+    <!-- Explicit entry point (Program.cs). Normally WPF auto-generates
+         Main from App.xaml, but if App.xaml's build action isn't
+         "ApplicationDefinition" (e.g. after importing the files into an
+         existing project) the build fails with "Program does not contain a
+         static 'Main' method". StartupObject makes our explicit Main the
+         entry point either way - and also disambiguates if BOTH Mains
+         exist. -->
+    <StartupObject>ServoAnimator.Program</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="SkiaSharp.Views.WPF" Version="2.88.8" />
+    <PackageReference Include="System.Management" Version="10.0.0" />
+    <PackageReference Include="System.IO.Ports" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Models\johnny5_head.urdf" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Models\servo_joint_map.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Models\Meshes\**\*.obj" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Models\Meshes\**\*.stl" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

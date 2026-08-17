@@ -1,0 +1,223 @@
+{
+  "coordinateSystem": {
+    "x": "forward",
+    "y": "robot left",
+    "z": "up"
+  },
+  "headDimensionsMeters": {
+    "depth": 0.292582,
+    "width": 0.329146,
+    "height": 0.167914
+  },
+  "logicalControls": {
+    "NeckTurn": {
+      "joint": "NeckTurn",
+      "input": "-100..100",
+      "motion": "default -90..+90 degrees yaw about Z; configurable in URDFconfig.json"
+    },
+    "NeckNodUp": {
+      "joint": "NeckNodUp",
+      "input": "-100..100",
+      "motion": "default -20..+20 degrees about the Solid U-Joint Y hinge; direction reversed by default so +input raises the face"
+    },
+    "NeckTiltRight": {
+      "joint": "NeckTiltRight",
+      "input": "-100..100",
+      "motion": "default -15..+15 degrees about the Solid U-Joint X hinge"
+    },
+    "EyesHorizontalRight": {
+      "joints": [
+        "LeftLensHorizontal",
+        "RightLensHorizontal"
+      ],
+      "input": "-100..100",
+      "motion": "calibrated Min/Zero/Max: outer Gimbal Ring, Gimbal Spacers, the two top/bottom SCHCSCREW 0.086-56x0.125 pivot screws, and descendant Wollensak Raptar lens assembly rotate about URDF Z; configurable per child servo"
+    },
+    "EyesVerticalUp": {
+      "joints": [
+        "LeftLensVertical",
+        "RightLensVertical"
+      ],
+      "input": "-100..100",
+      "motion": "calibrated Min/Zero/Max: Wollensak Raptar lens/iris assembly rotates inside the Gimbal Ring about local URDF Y through the CAD Gimbal Spacer centerline; the two 0.125 in SCHCSCREW pivot screws remain fixed to the Gimbal Ring; configurable per child servo"
+    },
+    "IrisClose": {
+      "joints": [
+        "LeftIris",
+        "RightIris"
+      ],
+      "input": "-100..100",
+      "motion": "inner aperture diameter is piecewise-linear: 1.80 in (45.72 mm) at -100, 0.90 in (22.86 mm) at 0/default, and 0.30 in (7.62 mm) at +100; reversal remains configurable",
+      "apertureDiameter": {
+        "units": "inches",
+        "inputMinus100": 1.8,
+        "inputZeroDefault": 0.9,
+        "inputPlus100": 0.3,
+        "interpolation": "piecewise-linear"
+      },
+      "rgbBacking": {
+        "material": "pupil_dynamic",
+        "diameterInches": 1.8,
+        "behavior": "fixed-size circle behind the blue iris annulus; RGBCommand changes its material color"
+      }
+    },
+    "FlapsOpen": {
+      "joints": [
+        "BrowLeftTopOpen",
+        "BrowRightTopOpen",
+        "BrowLeftBottomOpen",
+        "BrowRightBottomOpen"
+      ],
+      "input": "-100..100",
+      "motion": "default -90..+90 degree semantic travel around CAD servo pinions; configurable"
+    },
+    "FlapTiltUp": {
+      "joints": [
+        "BrowLeftTopTilt",
+        "BrowRightTopTilt"
+      ],
+      "input": "-100..100",
+      "motion": "default -30..+90 degrees around basket-mounted HS-85 pinions; 0 remains CAD neutral"
+    },
+    "VentsOpen": {
+      "joints": [
+        "LeftEyeVent",
+        "LeftEyeVentFin1",
+        "LeftEyeVentFin2",
+        "LeftEyeVentFin3",
+        "LeftEyeVentFin4",
+        "LeftEyeVentFin5",
+        "RightEyeVent",
+        "RightEyeVentFin1",
+        "RightEyeVentFin2",
+        "RightEyeVentFin3",
+        "RightEyeVentFin4",
+        "RightEyeVentFin5"
+      ],
+      "input": "0..100",
+      "motion": "default 0..30 degrees on HS-40 drive/fins; configurable"
+    },
+    "NoseBody": {
+      "joint": "NoseBody",
+      "input": "-100..100",
+      "motion": "default -45..+45 degrees about ASME B18.8.2 spindle; configurable"
+    },
+    "NoseBasket": {
+      "joint": "NoseBasket",
+      "input": "0..100",
+      "motion": "0 defaults to the minimum/default basket position; 0..100 maps across the configurable mechanical endpoints (default -45..+45 degrees) about [HEAD-E-V2-B-02] Pin"
+    },
+    "MFR_UpDown": {
+      "joint": "MFR_UpDown",
+      "input": "0..100",
+      "motion": "default 0..100 mm lift; configurable"
+    },
+    "MFR_Rotate": {
+      "joint": "MFR_Rotate",
+      "input": "-100..100",
+      "motion": "default -90..+90 degrees; configurable"
+    },
+    "Whip_Antenna_RaiseLower": {
+      "joint": "Whip_Antenna_RaiseLower",
+      "input": "0..100",
+      "motion": "default 0..250 mm lift; configurable. The derived Whip_Antenna_Fold stays 0 degrees until the ASME B18.8.2 hinge center clears the SimplifiedHead2 top, then ramps to 90 degrees as the lower-linkage flat shoulder reaches that same surface.",
+      "derivedFold": {
+        "joint": "Whip_Antenna_Fold",
+        "hinge": "ASME B18.8.2 - 0.0627x0.25",
+        "axisUrdf": [
+          0,
+          1,
+          0
+        ],
+        "headTopHeightMm": 59.181999,
+        "liftJointOriginHeightMm": 1.764,
+        "hingeLocalHeightMm": 2.921,
+        "lowerLinkageFlatLocalHeightMm": 0.0,
+        "foldStartLiftMm": 54.496999,
+        "foldEndLiftMm": 57.417999,
+        "foldAtStartDeg": 0.0,
+        "foldAtEndDeg": 90.0,
+        "afterEnd": "hold 90 degrees"
+      }
+    },
+    "Whip_Antenna_Rotate": {
+      "joint": "Whip_Antenna_Rotate",
+      "input": "-100..100",
+      "motion": "default -90..+90 degrees; configurable"
+    },
+    "Microphone_RaiseLower": {
+      "joint": "Microphone_RaiseLower",
+      "input": "0..100",
+      "motion": "default 0..21.6 mm lift; configurable"
+    },
+    "LeftEyePop": {
+      "joint": "LeftEyePop",
+      "input": "0..2000",
+      "motion": "default 0..89.951 mm forward; input 0 is neutral and 2000 places the 3/8-in Delrin-ball front surface 1 mm behind the eye-tube front; configurable"
+    },
+    "RightEyePop": {
+      "joint": "RightEyePop",
+      "input": "0..2000",
+      "motion": "default 0..89.951 mm forward; input 0 is neutral and 2000 places the 3/8-in Delrin-ball front surface 1 mm behind the eye-tube front; configurable"
+    }
+  },
+  "faceGeometryMeters": {
+    "microphoneLiftAt100": 0.0216,
+    "microphoneNeutralY": -0.083909
+  },
+  "geometry": {
+    "mfrTopDiskRadius": 0.06,
+    "mfrTopDiskThickness": 0.035,
+    "mfrLowerDiskRadius": 0.0432,
+    "whipBaseMaterial": "flap_blue",
+    "headCadSource": "Models/SourceCAD/SimplifiedHead2.step",
+    "headCadRuntimeMeshes": "Models/Meshes/SimplifiedHead2/*.stl",
+    "headCadTriangleCount": 238197,
+    "lipLedIdleColor": "#D3D3D3",
+    "ventServoModel": "Hitec HS-40",
+    "ventFinCountPerSide": 5,
+    "noseBodyPivot": "ASME B18.8.2 spindle",
+    "noseBasketPivot": "[HEAD-E-V2-B-02] Pin",
+    "rearCoverCadSource": "Models/SourceCAD/rearCover.STEP",
+    "rearCoverRuntimeMesh": "Models/Meshes/RearCover/rear_cover.stl",
+    "rearCoverColor": "#B3B3B3",
+    "rearCoverPlacement": "Broad flat mounting face registered to SimplifiedHead2 native back datum Z=0; remaining cover depth extends behind the head.",
+    "upperFlapLinkage": "Upper flap plate, flap-mounted HS-85 servo body, mounting bracket, and their mounting screws rotate together about the open/close servo pinion; the inter-servo Servo Arm/rod/collars remain on the tilt carrier as the stationary horn/linkage side.",
+    "rearCoverColorSource": "Models/SourceCAD/rearCoverColor.step",
+    "eyeMechanismCadSource": "Models/SourceCAD/EyeMechanism.step",
+    "eyeMechanismFrontLensProtrusionMm": 2.0,
+    "eyeMechanismIrisSetbackMm": 1.0,
+    "eyeMechanismFrontOpeningRadiusMm": 29.9847,
+    "eyePopDefaultTravelAt2000Mm": 89.9513,
+    "eyeMechanismFrontFlatTransitionRadiusMm": 30.7467,
+    "irisGoldRingInnerRadiusMm": 24.796,
+    "irisGoldRingFlatOuterRadiusMm": 29.9847,
+    "irisGoldRingOuterRadiusMm": 30.7467,
+    "irisGoldForwardOffsetMm": 0.1,
+    "irisGoldRingMesh": "Models/Meshes/EyeMechanism/iris_gold_continuous.stl",
+    "irisInnerBlackBandInnerRadiusMm": 22.86,
+    "irisInnerBlackBandOuterRadiusMm": 24.796,
+    "irisInnerBlackBandMesh": "Models/Meshes/EyeMechanism/iris_inner_black_band.stl",
+    "whipAntennaCadSource": "Models/SourceCAD/Whip AntennaColor.step",
+    "whipAntennaHinge": "ASME B18.8.2 - 0.0627x0.25",
+    "whipAntennaFoldJoint": "Whip_Antenna_Fold",
+    "whipAntennaArticulatedMeshes": "Models/Meshes/HeadTopCAD/WhipAntenna_*linkage/stud/skirt/knob/pin/spring/screw*.stl"
+  },
+  "urdfConfiguration": {
+    "embeddedBaseline": "Models/johnny5_head.urdf <servo_animator_calibration>",
+    "file": "URDFconfig.json",
+    "location": "Configuration folder selected by Config > Set Paths",
+    "autoLoad": "Embedded URDF calibration is the baseline. If URDFconfig.json is present, it loads automatically as a higher-precedence override; Save Default reloads/applies the exact override file immediately, and external saves are watched and live-reloaded.",
+    "semantics": "Per physical child servo: minExtent/maxExtent/zeroExtent plus optional reverseOverride. Reverse inherits Config > Servo Configuration when no override is present. FlapsOpen retains independent per-child Min/Max; normal gangs share Min/Max while Zero/Direction remain per child."
+  },
+  "visuals": {
+    "irisGoldRingMesh": "Models/Meshes/EyeMechanism/iris_gold_continuous.stl",
+    "rearCoverGreyRgb": [
+      0.701961,
+      0.701961,
+      0.701961
+    ],
+    "neckReplacementSource": "Models/SourceCAD/URFDNeckAssembly.step (replaced from NeckforURDFColors2.step in v1.3.0)",
+    "neckNestedTransformFix": true
+  }
+}

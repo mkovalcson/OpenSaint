@@ -1,0 +1,35 @@
+{
+  "source": "rearCover.STEP",
+  "stepColorRgb": [
+    179,
+    179,
+    179
+  ],
+  "stepColorHex": "#B3B3B3",
+  "mountingFaceCenterNativeMm": [
+    -0.587,
+    7.203,
+    -1.587
+  ],
+  "headBackDatumNativeZMm": 0.0,
+  "transformInHeadNativeMm": {
+    "rotation": "180 degrees about native Y",
+    "translation": [
+      -0.587,
+      -6.185408981320496,
+      -1.587
+    ]
+  },
+  "resultBoundsHeadNativeMm": [
+    -139.1129607154296,
+    -54.86919607630591,
+    -74.32696071542966,
+    137.8894593751333,
+    52.56711380680271,
+    0.3504607154296661
+  ],
+  "triangles": 5968,
+  "runtimeMesh": "rear_cover.stl",
+  "colorSource": "rearCoverColor.step",
+  "stepAppearance": "Paint - Enamel Glossy (Grey)"
+}

@@ -1,0 +1,265 @@
+{
+  "source": "SimpleMouth.step",
+  "ballCupCentersNativeMm": [
+    [
+      -78.29833145302756,
+      -12.894421133107162,
+      69.34483145302758,
+      6.35,
+      "[NECK-C-UPR-COMN-02] Ball Cup (1-Piece):1"
+    ],
+    [
+      78.29833145302756,
+      -12.894421133107162,
+      69.34483145302758,
+      6.35,
+      "[NECK-C-UPR-COMN-02] Ball Cup (1-Piece):2"
+    ]
+  ],
+  "static": [
+    {
+      "rgb": [
+        15,
+        78,
+        17
+      ],
+      "hex": "#0F4E11",
+      "file": "static_0f4e11.stl",
+      "triangles": 21612,
+      "parts": 1
+    },
+    {
+      "rgb": [
+        68,
+        150,
+        72
+      ],
+      "hex": "#449648",
+      "file": "static_449648.stl",
+      "triangles": 37464,
+      "parts": 24
+    },
+    {
+      "rgb": [
+        115,
+        115,
+        115
+      ],
+      "hex": "#737373",
+      "file": "static_737373.stl",
+      "triangles": 5540,
+      "parts": 2
+    },
+    {
+      "rgb": [
+        151,
+        163,
+        218
+      ],
+      "hex": "#97A3DA",
+      "file": "static_97a3da.stl",
+      "triangles": 69140,
+      "parts": 75
+    },
+    {
+      "rgb": [
+        160,
+        160,
+        160
+      ],
+      "hex": "#A0A0A0",
+      "file": "static_a0a0a0.stl",
+      "triangles": 612,
+      "parts": 1
+    },
+    {
+      "rgb": [
+        196,
+        53,
+        39
+      ],
+      "hex": "#C43527",
+      "file": "static_c43527.stl",
+      "triangles": 74928,
+      "parts": 48
+    },
+    {
+      "rgb": [
+        233,
+        233,
+        235
+      ],
+      "hex": "#E9E9EB",
+      "file": "static_e9e9eb.stl",
+      "triangles": 5584,
+      "parts": 5
+    }
+  ],
+  "voiceLeds": [
+    {
+      "index": 0,
+      "file": "lip_led_00.stl",
+      "triangles": 2111,
+      "centerNativeMm": [
+        -49.22999999999999,
+        -8.260499999999467,
+        48.4699859317102
+      ],
+      "sourcePath": "[ELEC-PCB-LIP] Lip Light LED PCB:1 / [ELEC-BULB-LED5] Kingbright Orange Diffused LED_Bent (Cathode Right):12"
+    },
+    {
+      "index": 1,
+      "file": "lip_led_01.stl",
+      "triangles": 2111,
+      "centerNativeMm": [
+        -42.20999999999999,
+        -8.260499999999997,
+        48.46998593171023
+      ],
+      "sourcePath": "[ELEC-PCB-LIP] Lip Light LED PCB:1 / [ELEC-BULB-LED5] Kingbright Orange Diffused LED_Bent (Cathode Left):2"
+    },
+    {
+      "index": 2,
+      "file": "lip_led_02.stl",
+      "triangles": 2111,
+      "centerNativeMm": [
+        -33.989999999999995,
+        -8.260499999999467,
+        48.46998593171019
+      ],
+      "sourcePath": "[ELEC-PCB-LIP] Lip Light LED PCB:1 / [ELEC-BULB-LED5] Kingbright Orange Diffused LED_Bent (Cathode Right):11"
+    },
+    {
+      "index": 3,
+      "file": "lip_led_03.stl",
+      "triangles": 2111,
+      "centerNativeMm": [
+        -26.369999999999994,
+        -8.260499999999467,
+        48.469985931710184
+      ],
+      "sourcePath": "[ELEC-PCB-LIP] Lip Light LED PCB:1 / [ELEC-BULB-LED5] Kingbright Orange Diffused LED_Bent (Cathode Right):10"
+    },
+    {
+      "index": 4,
+      "file": "lip_led_04.stl",
+      "triangles": 2111,
+      "centerNativeMm": [
+        -18.749999999999993,
+        -8.260499999999467,
+        48.469985931710184
+      ],
+      "sourcePath": "[ELEC-PCB-LIP] Lip Light LED PCB:1 / [ELEC-BULB-LED5] Kingbright Orange Diffused LED_Bent (Cathode Right):9"
+    },
+    {
+      "index": 5,
+      "file": "lip_led_05.stl",
+      "triangles": 2111,
+      "centerNativeMm": [
+        -11.129999999999995,
+        -8.260499999999467,
+        48.469985931710184
+      ],
+      "sourcePath": "[ELEC-PCB-LIP] Lip Light LED PCB:1 / [ELEC-BULB-LED5] Kingbright Orange Diffused LED_Bent (Cathode Right):8"
+    },
+    {
+      "index": 6,
+      "file": "lip_led_06.stl",
+      "triangles": 2111,
+      "centerNativeMm": [
+        -3.5099999999999953,
+        -8.260499999999467,
+        48.46998593171018
+      ],
+      "sourcePath": "[ELEC-PCB-LIP] Lip Light LED PCB:1 / [ELEC-BULB-LED5] Kingbright Orange Diffused LED_Bent (Cathode Right):7"
+    },
+    {
+      "index": 7,
+      "file": "lip_led_07.stl",
+      "triangles": 2111,
+      "centerNativeMm": [
+        4.110000000000005,
+        -8.260499999999467,
+        48.46998593171018
+      ],
+      "sourcePath": "[ELEC-PCB-LIP] Lip Light LED PCB:1 / [ELEC-BULB-LED5] Kingbright Orange Diffused LED_Bent (Cathode Right):6"
+    },
+    {
+      "index": 8,
+      "file": "lip_led_08.stl",
+      "triangles": 2111,
+      "centerNativeMm": [
+        11.730000000000004,
+        -8.260499999999467,
+        48.46998593171017
+      ],
+      "sourcePath": "[ELEC-PCB-LIP] Lip Light LED PCB:1 / [ELEC-BULB-LED5] Kingbright Orange Diffused LED_Bent (Cathode Right):5"
+    },
+    {
+      "index": 9,
+      "file": "lip_led_09.stl",
+      "triangles": 2111,
+      "centerNativeMm": [
+        19.35,
+        -8.260499999999467,
+        48.46998593171017
+      ],
+      "sourcePath": "[ELEC-PCB-LIP] Lip Light LED PCB:1 / [ELEC-BULB-LED5] Kingbright Orange Diffused LED_Bent (Cathode Right):4"
+    },
+    {
+      "index": 10,
+      "file": "lip_led_10.stl",
+      "triangles": 2111,
+      "centerNativeMm": [
+        26.970000000000002,
+        -8.260499999999467,
+        48.46998593171017
+      ],
+      "sourcePath": "[ELEC-PCB-LIP] Lip Light LED PCB:1 / [ELEC-BULB-LED5] Kingbright Orange Diffused LED_Bent (Cathode Right):3"
+    },
+    {
+      "index": 11,
+      "file": "lip_led_11.stl",
+      "triangles": 2111,
+      "centerNativeMm": [
+        34.59,
+        -8.260499999999467,
+        48.46998593171016
+      ],
+      "sourcePath": "[ELEC-PCB-LIP] Lip Light LED PCB:1 / [ELEC-BULB-LED5] Kingbright Orange Diffused LED_Bent (Cathode Right):2"
+    },
+    {
+      "index": 12,
+      "file": "lip_led_12.stl",
+      "triangles": 2111,
+      "centerNativeMm": [
+        42.21,
+        -8.260499999999467,
+        48.46998593171016
+      ],
+      "sourcePath": "[ELEC-PCB-LIP] Lip Light LED PCB:1 / [ELEC-BULB-LED5] Kingbright Orange Diffused LED_Bent (Cathode Right):1"
+    },
+    {
+      "index": 13,
+      "file": "lip_led_13.stl",
+      "triangles": 2111,
+      "centerNativeMm": [
+        49.230000000000004,
+        -8.260500000000173,
+        48.46998593171019
+      ],
+      "sourcePath": "[ELEC-PCB-LIP] Lip Light LED PCB:1 / [ELEC-BULB-LED5] Kingbright Orange Diffused LED_Bent (Cathode Left):1"
+    }
+  ],
+  "rearCoverGreyOverrides": [
+    {
+      "sourcePart": "[NECK-COVR-00] Lip Light Box_Standard",
+      "runtimeMesh": "static_737373.stl"
+    },
+    {
+      "sourcePart": "[NECK-E-COMN-01] Front Slide_V2",
+      "runtimeMesh": "static_737373.stl"
+    }
+  ],
+  "static_737373MaterialOverride": "rear_cover_grey (#B3B3B3); this mesh contains exactly the two requested parts."
+}

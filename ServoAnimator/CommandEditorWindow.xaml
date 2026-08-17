@@ -1,0 +1,232 @@
+<Window x:Class="ServoAnimator.CommandEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:ServoAnimator"
+        Title="Edit Commands"
+        Width="1080" SizeToContent="Height" MaxHeight="640"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource PanelBackground}">
+
+    <!-- ==================================================================
+         Modal editor for all commands at one timeline point.
+         Each row edits one ServoCommand: Offset | Servo | Value slider |
+         Value textbox | Disable | Speed (N/C by default) | Reason | Delete.
+
+         Value editing is per-servo:
+           * numeric servos: slider whose Min/Max come from the view-model
+             (0..2000 for LeftEyePop/RightEyePop, -100..100 otherwise),
+             plus a numeric TextBox. Moving either calls MoveServoNow().
+           * RGBCommand: the slider/number are replaced by a free-text box;
+             committing the text calls the text MoveServoNow() overload.
+
+         Rows bind directly to CommandVM wrappers around the live command
+         objects, so edits take effect immediately; MainWindow refreshes
+         markers/grid after this dialog closes.
+         ================================================================== -->
+    <DockPanel Margin="10">
+
+        <!-- Column headers -->
+        <Grid DockPanel.Dock="Top" Margin="0,0,0,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="90"/>
+                <ColumnDefinition Width="185"/>
+                <ColumnDefinition Width="190"/>
+                <ColumnDefinition Width="115"/>
+                <ColumnDefinition Width="80"/>
+                <ColumnDefinition Width="95"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="60"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Offset (s)" Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
+            <TextBlock Grid.Column="1" Text="Servo"      Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
+            <TextBlock Grid.Column="2" Text="Value (slider / text)" Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
+            <TextBlock Grid.Column="3" Text="Value"      Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
+            <TextBlock Grid.Column="4" Text="Disable"    Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
+            <TextBlock Grid.Column="5" Text="Speed"      Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
+            <TextBlock Grid.Column="6" Text="Reason (optional)" Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
+        </Grid>
+
+        <!-- Bottom buttons -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button Content="Add Command" Padding="10,4" Margin="4,0" Click="AddCommand_Click"/>
+            <Button Content="Close"       Padding="10,4" Margin="4,0" Click="Close_Click" IsDefault="True"/>
+        </StackPanel>
+
+        <!-- One editable row per command -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="CmdList">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,3">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="185"/>
+                                <ColumnDefinition Width="190"/>
+                                <ColumnDefinition Width="115"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="95"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="60"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- offsetSeconds: editing moves the command to a
+                                 new point in the timeline -->
+                            <TextBox Grid.Column="0" Margin="0,0,6,0"
+                                     Text="{Binding OffsetText, UpdateSourceTrigger=LostFocus}"/>
+
+                            <!-- Servo picklist in Display Grid order: each
+                                 ganged ServoName followed by its child
+                                 servos prefixed " – ". Picking a child
+                                 targets just that servo (parent's range and
+                                 gang-relative direction apply) until the
+                                 next ganged command. -->
+                            <ComboBox Grid.Column="1" Margin="0,0,6,0"
+                                      ItemsSource="{Binding ServoPickOptions}"
+                                      SelectedItem="{Binding SelectedServoItem}"/>
+
+                            <!-- NUMERIC value slider: range bound per servo;
+                                 dragging calls MoveServoNow(). Hidden for
+                                 text-valued servos (RGBCommand). -->
+                            <Slider Grid.Column="2"
+                                    Minimum="{Binding Min}" Maximum="{Binding Max}"
+                                    VerticalAlignment="Center" Margin="0,0,6,0"
+                                    Value="{Binding Value, Mode=TwoWay}">
+                                <Slider.Style>
+                                    <Style TargetType="Slider">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsTextServo}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Slider.Style>
+                            </Slider>
+
+                            <!-- NUMERIC value typed directly -->
+                            <TextBox Grid.Column="3" Margin="0,0,6,0"
+                                     Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat=F0}">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsTextServo}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+
+                            <!-- TEXT value (RGBCommand only): free-form string -->
+                            <TextBox Grid.Column="2" Margin="0,0,6,0"
+                                     VerticalAlignment="Center"
+                                     Text="{Binding TextValue, Mode=TwoWay, UpdateSourceTrigger=LostFocus}">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsTextServo}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+
+                            <!-- 24-bit color picker (RGBCommand only): the
+                                 button shows the chosen color; clicking opens
+                                 a palette popup that also displays the 0-255
+                                 R/G/B values of the selection. -->
+                            <Grid Grid.Column="3" Margin="0,0,6,0">
+                                <Grid.Style>
+                                    <Style TargetType="Grid">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsTextServo}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Grid.Style>
+
+                                <StackPanel Orientation="Horizontal">
+                                <Button Content="Build…" Height="22" Margin="0,0,4,0"
+                                        ToolTip="Build the RGB command text from the RGBLight command list"
+                                        Click="BuildRgb_Click"/>
+                                <ToggleButton x:Name="ColorToggle"
+                                              ToolTip="{Binding RgbText}"
+                                              VerticalAlignment="Center" Height="22">
+                                    <Border Width="34" Height="14"
+                                            Background="{Binding ColorBrush}"
+                                            BorderBrush="{DynamicResource HeaderText}" BorderThickness="1"/>
+                                </ToggleButton>
+
+                                <Popup IsOpen="{Binding IsChecked, ElementName=ColorToggle}"
+                                       StaysOpen="False" Placement="Bottom"
+                                       PlacementTarget="{Binding ElementName=ColorToggle}">
+                                    <Border Background="{DynamicResource MenuBackground}" BorderBrush="{DynamicResource FocusBorder}"
+                                            BorderThickness="1" Padding="8" CornerRadius="{StaticResource PanelCornerRadius}">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding RgbText}"
+                                                       Foreground="{DynamicResource PrimaryText}" FontWeight="Bold"
+                                                       Margin="0,0,0,6"/>
+                                            <ItemsControl ItemsSource="{x:Static local:CommandVM.PaletteBrushes}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <UniformGrid Columns="8"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Width="20" Height="20" Margin="1"
+                                                                Background="{Binding}"
+                                                                BorderBrush="#16181C" BorderThickness="1"
+                                                                Cursor="Hand"
+                                                                Tag="{Binding DataContext,
+                                                                      RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                MouseLeftButtonDown="PaletteSwatch_Click"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </Popup>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Disable: this command turns its servo(s)
+                                 OFF instead of moving them; exports write
+                                 "Disable" in the value field. -->
+                            <CheckBox Grid.Column="4" VerticalAlignment="Center"
+                                      HorizontalAlignment="Center"
+                                      IsChecked="{Binding Disable, Mode=TwoWay}"/>
+
+                            <!-- Optional Maestro speed profile. N/C means
+                                 position only: do not change speed/acceleration. -->
+                            <ComboBox Grid.Column="5" Margin="0,0,6,0"
+                                      ItemsSource="{Binding SpeedOptions}"
+                                      SelectedItem="{Binding SpeedText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                <ComboBox.Style>
+                                    <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                                        <Setter Property="IsEnabled" Value="True"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SupportsSpeed}" Value="False">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ComboBox.Style>
+                            </ComboBox>
+
+                            <!-- reason: optional free text -->
+                            <TextBox Grid.Column="6" Margin="0,0,6,0"
+                                     Text="{Binding Reason, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <Button Grid.Column="7" Content="Delete" Click="DeleteCommand_Click"/>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

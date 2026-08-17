@@ -1,0 +1,1019 @@
+{
+  "headSource": "SimplifiedHead2.step",
+  "headRuntimeDirectory": "Models/Meshes/SimplifiedHead2",
+  "headMaterials": {
+    "cad_020202": {
+      "rgba": [
+        0.009721,
+        0.009721,
+        0.009721,
+        1.0
+      ],
+      "hex": "#020202"
+    },
+    "cad_080b4e": {
+      "rgba": [
+        0.029557,
+        0.043735,
+        0.304987,
+        1.0
+      ],
+      "hex": "#080B4E"
+    },
+    "cad_737373": {
+      "rgba": [
+        0.450786,
+        0.450786,
+        0.450786,
+        1.0
+      ],
+      "hex": "#737373"
+    },
+    "cad_97a3da": {
+      "rgba": [
+        0.590619,
+        0.637597,
+        0.854993,
+        1.0
+      ],
+      "hex": "#97A3DA"
+    },
+    "cad_e7c863": {
+      "rgba": [
+        0.904661,
+        0.783538,
+        0.386429,
+        1.0
+      ],
+      "hex": "#E7C863"
+    },
+    "cad_e9e9eb": {
+      "rgba": [
+        0.913099,
+        0.913099,
+        0.921582,
+        1.0
+      ],
+      "hex": "#E9E9EB"
+    },
+    "cad_f6f4e9": {
+      "rgba": [
+        0.964686,
+        0.955973,
+        0.913099,
+        1.0
+      ],
+      "hex": "#F6F4E9"
+    },
+    "cad_a0a0a0": {
+      "rgba": [
+        0.627451,
+        0.627451,
+        0.627451,
+        1.0
+      ],
+      "hex": "#A0A0A0"
+    }
+  },
+  "headGroups": {
+    "lower_left": [
+      {
+        "filename": "lower_left.stl",
+        "material": "cad_020202",
+        "rgba": [
+          0.009721,
+          0.009721,
+          0.009721,
+          1.0
+        ],
+        "triangles": 2986,
+        "partCount": 7,
+        "parts": [
+          "SimplifiedHead / [HEAD-D-LWR-L] Lower Eye Flap Assembly (Left):1 / [HDWR-FSTR-STND] Unthreaded Spacer #4 Screw Size x 1 \u0338 4 x 7 \u0338 16:1",
+          "SimplifiedHead / [HEAD-D-LWR-L] Lower Eye Flap Assembly (Left):1 / [HEAD-D-LWR-COMN-00-L] Lower Eye Flap Arm (Left):1",
+          "SimplifiedHead / [HEAD-D-LWR-L] Lower Eye Flap Assembly (Left):1 / [HEAD-D-LWR-COMN-01-L] Lower Eye Flap (Left):1",
+          "SimplifiedHead / [HEAD-D-LWR-L] Lower Eye Flap Assembly (Left):1 / [ELEC-SRVO-HORN] Servo Shaft Attachment (525140)_Lower Eye Flaps:1",
+          "SimplifiedHead / [HEAD-D-LWR-L] Lower Eye Flap Assembly (Left):1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:1",
+          "SimplifiedHead / [HEAD-D-LWR-L] Lower Eye Flap Assembly (Left):1 / CR-PHMS 0.112-40x0.75x0.75-N_CR-PHMS 0.112-40x0.75x0.75-N:1",
+          "SimplifiedHead / [HEAD-D-LWR-L] Lower Eye Flap Assembly (Left):1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:2"
+        ]
+      }
+    ],
+    "lower_right": [
+      {
+        "filename": "lower_right.stl",
+        "material": "cad_020202",
+        "rgba": [
+          0.009721,
+          0.009721,
+          0.009721,
+          1.0
+        ],
+        "triangles": 3038,
+        "partCount": 7,
+        "parts": [
+          "SimplifiedHead / [HEAD-D-LWR-R] Lower Eye Flap Assembly (Right):1 / [HEAD-D-LWR-COMN-00-R] Lower Eye Flap Arm (Right):1",
+          "SimplifiedHead / [HEAD-D-LWR-R] Lower Eye Flap Assembly (Right):1 / [HEAD-D-LWR-COMN-01-R] Lower Eye Flap (Right):1",
+          "SimplifiedHead / [HEAD-D-LWR-R] Lower Eye Flap Assembly (Right):1 / [ELEC-SRVO-HORN] Servo Shaft Attachment (525140)_Lower Eye Flaps:1",
+          "SimplifiedHead / [HEAD-D-LWR-R] Lower Eye Flap Assembly (Right):1 / [HDWR-FSTR-STND] Unthreaded Spacer #4 Screw Size x 1 \u0338 4 x 7 \u0338 16:1",
+          "SimplifiedHead / [HEAD-D-LWR-R] Lower Eye Flap Assembly (Right):1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:1",
+          "SimplifiedHead / [HEAD-D-LWR-R] Lower Eye Flap Assembly (Right):1 / B18.6.7M - M3 x 0.5 x 16 Type I Cross Recessed PHMS --16N_B18.6.7M - M3 x 0.5 x 16 Type I Cross Recessed PHMS --16N:1",
+          "SimplifiedHead / [HEAD-D-LWR-R] Lower Eye Flap Assembly (Right):1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:2"
+        ]
+      }
+    ],
+    "nose_basket": [
+      {
+        "filename": "nose_basket.stl",
+        "material": "cad_020202",
+        "rgba": [
+          0.009721,
+          0.009721,
+          0.009721,
+          1.0
+        ],
+        "triangles": 18384,
+        "partCount": 28,
+        "parts": [
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / [HEAD-E-V2-C-MSTR-00] Basket Master_Standard:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / SCHCSCREW 0.086-56x0.25x0.25-HX-N_SCHCSCREW 0.086-56x0.25x0.25-HX-N:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / DPM 0.0938x0.375_DPM 0.0938x0.375:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / SBHCSCREW 0.086-56x0.25-HX-N_SBHCSCREW 0.086-56x0.25-HX-N:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / [ELEC-SRVO-HS85BB] Hitec HS-85BB_Without Sticker (1):1 / [ELEC-SRVO-HS85BB] Hitec HS-85BB_Without Sticker:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / [ELEC-SRVO-HS85BB] Hitec HS-85BB_Without Sticker (1):1 / CR-PHMS 0.06-80x0.75x0.75-N_CR-PHMS 0.06-80x0.75x0.75-N:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / [ELEC-SRVO-HS85BB] Hitec HS-85BB_Without Sticker (1):1 / CR-PHMS 0.06-80x0.75x0.75-N_CR-PHMS 0.06-80x0.75x0.75-N:2",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / [ELEC-SRVO-HS85BB] Hitec HS-85BB_Without Sticker (1):1 / CR-PHMS 0.06-80x0.75x0.75-N_CR-PHMS 0.06-80x0.75x0.75-N:3",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / [ELEC-SRVO-HS85BB] Hitec HS-85BB_Without Sticker (1):1 / CR-PHMS 0.06-80x0.75x0.75-N_CR-PHMS 0.06-80x0.75x0.75-N:4",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / SSCUPSKT 0.086-64x0.09375-HX-N_SSCUPSKT 0.086-64x0.09375-HX-N:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / SCHCSCREW 0.086-56x0.25x0.25-HX-N_SCHCSCREW 0.086-56x0.25x0.25-HX-N:2",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / SCHCSCREW 0.086-56x0.25x0.25-HX-N_SCHCSCREW 0.086-56x0.25x0.25-HX-N:3",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / SCHCSCREW 0.086-56x0.25x0.25-HX-N_SCHCSCREW 0.086-56x0.25x0.25-HX-N:4",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / SCHCSCREW 0.086-56x0.25x0.25-HX-N_SCHCSCREW 0.086-56x0.25x0.25-HX-N:5",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / SCHCSCREW 0.086-56x0.25x0.25-HX-N_SCHCSCREW 0.086-56x0.25x0.25-HX-N:6",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / SCHCSCREW 0.086-56x0.25x0.25-HX-N_SCHCSCREW 0.086-56x0.25x0.25-HX-N:7",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / SCHCSCREW 0.086-56x0.25x0.25-HX-N_SCHCSCREW 0.086-56x0.25x0.25-HX-N:8",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / SBHCSCREW 0.086-56x0.25-HX-N_SBHCSCREW 0.086-56x0.25-HX-N:2",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / SBHCSCREW 0.086-56x0.25-HX-N_SBHCSCREW 0.086-56x0.25-HX-N:3",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / SBHCSCREW 0.086-56x0.25-HX-N_SBHCSCREW 0.086-56x0.25-HX-N:4",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / [ELEC-SRVO-HS85BB] Hitec HS-85BB_Without Sticker (1):2 / [ELEC-SRVO-HS85BB] Hitec HS-85BB_Without Sticker:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / [ELEC-SRVO-HS85BB] Hitec HS-85BB_Without Sticker (1):2 / CR-PHMS 0.06-80x0.75x0.75-N_CR-PHMS 0.06-80x0.75x0.75-N:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / [ELEC-SRVO-HS85BB] Hitec HS-85BB_Without Sticker (1):2 / CR-PHMS 0.06-80x0.75x0.75-N_CR-PHMS 0.06-80x0.75x0.75-N:2",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / [ELEC-SRVO-HS85BB] Hitec HS-85BB_Without Sticker (1):2 / CR-PHMS 0.06-80x0.75x0.75-N_CR-PHMS 0.06-80x0.75x0.75-N:3",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / [ELEC-SRVO-HS85BB] Hitec HS-85BB_Without Sticker (1):2 / CR-PHMS 0.06-80x0.75x0.75-N_CR-PHMS 0.06-80x0.75x0.75-N:4",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / SSCUPSKT 0.086-64x0.09375-HX-N_SSCUPSKT 0.086-64x0.09375-HX-N:2",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / SSCUPSKT 0.086-64x0.09375-HX-N_SSCUPSKT 0.086-64x0.09375-HX-N:3",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-C] Basket:1 / SSCUPSKT 0.086-64x0.09375-HX-N_SSCUPSKT 0.086-64x0.09375-HX-N:4"
+        ]
+      }
+    ],
+    "nose_body": [
+      {
+        "filename": "nose_body.stl",
+        "material": "cad_020202",
+        "rgba": [
+          0.009721,
+          0.009721,
+          0.009721,
+          1.0
+        ],
+        "triangles": 25441,
+        "partCount": 38,
+        "parts": [
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-B-00] Main Section:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-B-01-L] Side Panel (Left)_Standard:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-B-01-R] Side Panel (Right)_Standard:1",
+          "SimplifiedHead / Printable Nose:1 / SL-FHMS 0.073-64x0.25x0.25-N_SL-FHMS 0.073-64x0.25x0.25-N:1",
+          "SimplifiedHead / Printable Nose:1 / [ELEC-SRVO-HS5645MG] Hitec HS-5645MG_With Ears (1):1 / [ELEC-SRVO-HS5645MG] Hitec HS-5645MG_With Ears:1",
+          "SimplifiedHead / Printable Nose:1 / [ELEC-SRVO-HS5645MG] Hitec HS-5645MG_With Ears (1):1 / CR-PHMS 0.06-80x1.25x1.25-N_CR-PHMS 0.06-80x1.25x1.25-N:1",
+          "SimplifiedHead / Printable Nose:1 / [ELEC-SRVO-HS5645MG] Hitec HS-5645MG_With Ears (1):1 / CR-PHMS 0.06-80x1.25x1.25-N_CR-PHMS 0.06-80x1.25x1.25-N:2",
+          "SimplifiedHead / Printable Nose:1 / [ELEC-SRVO-HS5645MG] Hitec HS-5645MG_With Ears (1):1 / CR-PHMS 0.06-80x1.25x1.25-N_CR-PHMS 0.06-80x1.25x1.25-N:3",
+          "SimplifiedHead / Printable Nose:1 / [ELEC-SRVO-HS5645MG] Hitec HS-5645MG_With Ears (1):1 / CR-PHMS 0.06-80x1.25x1.25-N_CR-PHMS 0.06-80x1.25x1.25-N:4",
+          "SimplifiedHead / Printable Nose:1 / [ELEC-SRVO-HORN] Round Horn (HMSH-02)_HEAD Nose:1",
+          "SimplifiedHead / Printable Nose:1 / SBHCSCREW 0.112-40x0.3125-HX-N_SBHCSCREW 0.112-40x0.3125-HX-N:1",
+          "SimplifiedHead / Printable Nose:1 / [ELEC-SRVO-HS5496MH] Hitec HS-5496MH_With Ears (1):1 / [ELEC-SRVO-HS5496MH] Hitec HS-5496MH_With Ears:1",
+          "SimplifiedHead / Printable Nose:1 / [ELEC-SRVO-HS5496MH] Hitec HS-5496MH_With Ears (1):1 / CR-PHMS 0.06-80x1.1875x0.375-N_CR-PHMS 0.06-80x1.1875x0.375-N:1",
+          "SimplifiedHead / Printable Nose:1 / [ELEC-SRVO-HS5496MH] Hitec HS-5496MH_With Ears (1):1 / CR-PHMS 0.06-80x1.1875x0.375-N_CR-PHMS 0.06-80x1.1875x0.375-N:2",
+          "SimplifiedHead / Printable Nose:1 / [ELEC-SRVO-HS5496MH] Hitec HS-5496MH_With Ears (1):1 / CR-PHMS 0.06-80x1.1875x0.375-N_CR-PHMS 0.06-80x1.1875x0.375-N:3",
+          "SimplifiedHead / Printable Nose:1 / [ELEC-SRVO-HS5496MH] Hitec HS-5496MH_With Ears (1):1 / CR-PHMS 0.06-80x1.1875x0.375-N_CR-PHMS 0.06-80x1.1875x0.375-N:4",
+          "SimplifiedHead / Printable Nose:1 / [ELEC-SRVO-HORN] Hitec Standard Spline Single Arm (55701)_Modified:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-B-04] Servo Arm Extension:1",
+          "SimplifiedHead / Printable Nose:1 / JIS B 1111 Binding head screw M2.6 x 8 --8N_JIS B 1111 Binding head screw M2.6 x 8 --8N:1",
+          "SimplifiedHead / Printable Nose:1 / SBHCSCREW 0.086-56x0.188-HX-N_SBHCSCREW 0.086-56x0.188-HX-N:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-B-03] Spacer:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-B-02] Pin:1",
+          "SimplifiedHead / Printable Nose:1 / SL-FHMS 0.073-64x0.25x0.25-N_SL-FHMS 0.073-64x0.25x0.25-N:2",
+          "SimplifiedHead / Printable Nose:1 / SL-FHMS 0.073-64x0.25x0.25-N_SL-FHMS 0.073-64x0.25x0.25-N:3",
+          "SimplifiedHead / Printable Nose:1 / SL-FHMS 0.073-64x0.25x0.25-N_SL-FHMS 0.073-64x0.25x0.25-N:4",
+          "SimplifiedHead / Printable Nose:1 / SL-FHMS 0.073-64x0.25x0.25-N_SL-FHMS 0.073-64x0.25x0.25-N:5",
+          "SimplifiedHead / Printable Nose:1 / SL-FHMS 0.073-64x0.25x0.25-N_SL-FHMS 0.073-64x0.25x0.25-N:6",
+          "SimplifiedHead / Printable Nose:1 / SL-FHMS 0.073-64x0.25x0.25-N_SL-FHMS 0.073-64x0.25x0.25-N:7",
+          "SimplifiedHead / Printable Nose:1 / SL-FHMS 0.073-64x0.25x0.25-N_SL-FHMS 0.073-64x0.25x0.25-N:8",
+          "SimplifiedHead / Printable Nose:1 / SBHCSCREW 0.112-40x0.3125-HX-N_SBHCSCREW 0.112-40x0.3125-HX-N:2",
+          "SimplifiedHead / Printable Nose:1 / SBHCSCREW 0.112-40x0.3125-HX-N_SBHCSCREW 0.112-40x0.3125-HX-N:3",
+          "SimplifiedHead / Printable Nose:1 / SBHCSCREW 0.112-40x0.3125-HX-N_SBHCSCREW 0.112-40x0.3125-HX-N:4",
+          "SimplifiedHead / Printable Nose:1 / SBHCSCREW 0.086-56x0.188-HX-N_SBHCSCREW 0.086-56x0.188-HX-N:2",
+          "SimplifiedHead / Printable Nose:1 / SBHCSCREW 0.112-40x0.3125-HX-N_SBHCSCREW 0.112-40x0.3125-HX-N:5",
+          "SimplifiedHead / Printable Nose:1 / SBHCSCREW 0.112-40x0.3125-HX-N_SBHCSCREW 0.112-40x0.3125-HX-N:6",
+          "SimplifiedHead / Printable Nose:1 / SBHCSCREW 0.112-40x0.3125-HX-N_SBHCSCREW 0.112-40x0.3125-HX-N:7",
+          "SimplifiedHead / Printable Nose:1 / SBHCSCREW 0.112-40x0.3125-HX-N_SBHCSCREW 0.112-40x0.3125-HX-N:8",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-E-V2-B-03] Spacer:2"
+        ]
+      }
+    ],
+    "static": [
+      {
+        "filename": "static_020202.stl",
+        "material": "cad_020202",
+        "rgba": [
+          0.009721,
+          0.009721,
+          0.009721,
+          1.0
+        ],
+        "triangles": 39071,
+        "partCount": 26,
+        "parts": [
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-E-00] Detail Plate L1 & R1:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-E-01] Detail Plate L2 & R2:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-E-02] Detail Plate L3:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-E-03] Detail Plate L4:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-E-04] Detail Plate L5:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-E-05] Detail Plate L6:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-E-06] Detail Plate R3:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-E-07] Detail Plate R4:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-E-08] Detail Plate R5:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-E-09] Detail Plate R6:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-E-10] Detail Plate R7:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-E-00] Detail Plate L1 & R1:2",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-E-01] Detail Plate L2 & R2:2",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-B-00] Pocket Block:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-B-03-V1] Microphone Block (Combined):1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-B-04] MFRC Block:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-B-06] Stepdown Block:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-B-07] Slope Block:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-B-08] Slope Panels_Standard:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-E-11] Detail Plate CRV:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [DTL-RH50] Vishay Dale RH-50 Resistor_Modified:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [DTL-RH25] Vishay Dale RH-25 Resistor_Modified:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [DTL-PCKT1] Pocket Long Detail:1",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / [HEAD-C-COMN-A-00] Frame_Left:1",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / [HEAD-C-COMN-A-00] Frame_Right:1",
+          "SimplifiedHead / Printable Nose:1 / ASME B18.8.2 - 0.25x0.25_ASME B18.8.2 - 0.25x0.25:1"
+        ]
+      },
+      {
+        "filename": "static_080b4e.stl",
+        "material": "cad_080b4e",
+        "rgba": [
+          0.029557,
+          0.043735,
+          0.304987,
+          1.0
+        ],
+        "triangles": 3363,
+        "partCount": 2,
+        "parts": [
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-B-01-R] Curve Right:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-B-02] Whip Antenna Top:1"
+        ]
+      },
+      {
+        "filename": "static_737373.stl",
+        "material": "cad_737373",
+        "rgba": [
+          0.450786,
+          0.450786,
+          0.450786,
+          1.0
+        ],
+        "triangles": 61754,
+        "partCount": 24,
+        "parts": [
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-A-00] Center Section:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-A-01-L] Rear Left:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-A-01-R] Rear Right:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-A-02-L] Front Left:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-A-02-R] Front Right:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-A-03] Mounting Block:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-A-05] Faceplate Bottom:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-A-06-L] Face Block Bottom Left:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-A-06-R] Face Block Bottom Right:1",
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-A-03] Mounting Block:2",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-B-01-L] Curve Left:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-B-05-L] Rear Vent Left:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-B-05-R] Rear Vent Right:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-B-09-L] Faceplate Top Left:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-B-09-R] Faceplate Top Right:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-B-10-L] Face Block Top Left:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-B-10-R] Face Block Top Right:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-B-11-L] Face Block Middle Left:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-B-11-R] Face Block Middle Right:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-B-12] Nose Bridge:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-D-00-R] Seam Strip - Curve Right:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-D-00-L] Seam Strip - Curve Left:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-D-01-L] Seam Strip - Rear Vent Left:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-D-01-R] Seam Strip - Rear Vent Right:1"
+        ]
+      },
+      {
+        "filename": "static_97a3da.stl",
+        "material": "cad_97a3da",
+        "rgba": [
+          0.590619,
+          0.637597,
+          0.854993,
+          1.0
+        ],
+        "triangles": 19968,
+        "partCount": 53,
+        "parts": [
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-A-A-04] Vent Plate:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / MSHXNUT 0.073-64-D-N_MSHXNUT 0.073-64-D-N:1",
+          "SimplifiedHead / Top Shell (no bolts):1 / Selected Narrow FW 0.094_Selected Narrow FW 0.094:33",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / ASME B18.8.2 - .03125x.3125_ASME B18.8.2 - .03125x.3125:1",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / [HEAD-C-COMN-A-01] Pivot Pin_Left:1",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:1",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / [ELEC-SRVO-HS40] Hitec HS-40:1",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / HX-SHCS 0.086-56x0.375x0.375-N_HX-SHCS 0.086-56x0.375x0.375-N:1",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / CR-BHMS 0.06-80x0.188x0.188-N_CR-BHMS 0.06-80x0.188x0.188-N:1",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / ASME B18.8.2 - .03125x.3125_ASME B18.8.2 - .03125x.3125:2",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / ASME B18.8.2 - .03125x.3125_ASME B18.8.2 - .03125x.3125:3",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / ASME B18.8.2 - .03125x.3125_ASME B18.8.2 - .03125x.3125:4",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / ASME B18.8.2 - .03125x.3125_ASME B18.8.2 - .03125x.3125:5",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:2",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / [HEAD-C-COMN-A-01] Pivot Pin_Left:2",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:3",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:4",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / [HEAD-C-COMN-A-01] Pivot Pin_Left:3",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:5",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:6",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / [HEAD-C-COMN-A-01] Pivot Pin_Left:4",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:7",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:8",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / [HEAD-C-COMN-A-01] Pivot Pin_Left:5",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:9",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:10",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / HX-SHCS 0.086-56x0.375x0.375-N_HX-SHCS 0.086-56x0.375x0.375-N:2",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-COMN-A-05] Holding Pin_Left:1",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / ASME B18.8.2 - .03125x.3125_ASME B18.8.2 - .03125x.3125:1",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / [HEAD-C-COMN-A-01] Pivot Pin_Right:1",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:1",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / [ELEC-SRVO-HS40] Hitec HS-40:1",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / HX-SHCS 0.086-56x0.375x0.375-N_HX-SHCS 0.086-56x0.375x0.375-N:1",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / CR-BHMS 0.06-80x0.188x0.188-N_CR-BHMS 0.06-80x0.188x0.188-N:1",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / ASME B18.8.2 - .03125x.3125_ASME B18.8.2 - .03125x.3125:2",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / ASME B18.8.2 - .03125x.3125_ASME B18.8.2 - .03125x.3125:3",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / ASME B18.8.2 - .03125x.3125_ASME B18.8.2 - .03125x.3125:4",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / ASME B18.8.2 - .03125x.3125_ASME B18.8.2 - .03125x.3125:5",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:2",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / [HEAD-C-COMN-A-01] Pivot Pin_Right:2",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:3",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:4",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / [HEAD-C-COMN-A-01] Pivot Pin_Right:3",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:5",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:6",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / [HEAD-C-COMN-A-01] Pivot Pin_Right:4",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:7",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:8",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / [HEAD-C-COMN-A-01] Pivot Pin_Right:5",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:9",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:10",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / HX-SHCS 0.086-56x0.375x0.375-N_HX-SHCS 0.086-56x0.375x0.375-N:2",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-COMN-A-05] Holding Pin_Right:1"
+        ]
+      },
+      {
+        "filename": "static_e7c863.stl",
+        "material": "cad_e7c863",
+        "rgba": [
+          0.904661,
+          0.783538,
+          0.386429,
+          1.0
+        ],
+        "triangles": 972,
+        "partCount": 1,
+        "parts": [
+          "SimplifiedHead / Top Shell (no bolts):1 / [HEAD-A-E-12] Detail Plate W1:1"
+        ]
+      },
+      {
+        "filename": "static_e9e9eb.stl",
+        "material": "cad_e9e9eb",
+        "rgba": [
+          0.913099,
+          0.913099,
+          0.921582,
+          1.0
+        ],
+        "triangles": 2716,
+        "partCount": 2,
+        "parts": [
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-COMN-00-L] Eye Tube (Left):1",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-COMN-00-R] Eye Tube (Right):1"
+        ]
+      },
+      {
+        "filename": "static_f6f4e9.stl",
+        "material": "cad_f6f4e9",
+        "rgba": [
+          0.964686,
+          0.955973,
+          0.913099,
+          1.0
+        ],
+        "triangles": 1096,
+        "partCount": 1,
+        "parts": [
+          "SimplifiedHead / Bottom Shell (no bolts):1 / [HEAD-I-00] Sliding Plate:1"
+        ]
+      }
+    ],
+    "upper_left": [
+      {
+        "filename": "upper_left.stl",
+        "material": "cad_020202",
+        "rgba": [
+          0.009721,
+          0.009721,
+          0.009721,
+          1.0
+        ],
+        "triangles": 10805,
+        "partCount": 18,
+        "parts": [
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-L] Upper Eye Flap Assembly (Left):1 / [HEAD-D-UPR-COMN-01-L] Upper Eye Flap (Left):1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-L] Upper Eye Flap Assembly (Left):1 / [HEAD-D-UPR-COMN-00] Servo Bracket:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-L] Upper Eye Flap Assembly (Left):1 / [HEAD-D-UPR-A] Servo Arm:1 / [HEAD-D-UPR-A-COMN-00] Rod:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-L] Upper Eye Flap Assembly (Left):1 / [HEAD-D-UPR-A] Servo Arm:1 / [HEAD-D-UPR-A-COMN-01] Servo Collar_Right - Upper Eye Flaps:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-L] Upper Eye Flap Assembly (Left):1 / [HEAD-D-UPR-A] Servo Arm:1 / [HEAD-D-UPR-A-COMN-01] Servo Collar_Left - Upper Eye Flaps:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-L] Upper Eye Flap Assembly (Left):1 / [HEAD-D-UPR-A] Servo Arm:1 / SSCUPSKT 0.138-32x0.125-HX-N_SSCUPSKT 0.138-32x0.125-HX-N:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-L] Upper Eye Flap Assembly (Left):1 / [HEAD-D-UPR-A] Servo Arm:1 / SSCUPSKT 0.138-32x0.125-HX-N_SSCUPSKT 0.138-32x0.125-HX-N:2",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-L] Upper Eye Flap Assembly (Left):1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-L] Upper Eye Flap Assembly (Left):1 / HX-SHCS 0.112-40x0.3125x0.3125-N_HX-SHCS 0.112-40x0.3125x0.3125-N:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-L] Upper Eye Flap Assembly (Left):1 / CR-PHMS 0.073-72x1x1-N_CR-PHMS 0.073-72x1x1-N:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-L] Upper Eye Flap Assembly (Left):1 / [ELEC-SRVO-HS85BB] Hitec HS-85BB_Without Sticker:2",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-L] Upper Eye Flap Assembly (Left):1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:2",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-L] Upper Eye Flap Assembly (Left):1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:3",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-L] Upper Eye Flap Assembly (Left):1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:4",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-L] Upper Eye Flap Assembly (Left):1 / HX-SHCS 0.112-40x0.3125x0.3125-N_HX-SHCS 0.112-40x0.3125x0.3125-N:2",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-L] Upper Eye Flap Assembly (Left):1 / CR-PHMS 0.06-80x0.75x0.75-N_CR-PHMS 0.06-80x0.75x0.75-N:5",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-L] Upper Eye Flap Assembly (Left):1 / CR-PHMS 0.073-72x1x1-N_CR-PHMS 0.073-72x1x1-N:2",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-L] Upper Eye Flap Assembly (Left):1 / CR-PHMS 0.06-80x0.75x0.75-N_CR-PHMS 0.06-80x0.75x0.75-N:6"
+        ]
+      }
+    ],
+    "upper_right": [
+      {
+        "filename": "upper_right.stl",
+        "material": "cad_020202",
+        "rgba": [
+          0.009721,
+          0.009721,
+          0.009721,
+          1.0
+        ],
+        "triangles": 10733,
+        "partCount": 18,
+        "parts": [
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-R] Upper Eye Flap Assembly (Right):1 / [HEAD-D-UPR-COMN-01-R] Upper Eye Flap (Right):1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-R] Upper Eye Flap Assembly (Right):1 / [HEAD-D-UPR-COMN-00] Servo Bracket:2",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-R] Upper Eye Flap Assembly (Right):1 / [HEAD-D-UPR-A] Servo Arm:2 / [HEAD-D-UPR-A-COMN-00] Rod:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-R] Upper Eye Flap Assembly (Right):1 / [HEAD-D-UPR-A] Servo Arm:2 / [HEAD-D-UPR-A-COMN-01] Servo Collar_Right - Upper Eye Flaps:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-R] Upper Eye Flap Assembly (Right):1 / [HEAD-D-UPR-A] Servo Arm:2 / [HEAD-D-UPR-A-COMN-01] Servo Collar_Left - Upper Eye Flaps:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-R] Upper Eye Flap Assembly (Right):1 / [HEAD-D-UPR-A] Servo Arm:2 / SSCUPSKT 0.138-32x0.125-HX-N_SSCUPSKT 0.138-32x0.125-HX-N:1",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-R] Upper Eye Flap Assembly (Right):1 / [HEAD-D-UPR-A] Servo Arm:2 / SSCUPSKT 0.138-32x0.125-HX-N_SSCUPSKT 0.138-32x0.125-HX-N:2",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-R] Upper Eye Flap Assembly (Right):1 / [ELEC-SRVO-HS85BB] Hitec HS-85BB_Without Sticker:3",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-R] Upper Eye Flap Assembly (Right):1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:5",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-R] Upper Eye Flap Assembly (Right):1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:6",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-R] Upper Eye Flap Assembly (Right):1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:7",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-R] Upper Eye Flap Assembly (Right):1 / SL-FHMS 0.06-80x0.125x0.125-N_SL-FHMS 0.06-80x0.125x0.125-N:8",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-R] Upper Eye Flap Assembly (Right):1 / HX-SHCS 0.112-40x0.3125x0.3125-N_HX-SHCS 0.112-40x0.3125x0.3125-N:3",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-R] Upper Eye Flap Assembly (Right):1 / HX-SHCS 0.112-40x0.3125x0.3125-N_HX-SHCS 0.112-40x0.3125x0.3125-N:4",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-R] Upper Eye Flap Assembly (Right):1 / CR-PHMS 0.073-72x1x1-N_CR-PHMS 0.073-72x1x1-N:3",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-R] Upper Eye Flap Assembly (Right):1 / CR-PHMS 0.06-80x0.75x0.75-N_CR-PHMS 0.06-80x0.75x0.75-N:7",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-R] Upper Eye Flap Assembly (Right):1 / CR-PHMS 0.06-80x0.75x0.75-N_CR-PHMS 0.06-80x0.75x0.75-N:8",
+          "SimplifiedHead / Printable Nose:1 / [HEAD-D-UPR-R] Upper Eye Flap Assembly (Right):1 / CR-PHMS 0.073-72x1x1-N_CR-PHMS 0.073-72x1x1-N:4"
+        ]
+      }
+    ],
+    "vent_left_drive": [
+      {
+        "filename": "vent_left_drive.stl",
+        "material": "cad_97a3da",
+        "rgba": [
+          0.590619,
+          0.637597,
+          0.854993,
+          1.0
+        ],
+        "triangles": 1384,
+        "partCount": 2,
+        "parts": [
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / [HEAD-C-COMN-A-02] Pivot Strut:1",
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / [ELEC-SRVO-HORN] Hitec 2-Way Inline Arm (HS-40) MOD:1"
+        ]
+      }
+    ],
+    "vent_left_fin1": [
+      {
+        "filename": "vent_left_fin1.stl",
+        "material": "cad_080b4e",
+        "rgba": [
+          0.029557,
+          0.043735,
+          0.304987,
+          1.0
+        ],
+        "triangles": 3332,
+        "partCount": 1,
+        "parts": [
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / [HEAD-C-COMN-A-04] Vent Fin with Mount_1L:1"
+        ]
+      }
+    ],
+    "vent_left_fin2": [
+      {
+        "filename": "vent_left_fin2.stl",
+        "material": "cad_a0a0a0",
+        "rgba": [
+          0.627451,
+          0.627451,
+          0.627451,
+          1.0
+        ],
+        "triangles": 3388,
+        "partCount": 1,
+        "parts": [
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / [HEAD-C-COMN-A-04] Vent Fin with Mount_2L:1"
+        ]
+      }
+    ],
+    "vent_left_fin3": [
+      {
+        "filename": "vent_left_fin3.stl",
+        "material": "cad_a0a0a0",
+        "rgba": [
+          0.627451,
+          0.627451,
+          0.627451,
+          1.0
+        ],
+        "triangles": 3492,
+        "partCount": 1,
+        "parts": [
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / [HEAD-C-COMN-A-04] Vent Fin with Mount_3L:1"
+        ]
+      }
+    ],
+    "vent_left_fin4": [
+      {
+        "filename": "vent_left_fin4.stl",
+        "material": "cad_a0a0a0",
+        "rgba": [
+          0.627451,
+          0.627451,
+          0.627451,
+          1.0
+        ],
+        "triangles": 3604,
+        "partCount": 1,
+        "parts": [
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / [HEAD-C-COMN-A-04] Vent Fin with Mount_4L:1"
+        ]
+      }
+    ],
+    "vent_left_fin5": [
+      {
+        "filename": "vent_left_fin5.stl",
+        "material": "cad_080b4e",
+        "rgba": [
+          0.029557,
+          0.043735,
+          0.304987,
+          1.0
+        ],
+        "triangles": 3724,
+        "partCount": 1,
+        "parts": [
+          "SimplifiedHead / [HEAD-C-LEFT] Eye Tube Assembly (Left):1 / [HEAD-C-LEFT-A-00-L] Eye Vent (Left)_Left:1 / [HEAD-C-COMN-A-04] Vent Fin with Mount_5L:1"
+        ]
+      }
+    ],
+    "vent_right_drive": [
+      {
+        "filename": "vent_right_drive.stl",
+        "material": "cad_97a3da",
+        "rgba": [
+          0.590619,
+          0.637597,
+          0.854993,
+          1.0
+        ],
+        "triangles": 1384,
+        "partCount": 2,
+        "parts": [
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / [HEAD-C-COMN-A-02] Pivot Strut:1",
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / [ELEC-SRVO-HORN] Hitec 2-Way Inline Arm (HS-40) MOD:1"
+        ]
+      }
+    ],
+    "vent_right_fin1": [
+      {
+        "filename": "vent_right_fin1.stl",
+        "material": "cad_080b4e",
+        "rgba": [
+          0.029557,
+          0.043735,
+          0.304987,
+          1.0
+        ],
+        "triangles": 3322,
+        "partCount": 1,
+        "parts": [
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / [HEAD-C-COMN-A-04] Vent Fin with Mount_1r:1"
+        ]
+      }
+    ],
+    "vent_right_fin2": [
+      {
+        "filename": "vent_right_fin2.stl",
+        "material": "cad_080b4e",
+        "rgba": [
+          0.029557,
+          0.043735,
+          0.304987,
+          1.0
+        ],
+        "triangles": 3402,
+        "partCount": 1,
+        "parts": [
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / [HEAD-C-COMN-A-04] Vent Fin with Mount_2r:1"
+        ]
+      }
+    ],
+    "vent_right_fin3": [
+      {
+        "filename": "vent_right_fin3.stl",
+        "material": "cad_080b4e",
+        "rgba": [
+          0.029557,
+          0.043735,
+          0.304987,
+          1.0
+        ],
+        "triangles": 3506,
+        "partCount": 1,
+        "parts": [
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / [HEAD-C-COMN-A-04] Vent Fin with Mount_3r:1"
+        ]
+      }
+    ],
+    "vent_right_fin4": [
+      {
+        "filename": "vent_right_fin4.stl",
+        "material": "cad_080b4e",
+        "rgba": [
+          0.029557,
+          0.043735,
+          0.304987,
+          1.0
+        ],
+        "triangles": 3618,
+        "partCount": 1,
+        "parts": [
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / [HEAD-C-COMN-A-04] Vent Fin with Mount_4r:1"
+        ]
+      }
+    ],
+    "vent_right_fin5": [
+      {
+        "filename": "vent_right_fin5.stl",
+        "material": "cad_080b4e",
+        "rgba": [
+          0.029557,
+          0.043735,
+          0.304987,
+          1.0
+        ],
+        "triangles": 3714,
+        "partCount": 1,
+        "parts": [
+          "SimplifiedHead / [HEAD-C-RGHT] Eye Tube Assembly (Right):1 / [HEAD-C-RGHT-A-00-R] Eye Vent (Right)_Right:1 / [HEAD-C-COMN-A-04] Vent Fin with Mount_5r:1"
+        ]
+      }
+    ]
+  },
+  "neckSource": "URFDNeckAssembly.step",
+  "neck": [
+    {
+      "filename": "neck_static_black.stl",
+      "material": "black",
+      "triangles": 11452,
+      "parts": 3
+    },
+    {
+      "filename": "neck_static_cad_97a3da.stl",
+      "material": "cad_97a3da",
+      "triangles": 15161,
+      "parts": 22
+    },
+    {
+      "filename": "neck_static_cad_e9e9eb.stl",
+      "material": "cad_e9e9eb",
+      "triangles": 1076,
+      "parts": 2
+    },
+    {
+      "filename": "neck_static_cad_f6f4e9.stl",
+      "material": "cad_f6f4e9",
+      "triangles": 868,
+      "parts": 2
+    }
+  ],
+  "mouthSource": "SimpleMouth.step",
+  "mouthRuntimeDirectory": "Models/Meshes/SimpleMouth",
+  "mouthHeadLinkOrigin": {
+    "xyz_m": [
+      0.047403543,
+      7.9e-08,
+      -0.059999818
+    ],
+    "rpy_rad": [
+      1.570796327,
+      0.0,
+      1.570796327
+    ]
+  },
+  "mouthBallCupAlignment": "Two 6.35 mm-radius spherical cup centers aligned to the existing upper Delrin ball centers.",
+  "ventFinMaterialOverride": {
+    "material": "cad_080b4e",
+    "hex": "#080B4E",
+    "appliesTo": "all ten left/right vent fins"
+  },
+  "headTopCad_v1_1_10": {
+    "MFRC.STEP": {
+      "rgb": [
+        202,
+        209,
+        238
+      ],
+      "hex": "#CAD1EE",
+      "material": "step_opaque_202_209_238"
+    },
+    "Whip Antenna.STEP": {
+      "rgb": [
+        202,
+        209,
+        238
+      ],
+      "hex": "#CAD1EE",
+      "material": "step_opaque_202_209_238"
+    },
+    "Microphone.STEP": {
+      "rgb": [
+        202,
+        209,
+        238
+      ],
+      "hex": "#CAD1EE",
+      "material": "step_opaque_202_209_238"
+    }
+  },
+  "headTopCad_v1_1_11": {
+    "sourceNote": "Colored STEP exports; values below are the URDF/display colors produced by the STEP XCAF appearance import.",
+    "MFRCColor.step": {
+      "groups": {
+        "#F6F4E9": [
+          "Outer Tube",
+          "Wideband Dish",
+          "Shortband Dish",
+          "Upper Tube"
+        ],
+        "#97A3DA": [
+          "Inner Tube",
+          "Feedhorn"
+        ],
+        "#404040": [
+          "Top Hat"
+        ]
+      },
+      "mfrNeutralLoweredMm": 50.0
+    },
+    "Whip AntennaColor.step": {
+      "groups": {
+        "#080B4E": [
+          "Skirt"
+        ],
+        "#E7C863": [
+          "Knob"
+        ],
+        "#F6F4E9": [
+          "Lower Linkage",
+          "Upper Linkage"
+        ],
+        "#97A3DA": [
+          "Stud/pins/spring/fastener hardware"
+        ]
+      }
+    },
+    "MicrophoneColor.step": {
+      "groups": {
+        "#E9E9EB": [
+          "Tube",
+          "Rear Cap",
+          "Hinge"
+        ],
+        "#B5AFA6": [
+          "Front Cap",
+          "Mesh"
+        ],
+        "#97A3DA": [
+          "Electret microphone",
+          "Wire Passthrough",
+          "Spacer"
+        ]
+      }
+    }
+  },
+  "rearCover_v1_1_12": {
+    "colorSource": "Models/SourceCAD/rearCoverColor.step",
+    "appearance": "Paint - Enamel Glossy (Grey)",
+    "rgb": [
+      179,
+      179,
+      179
+    ],
+    "hex": "#B3B3B3",
+    "runtimeMesh": "Models/Meshes/RearCover/rear_cover.stl"
+  },
+  "eyeMechanism_v1_1_12": {
+    "source": "Models/SourceCAD/EyeMechanism.step",
+    "runtimeDirectory": "Models/Meshes/EyeMechanism",
+    "stepColors": [
+      "#A0A0A0",
+      "#CAD1EE",
+      "#F6F6F3"
+    ],
+    "articulation": [
+      "fixed eye-pop carriage",
+      "outer Gimbal Ring",
+      "inner Front Lens/lens section"
+    ]
+  },
+  "neckRuntime_v1_3_1": {
+    "replacementSourceUpload": "NeckforURDFColor3.step",
+    "sourceStoredAs": "Models/SourceCAD/URFDNeckAssembly.step",
+    "staticGroups": {
+      "black": {
+        "mesh": "Meshes/NeckAssembly/StepColors/neck_static_black.stl",
+        "triangles": 11452,
+        "leafParts": 3
+      },
+      "cad_97a3da": {
+        "mesh": "Meshes/NeckAssembly/StepColors/neck_static_cad_97a3da.stl",
+        "triangles": 15161,
+        "leafParts": 22
+      },
+      "cad_e9e9eb": {
+        "mesh": "Meshes/NeckAssembly/StepColors/neck_static_cad_e9e9eb.stl",
+        "triangles": 1076,
+        "leafParts": 2
+      },
+      "cad_f6f4e9": {
+        "mesh": "Meshes/NeckAssembly/StepColors/neck_static_cad_f6f4e9.stl",
+        "triangles": 868,
+        "leafParts": 2
+      }
+    },
+    "leftBodyGroups": {
+      "cad_e7c863": {
+        "mesh": "Meshes/NeckAssembly/left_fabco_cad_e7c863.stl",
+        "triangles": 20462,
+        "leafParts": 9
+      },
+      "cad_97a3da": {
+        "mesh": "Meshes/NeckAssembly/left_fabco_cad_97a3da.stl",
+        "triangles": 4696,
+        "leafParts": 11
+      },
+      "cad_e9e9eb": {
+        "mesh": "Meshes/NeckAssembly/left_fabco_cad_e9e9eb.stl",
+        "triangles": 4258,
+        "leafParts": 4
+      },
+      "cad_f6f4e9": {
+        "mesh": "Meshes/NeckAssembly/left_fabco_cad_f6f4e9.stl",
+        "triangles": 2016,
+        "leafParts": 9
+      },
+      "step_steel_satin": {
+        "mesh": "Meshes/NeckAssembly/left_fabco_step_steel_satin.stl",
+        "triangles": 7544,
+        "leafParts": 2
+      },
+      "black": {
+        "mesh": "Meshes/NeckAssembly/left_fabco_black.stl",
+        "triangles": 224,
+        "leafParts": 1
+      }
+    },
+    "rightBodyGroups": {
+      "cad_f6f4e9": {
+        "mesh": "Meshes/NeckAssembly/right_fabco_cad_f6f4e9.stl",
+        "triangles": 2016,
+        "leafParts": 9
+      },
+      "cad_e9e9eb": {
+        "mesh": "Meshes/NeckAssembly/right_fabco_cad_e9e9eb.stl",
+        "triangles": 4258,
+        "leafParts": 4
+      },
+      "step_steel_satin": {
+        "mesh": "Meshes/NeckAssembly/right_fabco_step_steel_satin.stl",
+        "triangles": 7544,
+        "leafParts": 2
+      },
+      "cad_97a3da": {
+        "mesh": "Meshes/NeckAssembly/right_fabco_cad_97a3da.stl",
+        "triangles": 4696,
+        "leafParts": 11
+      },
+      "cad_e7c863": {
+        "mesh": "Meshes/NeckAssembly/right_fabco_cad_e7c863.stl",
+        "triangles": 20462,
+        "leafParts": 9
+      },
+      "black": {
+        "mesh": "Meshes/NeckAssembly/right_fabco_black.stl",
+        "triangles": 224,
+        "leafParts": 1
+      }
+    },
+    "pistonMeshes": {
+      "left": "Meshes/NeckAssembly/left_piston.stl",
+      "right": "Meshes/NeckAssembly/right_piston.stl"
+    },
+    "pistonStudMeshes": {
+      "left": "Meshes/NeckAssembly/left_piston_stud.stl",
+      "right": "Meshes/NeckAssembly/right_piston_stud.stl"
+    },
+    "ballMeshes": {
+      "leftBottom": "Meshes/NeckAssembly/left_bottom_ball.stl",
+      "leftTop": "Meshes/NeckAssembly/left_top_ball.stl",
+      "rightBottom": "Meshes/NeckAssembly/right_bottom_ball.stl",
+      "rightTop": "Meshes/NeckAssembly/right_top_ball.stl"
+    },
+    "nestedTransformFix": "Every nested XCAF component location is multiplied by its outer assembly instance location before tessellation.",
+    "colorUpdate": "The source STEP recolors the former cad_d89d8b fitting groups to CAD gold #E7C863; their already validated v1.3.0 geometry was merged into the existing gold meshes to preserve transforms.",
+    "mouthOverrides": {
+      "[NECK-COVR-00] Lip Light Box_Standard": "rear_cover_grey",
+      "[NECK-E-COMN-01] Front Slide_V2": "rear_cover_grey"
+    },
+    "previewLighting": "Added a second upper-left PointLight at (0.45, -0.90, 1.15) in RobotHeadView."
+  },
+  "neckVisualUpdate_v1_6_10": {
+    "description": "Recolored the four arrow-identified gray fitting bodies to neck_gold: the steel-colored body in each upper Legris 3118-54-20 fitting assembly and the steel-colored body in each lower FN-32 simplified needle-valve assembly. SFT-10 banjo bolts remain gray.",
+    "collisionGeometryPreserved": true,
+    "stats": {
+      "left": {
+        "originalFaces": 7544,
+        "goldFaces": 3096,
+        "remainingSteelFaces": 4448,
+        "lowerNeedleValveBodyFaces": 1674,
+        "upperLegrisBodyFaces": 1422,
+        "goldBoundsMm": [
+          [
+            39.42350769042969,
+            55.894386291503906,
+            31.750425338745117
+          ],
+          [
+            79.23844909667969,
+            116.466064453125,
+            64.0505599975586
+          ]
+        ]
+      },
+      "right": {
+        "originalFaces": 7544,
+        "goldFaces": 3096,
+        "remainingSteelFaces": 4448,
+        "lowerNeedleValveBodyFaces": 1674,
+        "upperLegrisBodyFaces": 1422,
+        "goldBoundsMm": [
+          [
+            -80.25253295898438,
+            55.65214157104492,
+            29.783292770385742
+          ],
+          [
+            -40.079010009765625,
+            116.73243713378906,
+            62.23464584350586
+          ]
+        ]
+      }
+    }
+  }
+}

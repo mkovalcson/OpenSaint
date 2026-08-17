@@ -1,0 +1,72 @@
+<Window x:Class="ServoAnimator.RgbBuilderWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Build RGB Command"
+        Width="440" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource PanelBackground}">
+
+    <!-- Builds an RGBCommand text value matching the string.Format outputs
+         in RGBLight.cs exactly. Pick the command, fill the arguments (enum
+         arguments are combos), and the live preview at the bottom shows the
+         text that OK will commit. -->
+    <StackPanel Margin="12">
+        <TextBlock Text="RGB Command:" Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
+        <ComboBox x:Name="CommandCombo" Margin="0,4,0,10"
+                  SelectionChanged="CommandCombo_SelectionChanged"/>
+
+        <!-- One row per argument of the selected command -->
+        <ItemsControl x:Name="ArgList">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="0,3">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{Binding Label}"
+                                   Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEnum}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+                        <ComboBox Grid.Column="1"
+                                  ItemsSource="{Binding EnumOptions}"
+                                  SelectedItem="{Binding Text}">
+                            <ComboBox.Style>
+                                <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEnum}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ComboBox.Style>
+                        </ComboBox>
+                    </Grid>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <Border Background="#1B1E23" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
+                CornerRadius="3" Padding="8" Margin="0,10,0,0">
+            <TextBlock x:Name="PreviewText" Foreground="{DynamicResource WarningText}"
+                       FontFamily="Consolas" TextWrapping="Wrap"/>
+        </Border>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="OK" Width="70" Click="Ok_Click" IsDefault="True"/>
+            <Button Content="Cancel" Width="70" Margin="6,0,0,0"
+                    Click="Cancel_Click" IsCancel="True"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

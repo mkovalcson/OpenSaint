@@ -1,0 +1,553 @@
+{
+  "leftTicSerialNumber": "00475552",
+  "servos": [
+    {
+      "control": "NoseBasket",
+      "reversed": false,
+      "defaultPwm": 850,
+      "minPwm": 850,
+      "maxPwm": 1150,
+      "speeds": [
+        100,
+        50,
+        0,
+        50
+      ],
+      "accels": [
+        30,
+        15,
+        0,
+        15
+      ]
+    },
+    {
+      "control": "NoseBody",
+      "reversed": true,
+      "defaultPwm": 1200,
+      "minPwm": 1000,
+      "maxPwm": 1500,
+      "speeds": [
+        100,
+        50,
+        0,
+        50
+      ],
+      "accels": [
+        30,
+        15,
+        0,
+        15
+      ]
+    },
+    {
+      "control": "NeckTiltLeft",
+      "reversed": false,
+      "defaultPwm": 1533,
+      "minPwm": 1445,
+      "maxPwm": 1594,
+      "speeds": [
+        20,
+        15,
+        0,
+        10
+      ],
+      "accels": [
+        10,
+        6,
+        0,
+        5
+      ]
+    },
+    {
+      "control": "NeckTiltRight",
+      "reversed": true,
+      "defaultPwm": 1480,
+      "minPwm": 1400,
+      "maxPwm": 1564,
+      "speeds": [
+        20,
+        15,
+        0,
+        10
+      ],
+      "accels": [
+        10,
+        6,
+        0,
+        5
+      ]
+    },
+    {
+      "control": "NeckTurn",
+      "reversed": false,
+      "defaultPwm": 1325,
+      "minPwm": 850,
+      "maxPwm": 1740,
+      "speeds": [
+        90,
+        30,
+        0,
+        45
+      ],
+      "accels": [
+        10,
+        10,
+        0,
+        15
+      ]
+    },
+    {
+      "control": "LeftLensHorizontal",
+      "reversed": false,
+      "defaultPwm": 1450,
+      "minPwm": 650,
+      "maxPwm": 2250,
+      "speeds": [
+        0,
+        60,
+        0,
+        20
+      ],
+      "accels": [
+        0,
+        25,
+        0,
+        5
+      ]
+    },
+    {
+      "control": "RightLensHorizontal",
+      "reversed": false,
+      "defaultPwm": 1450,
+      "minPwm": 650,
+      "maxPwm": 2250,
+      "speeds": [
+        0,
+        60,
+        0,
+        20
+      ],
+      "accels": [
+        0,
+        25,
+        0,
+        5
+      ]
+    },
+    {
+      "control": "LeftLensVertical",
+      "reversed": true,
+      "defaultPwm": 1400,
+      "minPwm": 600,
+      "maxPwm": 2200,
+      "speeds": [
+        0,
+        60,
+        0,
+        20
+      ],
+      "accels": [
+        0,
+        25,
+        0,
+        5
+      ]
+    },
+    {
+      "control": "RightLensVertical",
+      "reversed": false,
+      "defaultPwm": 1520,
+      "minPwm": 720,
+      "maxPwm": 2320,
+      "speeds": [
+        0,
+        60,
+        0,
+        20
+      ],
+      "accels": [
+        0,
+        25,
+        0,
+        5
+      ]
+    },
+    {
+      "control": "LeftIris",
+      "reversed": false,
+      "defaultPwm": 1575,
+      "minPwm": 1350,
+      "maxPwm": 1950,
+      "speeds": [
+        90,
+        90,
+        0,
+        10
+      ],
+      "accels": [
+        15,
+        15,
+        0,
+        5
+      ]
+    },
+    {
+      "control": "RightIris",
+      "reversed": false,
+      "defaultPwm": 975,
+      "minPwm": 750,
+      "maxPwm": 1350,
+      "speeds": [
+        90,
+        90,
+        0,
+        10
+      ],
+      "accels": [
+        15,
+        15,
+        0,
+        5
+      ]
+    },
+    {
+      "control": "BrowLeftTopOpen",
+      "reversed": true,
+      "defaultPwm": 1523,
+      "minPwm": 920,
+      "maxPwm": 1770,
+      "speeds": [
+        60,
+        10,
+        0,
+        2
+      ],
+      "accels": [
+        15,
+        5,
+        0,
+        3
+      ]
+    },
+    {
+      "control": "BrowRightTopOpen",
+      "reversed": false,
+      "defaultPwm": 866,
+      "minPwm": 637,
+      "maxPwm": 1417,
+      "speeds": [
+        60,
+        10,
+        0,
+        2
+      ],
+      "accels": [
+        15,
+        5,
+        0,
+        3
+      ]
+    },
+    {
+      "control": "BrowLeftTopTilt",
+      "reversed": true,
+      "defaultPwm": 1800,
+      "minPwm": 910,
+      "maxPwm": 1900,
+      "speeds": [
+        40,
+        10,
+        0,
+        2
+      ],
+      "accels": [
+        10,
+        5,
+        0,
+        3
+      ]
+    },
+    {
+      "control": "BrowRightTopTilt",
+      "reversed": false,
+      "defaultPwm": 1100,
+      "minPwm": 1000,
+      "maxPwm": 1990,
+      "speeds": [
+        40,
+        10,
+        0,
+        2
+      ],
+      "accels": [
+        10,
+        5,
+        0,
+        3
+      ]
+    },
+    {
+      "control": "BrowLeftBottomOpen",
+      "reversed": false,
+      "defaultPwm": 1750,
+      "minPwm": 940,
+      "maxPwm": 2050,
+      "speeds": [
+        60,
+        10,
+        0,
+        2
+      ],
+      "accels": [
+        15,
+        5,
+        0,
+        3
+      ]
+    },
+    {
+      "control": "BrowRightBottomOpen",
+      "reversed": true,
+      "defaultPwm": 1100,
+      "minPwm": 700,
+      "maxPwm": 1910,
+      "speeds": [
+        60,
+        10,
+        0,
+        2
+      ],
+      "accels": [
+        15,
+        5,
+        0,
+        3
+      ]
+    },
+    {
+      "control": "LeftEyeVent",
+      "reversed": false,
+      "defaultPwm": 1765,
+      "minPwm": 1765,
+      "maxPwm": 2086,
+      "speeds": [
+        40,
+        10,
+        0,
+        10
+      ],
+      "accels": [
+        20,
+        5,
+        0,
+        5
+      ]
+    },
+    {
+      "control": "RightEyeVent",
+      "reversed": true,
+      "defaultPwm": 1125,
+      "minPwm": 835,
+      "maxPwm": 1125,
+      "speeds": [
+        40,
+        10,
+        0,
+        10
+      ],
+      "accels": [
+        20,
+        5,
+        0,
+        5
+      ]
+    },
+    {
+      "control": "MFR_Rotate",
+      "reversed": true,
+      "defaultPwm": 1320,
+      "minPwm": 800,
+      "maxPwm": 1865,
+      "speeds": [
+        0,
+        1,
+        0,
+        10
+      ],
+      "accels": [
+        0,
+        1,
+        0,
+        20
+      ]
+    },
+    {
+      "control": "MFR_UpDown",
+      "reversed": true,
+      "defaultPwm": 550,
+      "minPwm": 550,
+      "maxPwm": 1070,
+      "speeds": [
+        100,
+        50,
+        0,
+        50
+      ],
+      "accels": [
+        30,
+        25,
+        0,
+        25
+      ]
+    },
+    {
+      "control": "Whip_Antenna_RaiseLower",
+      "reversed": true,
+      "defaultPwm": 2200,
+      "minPwm": 1620,
+      "maxPwm": 2200,
+      "speeds": [
+        100,
+        20,
+        0,
+        50
+      ],
+      "accels": [
+        30,
+        5,
+        0,
+        25
+      ]
+    },
+    {
+      "control": "Whip_Antenna_Rotate",
+      "reversed": false,
+      "defaultPwm": 1400,
+      "minPwm": 500,
+      "maxPwm": 2300,
+      "speeds": [
+        0,
+        0,
+        0,
+        10
+      ],
+      "accels": [
+        0,
+        0,
+        0,
+        20
+      ]
+    },
+    {
+      "control": "Microphone_RaiseLower",
+      "reversed": false,
+      "defaultPwm": 1625,
+      "minPwm": 1625,
+      "maxPwm": 2298,
+      "speeds": [
+        0,
+        0,
+        0,
+        50
+      ],
+      "accels": [
+        0,
+        0,
+        0,
+        25
+      ]
+    }
+  ],
+  "gangDirections": [
+    {
+      "servo": "FlapsOpen",
+      "control": "BrowLeftTopOpen",
+      "reversed": false
+    },
+    {
+      "servo": "FlapsOpen",
+      "control": "BrowRightTopOpen",
+      "reversed": false
+    },
+    {
+      "servo": "FlapsOpen",
+      "control": "BrowLeftBottomOpen",
+      "reversed": false
+    },
+    {
+      "servo": "FlapsOpen",
+      "control": "BrowRightBottomOpen",
+      "reversed": false
+    },
+    {
+      "servo": "FlapTiltUp",
+      "control": "BrowLeftTopTilt",
+      "reversed": false
+    },
+    {
+      "servo": "FlapTiltUp",
+      "control": "BrowRightTopTilt",
+      "reversed": false
+    },
+    {
+      "servo": "IrisClose",
+      "control": "LeftIris",
+      "reversed": false
+    },
+    {
+      "servo": "IrisClose",
+      "control": "RightIris",
+      "reversed": false
+    },
+    {
+      "servo": "EyesHorizontalRight",
+      "control": "LeftLensHorizontal",
+      "reversed": false
+    },
+    {
+      "servo": "EyesHorizontalRight",
+      "control": "RightLensHorizontal",
+      "reversed": false
+    },
+    {
+      "servo": "EyesVerticalUp",
+      "control": "LeftLensVertical",
+      "reversed": false
+    },
+    {
+      "servo": "EyesVerticalUp",
+      "control": "RightLensVertical",
+      "reversed": false
+    },
+    {
+      "servo": "VentsOpen",
+      "control": "LeftEyeVent",
+      "reversed": false
+    },
+    {
+      "servo": "VentsOpen",
+      "control": "RightEyeVent",
+      "reversed": false
+    },
+    {
+      "servo": "NeckTiltRight",
+      "control": "NeckTiltLeft",
+      "reversed": false
+    },
+    {
+      "servo": "NeckTiltRight",
+      "control": "NeckTiltRight",
+      "reversed": false
+    },
+    {
+      "servo": "NeckNodUp",
+      "control": "NeckTiltLeft",
+      "reversed": false
+    },
+    {
+      "servo": "NeckNodUp",
+      "control": "NeckTiltRight",
+      "reversed": true
+    }
+  ]
+}
