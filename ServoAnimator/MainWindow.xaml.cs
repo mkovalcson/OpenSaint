@@ -178,7 +178,7 @@ namespace ServoAnimator
         // day, increment minor/reset patch on a new day, and major only on
         // explicit user request.
         private const string AppDisplayName = "Animation Editor & Player";
-        private const string AppVersion = "1.7.5";
+        private const string AppVersion = "1.7.6";
 
         /// <summary>Detached URDF preview used when the user presses Undock.
         /// The old View > Robot Head entry has been removed; docking is now

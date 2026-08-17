@@ -271,27 +271,28 @@ namespace ServoAnimator
 
             return new ServoConfiguration
             {
-                // Direction of each control RELATIVE to its gang. The neck
-                // pair differs by gang: NeckTiltRight moves them opposite
-                // (scraped directions), NeckNodUp moves them the same way.
+                // Direction of each control RELATIVE to its gang. These
+                // values are the built-in ServoConfig defaults used when no
+                // external ServoConfig.json is available. The neck pair still
+                // supports independent gang direction for tilt versus nod.
                 GangDirections = new List<GangDirectionEntry>
                 {
-                    G(ServoNames.FlapsOpen, RobotControls.BrowLeftTopOpen, false),
-                    G(ServoNames.FlapsOpen, RobotControls.BrowRightTopOpen, false),
+                    G(ServoNames.FlapsOpen, RobotControls.BrowLeftTopOpen, true),
+                    G(ServoNames.FlapsOpen, RobotControls.BrowRightTopOpen, true),
                     G(ServoNames.FlapsOpen, RobotControls.BrowLeftBottomOpen, false),
                     G(ServoNames.FlapsOpen, RobotControls.BrowRightBottomOpen, false),
                     G(ServoNames.FlapTiltUp, RobotControls.BrowLeftTopTilt, false),
                     G(ServoNames.FlapTiltUp, RobotControls.BrowRightTopTilt, false),
                     G(ServoNames.IrisClose, RobotControls.LeftIris, false),
                     G(ServoNames.IrisClose, RobotControls.RightIris, false),
-                    G(ServoNames.EyesHorizontalRight, RobotControls.LeftLensHorizontal, false),
-                    G(ServoNames.EyesHorizontalRight, RobotControls.RightLensHorizontal, false),
-                    G(ServoNames.EyesVerticalUp, RobotControls.LeftLensVertical, false),
-                    G(ServoNames.EyesVerticalUp, RobotControls.RightLensVertical, false),
-                    G(ServoNames.VentsOpen, RobotControls.LeftEyeVent, false),
+                    G(ServoNames.EyesHorizontalRight, RobotControls.LeftLensHorizontal, true),
+                    G(ServoNames.EyesHorizontalRight, RobotControls.RightLensHorizontal, true),
+                    G(ServoNames.EyesVerticalUp, RobotControls.LeftLensVertical, true),
+                    G(ServoNames.EyesVerticalUp, RobotControls.RightLensVertical, true),
+                    G(ServoNames.VentsOpen, RobotControls.LeftEyeVent, true),
                     G(ServoNames.VentsOpen, RobotControls.RightEyeVent, false),
-                    G(ServoNames.NeckTiltRight, RobotControls.NeckTiltLeft, false),
-                    G(ServoNames.NeckTiltRight, RobotControls.NeckTiltRight, false),
+                    G(ServoNames.NeckTiltRight, RobotControls.NeckTiltLeft, true),
+                    G(ServoNames.NeckTiltRight, RobotControls.NeckTiltRight, true),
                     G(ServoNames.NeckNodUp, RobotControls.NeckTiltLeft, false),
                     G(ServoNames.NeckNodUp, RobotControls.NeckTiltRight, true),
                 },

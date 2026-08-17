@@ -1,5 +1,4 @@
 {
-  "leftTicSerialNumber": "00475552",
   "servos": [
     {
       "control": "NoseBasket",
@@ -462,12 +461,12 @@
     {
       "servo": "FlapsOpen",
       "control": "BrowLeftTopOpen",
-      "reversed": false
+      "reversed": true
     },
     {
       "servo": "FlapsOpen",
       "control": "BrowRightTopOpen",
-      "reversed": false
+      "reversed": true
     },
     {
       "servo": "FlapsOpen",
@@ -502,27 +501,27 @@
     {
       "servo": "EyesHorizontalRight",
       "control": "LeftLensHorizontal",
-      "reversed": false
+      "reversed": true
     },
     {
       "servo": "EyesHorizontalRight",
       "control": "RightLensHorizontal",
-      "reversed": false
+      "reversed": true
     },
     {
       "servo": "EyesVerticalUp",
       "control": "LeftLensVertical",
-      "reversed": false
+      "reversed": true
     },
     {
       "servo": "EyesVerticalUp",
       "control": "RightLensVertical",
-      "reversed": false
+      "reversed": true
     },
     {
       "servo": "VentsOpen",
       "control": "LeftEyeVent",
-      "reversed": false
+      "reversed": true
     },
     {
       "servo": "VentsOpen",
@@ -532,12 +531,12 @@
     {
       "servo": "NeckTiltRight",
       "control": "NeckTiltLeft",
-      "reversed": false
+      "reversed": true
     },
     {
       "servo": "NeckTiltRight",
       "control": "NeckTiltRight",
-      "reversed": false
+      "reversed": true
     },
     {
       "servo": "NeckNodUp",
@@ -549,5 +548,6 @@
       "control": "NeckTiltRight",
       "reversed": true
     }
-  ]
+  ],
+  "leftTicSerialNumber": "00475552"
 }
