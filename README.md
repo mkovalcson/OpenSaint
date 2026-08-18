@@ -1,3 +1,5 @@
+Requires a Windows Computer with Visual Studio 2026 C# and .NET 10.
+
 1. Copy the animatorConfig and ServoAnimator folders into the same parent folder
 2. Open the project file in the ServoAnimator folder in VS 2026
 
