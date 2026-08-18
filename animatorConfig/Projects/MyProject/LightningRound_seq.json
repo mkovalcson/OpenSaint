@@ -1,0 +1,93 @@
+{
+  "description": "Test Animation 2.",
+  "audioFiles": "LightningRound.mp3|LR7_Expressive.mp3",
+  "audioFile": "LightningRound.mp3",
+  "audioFilePath": "X:\\Johnny5\\Software\\animatorConfig\\Projects\\MyProject\\LightningRound.mp3",
+  "durationSeconds": 15.86,
+  "audioStartOffsetSeconds": 2.577,
+  "splineServos": [
+    "FlapsOpen"
+  ],
+  "splineSampleHz": 50,
+  "animateMode": "Individual",
+  "scaleValues": false,
+  "commands": [
+    {
+      "offsetSeconds": 1.313,
+      "servo": "FlapsOpen",
+      "value": 67,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 4.716,
+      "servo": "FlapsOpen",
+      "value": 28,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 8.509,
+      "servo": "FlapsOpen",
+      "value": -64,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 12.982,
+      "servo": "FlapsOpen",
+      "value": 68,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 17.018,
+      "servo": "FlapsOpen",
+      "value": -72,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 20.081,
+      "servo": "NeckTurn",
+      "value": 0,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 20.081,
+      "servo": "Play",
+      "value": "X:\\Johnny5\\animatorConfig\\Projects\\MyProject\\LR7_Expressive.mp3",
+      "speed": "Default",
+      "reason": "LR7_Expressive.mp3"
+    },
+    {
+      "offsetSeconds": 23.971,
+      "servo": "FlapsOpen",
+      "value": 76,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 29.173,
+      "servo": "FlapsOpen",
+      "value": -53,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 34.571,
+      "servo": "FlapsOpen",
+      "value": 50,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 39.044,
+      "servo": "FlapsOpen",
+      "value": -63,
+      "speed": "Default",
+      "reason": ""
+    }
+  ]
+}

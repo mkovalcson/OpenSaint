@@ -1,0 +1,258 @@
+{
+  "version": 8,
+  "audioLedGain": 1.2530120481927711,
+  "motions": [
+    {
+      "servo": "NeckTurn",
+      "control": "NeckTurn",
+      "minExtent": -90,
+      "maxExtent": 90,
+      "zeroExtent": 0,
+      "unit": "deg",
+      "reverseOverride": null
+    },
+    {
+      "servo": "NeckNodUp",
+      "control": "NeckTiltLeft",
+      "minExtent": -15,
+      "maxExtent": 15,
+      "zeroExtent": 0,
+      "unit": "deg",
+      "reverseOverride": null
+    },
+    {
+      "servo": "NeckNodUp",
+      "control": "NeckTiltRight",
+      "minExtent": -15,
+      "maxExtent": 15,
+      "zeroExtent": 0,
+      "unit": "deg",
+      "reverseOverride": null
+    },
+    {
+      "servo": "NeckTiltRight",
+      "control": "NeckTiltLeft",
+      "minExtent": -12,
+      "maxExtent": 12,
+      "zeroExtent": 0,
+      "unit": "deg",
+      "reverseOverride": false
+    },
+    {
+      "servo": "NeckTiltRight",
+      "control": "NeckTiltRight",
+      "minExtent": -12,
+      "maxExtent": 12,
+      "zeroExtent": 0,
+      "unit": "deg",
+      "reverseOverride": null
+    },
+    {
+      "servo": "FlapsOpen",
+      "control": "BrowLeftTopOpen",
+      "minExtent": -42,
+      "maxExtent": 90,
+      "zeroExtent": 22.563139931740615,
+      "unit": "deg",
+      "reverseOverride": true
+    },
+    {
+      "servo": "FlapsOpen",
+      "control": "BrowRightTopOpen",
+      "minExtent": -90,
+      "maxExtent": 42,
+      "zeroExtent": -22.563139931740615,
+      "unit": "deg",
+      "reverseOverride": false
+    },
+    {
+      "servo": "FlapsOpen",
+      "control": "BrowLeftBottomOpen",
+      "minExtent": -42,
+      "maxExtent": 90,
+      "zeroExtent": 0,
+      "unit": "deg",
+      "reverseOverride": true
+    },
+    {
+      "servo": "FlapsOpen",
+      "control": "BrowRightBottomOpen",
+      "minExtent": -90,
+      "maxExtent": 42,
+      "zeroExtent": 0,
+      "unit": "deg",
+      "reverseOverride": false
+    },
+    {
+      "servo": "FlapTiltUp",
+      "control": "BrowLeftTopTilt",
+      "minExtent": -7.883959044368574,
+      "maxExtent": 90,
+      "zeroExtent": 0,
+      "unit": "deg",
+      "reverseOverride": false
+    },
+    {
+      "servo": "FlapTiltUp",
+      "control": "BrowRightTopTilt",
+      "minExtent": -7.883959044368574,
+      "maxExtent": 90,
+      "zeroExtent": 0,
+      "unit": "deg",
+      "reverseOverride": null
+    },
+    {
+      "servo": "IrisClose",
+      "control": "LeftIris",
+      "minExtent": 29.526239067055418,
+      "maxExtent": 100,
+      "zeroExtent": 64.76311953352771,
+      "unit": "%",
+      "reverseOverride": null
+    },
+    {
+      "servo": "IrisClose",
+      "control": "RightIris",
+      "minExtent": 29.526239067055418,
+      "maxExtent": 100,
+      "zeroExtent": 64.76311953352771,
+      "unit": "%",
+      "reverseOverride": null
+    },
+    {
+      "servo": "EyesVerticalUp",
+      "control": "LeftLensVertical",
+      "minExtent": -12,
+      "maxExtent": 12,
+      "zeroExtent": 0,
+      "unit": "deg",
+      "reverseOverride": true
+    },
+    {
+      "servo": "EyesVerticalUp",
+      "control": "RightLensVertical",
+      "minExtent": -12,
+      "maxExtent": 12,
+      "zeroExtent": 0,
+      "unit": "deg",
+      "reverseOverride": true
+    },
+    {
+      "servo": "EyesHorizontalRight",
+      "control": "LeftLensHorizontal",
+      "minExtent": -12,
+      "maxExtent": 12,
+      "zeroExtent": 0,
+      "unit": "deg",
+      "reverseOverride": null
+    },
+    {
+      "servo": "EyesHorizontalRight",
+      "control": "RightLensHorizontal",
+      "minExtent": -12,
+      "maxExtent": 12,
+      "zeroExtent": 0,
+      "unit": "deg",
+      "reverseOverride": null
+    },
+    {
+      "servo": "VentsOpen",
+      "control": "LeftEyeVent",
+      "minExtent": 0,
+      "maxExtent": 30,
+      "zeroExtent": 0,
+      "unit": "deg",
+      "reverseOverride": false
+    },
+    {
+      "servo": "VentsOpen",
+      "control": "RightEyeVent",
+      "minExtent": 0,
+      "maxExtent": 30,
+      "zeroExtent": 0,
+      "unit": "deg",
+      "reverseOverride": null
+    },
+    {
+      "servo": "NoseBody",
+      "control": "NoseBody",
+      "minExtent": -19.174061433447143,
+      "maxExtent": 15.843003412969232,
+      "zeroExtent": 0,
+      "unit": "deg",
+      "reverseOverride": true
+    },
+    {
+      "servo": "NoseBasket",
+      "control": "NoseBasket",
+      "minExtent": -37.30716723549508,
+      "maxExtent": -22.563139931740615,
+      "zeroExtent": -22.563139931740615,
+      "unit": "deg",
+      "reverseOverride": true
+    },
+    {
+      "servo": "MFR_UpDown",
+      "control": "MFR_UpDown",
+      "minExtent": 22.42990654205612,
+      "maxExtent": 132.71028037383175,
+      "zeroExtent": 22.42990654205612,
+      "unit": "mm",
+      "reverseOverride": false
+    },
+    {
+      "servo": "MFR_Rotate",
+      "control": "MFR_Rotate",
+      "minExtent": -99.25233644859817,
+      "maxExtent": 93.36448598130833,
+      "zeroExtent": 0,
+      "unit": "deg",
+      "reverseOverride": null
+    },
+    {
+      "servo": "Microphone_RaiseLower",
+      "control": "Microphone_RaiseLower",
+      "minExtent": 0,
+      "maxExtent": 11.214953271028037,
+      "zeroExtent": 0,
+      "unit": "mm",
+      "reverseOverride": false
+    },
+    {
+      "servo": "Whip_Antenna_RaiseLower",
+      "control": "Whip_Antenna_RaiseLower",
+      "minExtent": 12.342627635745693,
+      "maxExtent": 57.20244071985785,
+      "zeroExtent": 12.342627635745693,
+      "unit": "mm",
+      "reverseOverride": false
+    },
+    {
+      "servo": "Whip_Antenna_Rotate",
+      "control": "Whip_Antenna_Rotate",
+      "minExtent": -90,
+      "maxExtent": 90,
+      "zeroExtent": 0,
+      "unit": "deg",
+      "reverseOverride": false
+    },
+    {
+      "servo": "LeftEyePop",
+      "control": "LeftEyePop",
+      "minExtent": 2,
+      "maxExtent": 90.46728971962642,
+      "zeroExtent": 2,
+      "unit": "mm",
+      "reverseOverride": null
+    },
+    {
+      "servo": "RightEyePop",
+      "control": "RightEyePop",
+      "minExtent": 2,
+      "maxExtent": 90.46728971962612,
+      "zeroExtent": 2,
+      "unit": "mm",
+      "reverseOverride": null
+    }
+  ]
+}

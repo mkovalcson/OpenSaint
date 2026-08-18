@@ -321,13 +321,17 @@ RobotControls channel, grouped under its ganged ServoName header (gang map:
 FlapsOpen → the four brow-open servos; FlapTiltUp → the two brow tilts;
 IrisClose → the two irises; VentsOpen → the two eye vents; NeckTiltRight and
 NeckNodUp both → the neck-tilt pair; the eye directions → the lens pairs;
-single-control names map 1:1). Per control: Normal/Reversed relative to the
-gang, Default/Min/Max PWM (clamped 500–2400), the 4-element speed and accel
-arrays ("default,slow,fast,crawl"), and a **verify slider** spanning
-Min–Max PWM that calls `MoveRobotControlNow(control, pwm)` live. Load /
-Save / Save As persist to JSON; **`ServoConfig.default.json`** ships with
-the project, holding the values scraped from `ConfigureServos.cs` (also
-compiled in as the startup defaults).
+single-control names map 1:1). Each individual physical servo row starts
+with an editable **Maestro Port** (0–23), followed by Normal/Reversed relative
+to the gang, Default/Min/Max PWM (clamped 500–2400), the 4-element speed and
+accel arrays ("default,slow,fast,crawl"), and a **verify slider** spanning
+Min–Max PWM that calls `MoveRobotControlNow(control, pwm)` live. Gang headers
+do not show a Maestro port. Historical `RobotControls` channel values remain
+the defaults, so older ServoConfig files that omit `maestroPort` retain their
+existing channel assignments. **File > Load / Save / Save As** persists the
+configuration to JSON; the active filename and Left Tic serial number remain
+visible on the configuration window's top line. **`ServoConfig.default.json`**
+ships with the project and matches the compiled startup defaults.
 
 In the display grid, every ServoName has a **[+/-] expander** exposing its
 RobotControl sub-rows, each with a PWM verify slider (enabled in Live
@@ -762,3 +766,11 @@ URDF Range Calibration Minimum/Maximum Extent values can now be typed directly i
 ## v1.6.10
 - Recolored the four gray hydraulic fitting bodies identified by the user arrows to `neck_gold`: the two upper Legris 3118-54-20 steel bodies and the two lower FN-32 needle-valve steel bodies.
 - SFT-10 banjo bolts remain gray/steel. Full original steel meshes are retained for collision geometry.
+
+
+## v1.8.0 — Configurable Maestro ports and Servo Configuration File menu
+
+- Added an editable **Maestro Port** (0–23) to each individual physical servo row in Servo Configuration. Gang headings do not show a port.
+- The existing RobotControls values remain the default port assignments, so older `ServoConfig.json` files without `maestroPort` preserve the current channel mapping.
+- Maestro hardware output now uses the configured port number; saving/loading Servo Configuration rebuilds the connected servo objects so port changes take effect through the existing reconfiguration path.
+- Moved Load, Save, Save As, and Close under a **File** menu at the top of Servo Configuration. The active configuration filename remains visible to the right of File, followed by the Left Tic serial number.

@@ -25,9 +25,9 @@
     <AssemblyTitle>Animation Editor &amp; Player</AssemblyTitle>
     <Product>Animation Editor &amp; Player</Product>
     <RootNamespace>ServoAnimator</RootNamespace>
-    <Version>1.7.6</Version>
-    <AssemblyVersion>1.7.6.0</AssemblyVersion>
-    <FileVersion>1.7.6.0</FileVersion>
+    <Version>1.8.3</Version>
+    <AssemblyVersion>1.8.3.0</AssemblyVersion>
+    <FileVersion>1.8.3.0</FileVersion>
     <!-- Explicit entry point (Program.cs). Normally WPF auto-generates
          Main from App.xaml, but if App.xaml's build action isn't
          "ApplicationDefinition" (e.g. after importing the files into an

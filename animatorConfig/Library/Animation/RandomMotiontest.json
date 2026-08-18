@@ -1,0 +1,96 @@
+{
+  "description": "Just testing things",
+  "commands": [
+    {
+      "offsetSeconds": 3.446,
+      "servo": "NeckTurn",
+      "value": 69,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 3.446,
+      "servo": "NeckTurn",
+      "value": 69,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 3.769,
+      "servo": "FlapsOpen",
+      "value": -93,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 5.312,
+      "servo": "NeckTurn",
+      "value": 0,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 5.312,
+      "servo": "Play",
+      "value": "X:\\Johnny5\\animatorConfig\\Library\\Audio\\LR7_Expressive.mp3",
+      "speed": "Default",
+      "reason": "LR7_Expressive.mp3"
+    },
+    {
+      "offsetSeconds": 6.236,
+      "servo": "FlapsOpen",
+      "value": 33,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 6.364,
+      "servo": "IrisClose",
+      "value": 91,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 6.897,
+      "servo": "NeckTurn",
+      "value": -27,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 7.574,
+      "servo": "FlapsOpen",
+      "value": 85,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 8.769,
+      "servo": "FlapsOpen",
+      "value": -79,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 9.375,
+      "servo": "NeckTurn",
+      "value": 41,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 9.375,
+      "servo": "IrisClose",
+      "value": -64,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 9.694,
+      "servo": "FlapsOpen",
+      "value": 25,
+      "speed": "Default",
+      "reason": ""
+    }
+  ]
+}

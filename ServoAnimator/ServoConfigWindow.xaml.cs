@@ -8,19 +8,21 @@
 // header). Everything edits the SHARED ServoConfiguration instance owned
 // by MainWindow, so the grid's expanded sub-rows see changes immediately.
 //
-// Each row: Normal/Reversed (relative to the gang), Default/Min/Max PWM
+// Each row: Maestro port, Normal/Reversed (relative to the gang), Default/Min/Max PWM
 // (clamped 500..2400), the 4-element speed and accel arrays (comma text,
 // "default,slow,fast,crawl"), and a verify SLIDER spanning Min..Max PWM
 // that calls MoveRobotControlNow(control, pwm) on every user move so the
 // physical servo can be driven to confirm the values.
 //
-// Load… / Save / Save As… persist the whole configuration to JSON.
+// File > Load / Save / Save As persist the whole configuration to JSON.
 // ---------------------------------------------------------------------------
 
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using Microsoft.Win32;
 
 namespace ServoAnimator
@@ -65,6 +67,36 @@ namespace ServoAnimator
         private void LeftTic_LostFocus(object sender, RoutedEventArgs e) =>
             _config.LeftTicSerialNumber = LeftTicBox.Text?.Trim() ?? "";
 
+        // Maestro channels are strictly 0..23. Reject a keystroke or paste
+        // that would make the complete field anything outside that range.
+        private static bool IsValidPortText(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return true; // allow editing/backspace
+            return int.TryParse(text, out int port) && port >= 0 && port <= 23;
+        }
+
+        private void Port_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            if (sender is not TextBox box) return;
+            string proposed = box.Text.Remove(box.SelectionStart, box.SelectionLength)
+                                      .Insert(box.SelectionStart, e.Text);
+            e.Handled = !IsValidPortText(proposed);
+        }
+
+        private void Port_Pasting(object sender, DataObjectPastingEventArgs e)
+        {
+            if (sender is not TextBox box || !e.SourceDataObject.GetDataPresent(DataFormats.Text))
+            {
+                e.CancelCommand();
+                return;
+            }
+
+            string pasted = e.SourceDataObject.GetData(DataFormats.Text) as string ?? "";
+            string proposed = box.Text.Remove(box.SelectionStart, box.SelectionLength)
+                                      .Insert(box.SelectionStart, pasted);
+            if (!IsValidPortText(proposed)) e.CancelCommand();
+        }
+
         /// <summary>
         /// Build the display groups:
         ///   * every GANGED ServoName (more than one control) is its own
@@ -85,12 +117,20 @@ namespace ServoAnimator
 
             void SharedEntryChanged(ServoConfigEntry entry, string propertyName)
             {
-                // The neck pair appears under both NeckTiltRight and NeckNodUp.
-                // PWM/speed/accel settings are one shared physical-channel
-                // configuration; only each gang's Direction is independent.
+                // NeckTiltLeft and NeckTiltRight each appear twice: once under
+                // NeckTiltRight and once under NeckNodUp. Those duplicate rows
+                // represent the SAME physical servo/config entry. Keep the two
+                // appearances synchronized for Port/PWM/speed/accel while each
+                // gang still owns its independent Direction setting.
                 foreach (var vm in _allConfigVms)
-                    if (ReferenceEquals(vm.Entry, entry))
+                    if (vm.Entry.Control == entry.Control)
                         vm.Refresh(propertyName);
+
+                // A port change can create or resolve a conflict for ANY other
+                // physical servo, so refresh conflict styling on every row.
+                if (propertyName == nameof(ServoConfigVM.MaestroPort))
+                    foreach (var vm in _allConfigVms)
+                        vm.Refresh(nameof(ServoConfigVM.HasPortConflict));
             }
 
             void AddGang(ServoNames gang)
@@ -361,6 +401,27 @@ namespace ServoAnimator
         internal void Refresh(string propertyName) => Raise(propertyName);
 
         public string Name => _e.Control.ToString();
+
+        /// <summary>True when another DIFFERENT physical servo is assigned
+        /// to this Maestro channel. Duplicate display rows for NeckTiltLeft
+        /// and NeckTiltRight are ignored because each repeated row points to
+        /// the same physical ServoConfigEntry/control.</summary>
+        public bool HasPortConflict => _config.Servos.Any(s =>
+            s.Control != _e.Control && s.MaestroPort == _e.MaestroPort);
+
+        /// <summary>Physical Pololu Maestro channel for this servo. The
+        /// historical RobotControls value is the default for older configs.</summary>
+        public int MaestroPort
+        {
+            get => _e.MaestroPort;
+            set
+            {
+                _e.MaestroPort = value;
+                Raise(nameof(MaestroPort));
+                _entryChanged?.Invoke(_e, nameof(MaestroPort));
+            }
+        }
+
         public string[] DirectionOptions { get; } = { "Normal", "Reversed" };
 
         /// <summary>Normal/Reversed RELATIVE TO the parent gang.</summary>

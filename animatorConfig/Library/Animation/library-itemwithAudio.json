@@ -1,0 +1,96 @@
+{
+  "description": "This is a test file with an audio file",
+  "commands": [
+    {
+      "offsetSeconds": 0.765,
+      "servo": "NeckTurn",
+      "value": 69,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 0.765,
+      "servo": "NeckTurn",
+      "value": 69,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 1.088,
+      "servo": "FlapsOpen",
+      "value": -93,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 1.311,
+      "servo": "NeckTurn",
+      "value": 0,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 1.311,
+      "servo": "Play",
+      "value": "X:\\Johnny5\\animatorConfig\\Library\\Audio\\LR7_Expressive.mp3",
+      "speed": "Default",
+      "reason": "LR7_Expressive.mp3"
+    },
+    {
+      "offsetSeconds": 2.235,
+      "servo": "FlapsOpen",
+      "value": 33,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 2.363,
+      "servo": "IrisClose",
+      "value": 91,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 2.896,
+      "servo": "NeckTurn",
+      "value": -27,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 3.573,
+      "servo": "FlapsOpen",
+      "value": 85,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 4.768,
+      "servo": "FlapsOpen",
+      "value": -79,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 5.374,
+      "servo": "IrisClose",
+      "value": -64,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 5.374,
+      "servo": "NeckTurn",
+      "value": 41,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 5.693,
+      "servo": "FlapsOpen",
+      "value": 25,
+      "speed": "Default",
+      "reason": ""
+    }
+  ]
+}

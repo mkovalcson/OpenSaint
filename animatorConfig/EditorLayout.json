@@ -1,0 +1,46 @@
+{
+  "WindowLeft": -1617,
+  "WindowTop": 30,
+  "WindowWidth": 1578,
+  "WindowHeight": 1079,
+  "WindowState": "Normal",
+  "ServoEditorColumn": {
+    "Value": 753.8305439330584,
+    "Unit": "Star"
+  },
+  "UrdfEditorColumn": {
+    "Value": 800.1694560669416,
+    "Unit": "Star"
+  },
+  "UndockedServoLeftColumn": {
+    "Value": 1,
+    "Unit": "Star"
+  },
+  "UndockedServoRightColumn": {
+    "Value": 1,
+    "Unit": "Star"
+  },
+  "TopEditorRow": {
+    "Value": 418,
+    "Unit": "Pixel"
+  },
+  "AudioTimelineRow": {
+    "Value": 1,
+    "Unit": "Star"
+  },
+  "LastSplineTimelineHeight": {
+    "Value": 137,
+    "Unit": "Pixel"
+  },
+  "CommandsVisible": false,
+  "MovieTimelineVisible": true,
+  "EmbeddedUrdfHeightStage": 0,
+  "EmbeddedUrdfHeightPixels": 418,
+  "UrdfUndocked": false,
+  "UrdfWindowLeft": 120,
+  "UrdfWindowTop": 120,
+  "UrdfWindowWidth": 900,
+  "UrdfWindowHeight": 650,
+  "UrdfWindowFullScreen": false,
+  "UrdfWindowState": "Maximized"
+}

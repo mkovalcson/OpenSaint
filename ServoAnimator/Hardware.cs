@@ -4,8 +4,9 @@
 // The physical output layer, adapted from the uploaded Servos.cs,
 // StepperMotors.cs, RGBLight.cs and USBDevices.cs into this project's
 // namespace (their file-level RobotControls / ServoSpeed enums collide with
-// ours, so ours were aligned to theirs instead - including the Maestro
-// channel numbers).
+// ours). RobotControls retains the historical Maestro channel numbers as the
+// DEFAULT assignment; ServoConfigEntry.MaestroPort can now remap a physical
+// servo to any Maestro channel 0-23.
 //
 //   * MaestroServo - one PWM channel on the Pololu Maestro. The compact-
 //     protocol serial commands (Set Target 0x84, Speed 0x87, Accel 0x89,
@@ -49,7 +50,7 @@ namespace ServoAnimator
         {
             Name = cfg.Control;
             UsbPort = usbPort;
-            Channel = (int)cfg.Control;      // enum value IS the channel
+            Channel = cfg.MaestroPort;       // configurable Maestro channel (0-23)
             HomeValue = cfg.DefaultPwm;
             LimitLower = cfg.MinPwm;
             LimitUpper = cfg.MaxPwm;

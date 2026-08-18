@@ -1,0 +1,301 @@
+{
+  "description": "A full description of what I\u0027m trying to do with this animation sequence including any notes I may care about.",
+  "audioFiles": "LightningRound.mp3|LR7_Expressive.mp3",
+  "audioFile": "LightningRound.mp3",
+  "audioFilePath": "X:\\Johnny5\\Software\\animatorConfig\\Projects\\MyProject\\LightningRound.mp3",
+  "durationSeconds": 13.28,
+  "audioStartOffsetSeconds": 0,
+  "splineServos": [
+    "NeckTurn",
+    "FlapsOpen",
+    "IrisClose",
+    "EyesVerticalUp",
+    "BothEyePop"
+  ],
+  "splineSampleHz": 50,
+  "animateMode": "Individual",
+  "scaleValues": false,
+  "commands": [
+    {
+      "offsetSeconds": 0,
+      "servo": "NeckTurn",
+      "value": 0,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 2.132,
+      "servo": "RGBCommand",
+      "value": "",
+      "speed": "Default",
+      "reason": "",
+      "color": "#FF1E1E"
+    },
+    {
+      "offsetSeconds": 3.577,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 3.577,
+      "servo": "NoseBody",
+      "value": 49,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 3.634,
+      "servo": "NeckTurn",
+      "value": 0,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 3.664,
+      "servo": "FlapsOpen",
+      "value": 0,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 3.664,
+      "servo": "IrisClose",
+      "value": -10,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 5.11,
+      "servo": "NeckTurn",
+      "value": 69,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 5.11,
+      "servo": "NeckTurn",
+      "value": 69,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 5.433,
+      "servo": "FlapsOpen",
+      "value": -93,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 5.714,
+      "servo": "EyesVerticalUp",
+      "value": -100,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 6.58,
+      "servo": "FlapsOpen",
+      "value": 33,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 6.708,
+      "servo": "IrisClose",
+      "value": 91,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 7.241,
+      "servo": "NeckTurn",
+      "value": -27,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 7.918,
+      "servo": "FlapsOpen",
+      "value": 85,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 8.273,
+      "servo": "EyesVerticalUp",
+      "value": 61,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 9.113,
+      "servo": "FlapsOpen",
+      "value": -79,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 9.719,
+      "servo": "BothEyePop",
+      "value": 0,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 9.719,
+      "servo": "NeckTurn",
+      "value": 41,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 9.719,
+      "servo": "IrisClose",
+      "value": -64,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 10.038,
+      "servo": "FlapsOpen",
+      "value": 25,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 11.371,
+      "servo": "BothEyePop",
+      "value": 1804,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 11.656,
+      "servo": "EyesVerticalUp",
+      "value": -100,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 13.049,
+      "servo": "BothEyePop",
+      "value": 117,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 14.044,
+      "servo": "BothEyePop",
+      "value": 2000,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 14.783,
+      "servo": "BothEyePop",
+      "value": 0,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 15.273,
+      "servo": "NeckTurn",
+      "value": 69,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 15.273,
+      "servo": "NeckTurn",
+      "value": 69,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 15.596,
+      "servo": "FlapsOpen",
+      "value": -93,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 15.636,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 15.819,
+      "servo": "Play",
+      "value": "X:\\Johnny5\\animatorConfig\\Projects\\MyProject\\LR7_Expressive.mp3",
+      "speed": "Default",
+      "reason": "LR7_Expressive.mp3"
+    },
+    {
+      "offsetSeconds": 15.819,
+      "servo": "NeckTurn",
+      "value": 0,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 16.743,
+      "servo": "FlapsOpen",
+      "value": 33,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 16.871,
+      "servo": "IrisClose",
+      "value": 91,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 17.404,
+      "servo": "NeckTurn",
+      "value": -27,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 18.081,
+      "servo": "FlapsOpen",
+      "value": 85,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 19.276,
+      "servo": "FlapsOpen",
+      "value": -79,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 19.882,
+      "servo": "IrisClose",
+      "value": -64,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 19.882,
+      "servo": "NeckTurn",
+      "value": 41,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 20.201,
+      "servo": "FlapsOpen",
+      "value": 25,
+      "speed": "Default",
+      "reason": ""
+    }
+  ]
+}

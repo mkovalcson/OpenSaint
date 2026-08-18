@@ -10,53 +10,73 @@
     <!-- ==================================================================
          Editable configuration for every physical servo channel, grouped
          under its ganged ServoName (the group header). Per control:
-           Name | Normal/Reversed (relative to the gang) |
+           Maestro Port | Name | Normal/Reversed (relative to the gang) |
            Default / Min / Max PWM (clamped 500..2400) |
            Speeds "d,s,f,c" | Accels "d,s,f,c" |
            verify SLIDER (Min..Max PWM) that drives the servo live via
            MoveRobotControlNow().
-         Load / Save / Save As persist the whole set to JSON.
+         File > Load / Save / Save As persist the whole set to JSON.
          ================================================================== -->
     <DockPanel Margin="10">
 
-        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
-                    HorizontalAlignment="Right" Margin="0,8,0,0">
-            <TextBlock Text="Left Tic SN:" Foreground="#C8CCD4"
+        <!-- File/configuration bar.  File operations live under the File
+             menu; the active configuration filename and Left Tic serial
+             remain visible beside it. -->
+        <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Menu Grid.Column="0" VerticalAlignment="Center"
+                  Background="Transparent" Foreground="{DynamicResource PrimaryText}">
+                <MenuItem Header="_File" Foreground="#F2F4F8">
+                    <MenuItem Header="_Load…" Click="Load_Click"/>
+                    <MenuItem Header="_Save" Click="Save_Click"/>
+                    <MenuItem Header="Save _As…" Click="SaveAs_Click"/>
+                    <Separator/>
+                    <MenuItem Header="_Close" Click="Close_Click"/>
+                </MenuItem>
+            </Menu>
+
+            <TextBlock Grid.Column="1" x:Name="ConfigPathText"
+                       Foreground="{DynamicResource HeaderText}"
+                       VerticalAlignment="Center" Margin="12,0,18,0"
+                       Text="(unsaved configuration)"/>
+
+            <TextBlock Grid.Column="2" Text="Left Tic SN:" Foreground="#C8CCD4"
                        VerticalAlignment="Center" Margin="0,0,4,0"
                        ToolTip="Serial number of the LEFT Tic T249 eye-pop controller (empty = first found is left)"/>
-            <TextBox x:Name="LeftTicBox" Width="110" VerticalAlignment="Center"
-                     Margin="0,0,14,0" LostFocus="LeftTic_LostFocus"/>
-            <TextBlock x:Name="ConfigPathText" Foreground="{DynamicResource HeaderText}"
-                       VerticalAlignment="Center" Margin="0,0,14,0"
-                       Text="(unsaved configuration)"/>
-            <Button Content="Load…"    Width="80" Margin="4,0" Click="Load_Click"/>
-            <Button Content="Save"     Width="80" Margin="4,0" Click="Save_Click"/>
-            <Button Content="Save As…" Width="80" Margin="4,0" Click="SaveAs_Click"/>
-            <Button Content="Close"    Width="80" Margin="4,0" Click="Close_Click" IsDefault="True"/>
-        </StackPanel>
+            <TextBox Grid.Column="3" x:Name="LeftTicBox" Width="110"
+                     VerticalAlignment="Center" LostFocus="LeftTic_LostFocus"/>
+        </Grid>
 
         <!-- Column headers -->
         <Grid DockPanel.Dock="Top" Margin="0,0,0,4">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="50"/>
                 <ColumnDefinition Width="185"/>
-                <ColumnDefinition Width="120"/>
-                <ColumnDefinition Width="80"/>
-                <ColumnDefinition Width="80"/>
-                <ColumnDefinition Width="80"/>
-                <ColumnDefinition Width="125"/>
-                <ColumnDefinition Width="125"/>
+                <ColumnDefinition Width="90"/>
+                <ColumnDefinition Width="56"/>
+                <ColumnDefinition Width="56"/>
+                <ColumnDefinition Width="56"/>
+                <ColumnDefinition Width="97"/>
+                <ColumnDefinition Width="88"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="60"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="RobotControl" Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
-            <TextBlock Grid.Column="1" Text="Direction"   Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
-            <TextBlock Grid.Column="2" Text="Default"     Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
-            <TextBlock Grid.Column="3" Text="Min"         Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
-            <TextBlock Grid.Column="4" Text="Max"         Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
-            <TextBlock Grid.Column="5" Text="Speeds d,s,f,c" Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
-            <TextBlock Grid.Column="6" Text="Accels d,s,f,c" Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
-            <TextBlock Grid.Column="7" Text="Drive (PWM verify)" Foreground="{DynamicResource HeaderText}" FontWeight="Bold" Margin="6,0"/>
-            <TextBlock Grid.Column="8" Text="PWM"         Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
+            <TextBlock Grid.Column="0" Text="Port"         Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
+            <TextBlock Grid.Column="1" Text="RobotControl" Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
+            <TextBlock Grid.Column="2" Text="Direction"   Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
+            <TextBlock Grid.Column="3" Text="Default"     Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
+            <TextBlock Grid.Column="4" Text="Min"         Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
+            <TextBlock Grid.Column="5" Text="Max"         Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
+            <TextBlock Grid.Column="6" Text="Speeds d,s,f,c" Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
+            <TextBlock Grid.Column="7" Text="Accels d,s,f,c" Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
+            <TextBlock Grid.Column="8" Text="Drive (PWM verify)" Foreground="{DynamicResource HeaderText}" FontWeight="Bold" Margin="6,0"/>
+            <TextBlock Grid.Column="9" Text="PWM"         Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
         </Grid>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -70,7 +90,7 @@
                                  servo in it, like the display grid. -->
                             <Grid Margin="0,4,0,2">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="245"/>
+                                    <ColumnDefinition Width="235"/>
                                     <ColumnDefinition Width="300"/>
                                     <ColumnDefinition Width="55"/>
                                     <ColumnDefinition Width="*"/>
@@ -126,12 +146,12 @@
                                     </StackPanel.Style>
                                     <TextBlock Text="Gang Speeds d,s,f,c" Foreground="{DynamicResource HeaderText}"
                                                VerticalAlignment="Center" Margin="8,0,5,0"/>
-                                    <TextBox Width="135" Margin="0,0,12,0"
+                                    <TextBox Width="105" Margin="0,0,12,0"
                                              ToolTip="Changing this copies all four speed profiles to every child servo in this gang"
                                              Text="{Binding GangSpeedsText, UpdateSourceTrigger=LostFocus}"/>
                                     <TextBlock Text="Gang Accels d,s,f,c" Foreground="{DynamicResource HeaderText}"
                                                VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                    <TextBox Width="135"
+                                    <TextBox Width="95"
                                              ToolTip="Changing this copies all four acceleration profiles to every child servo in this gang"
                                              Text="{Binding GangAccelsText, UpdateSourceTrigger=LostFocus}"/>
                                 </StackPanel>
@@ -143,45 +163,82 @@
                                     <DataTemplate>
                                         <Grid Margin="0,2">
                                             <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="50"/>
                                                 <ColumnDefinition Width="185"/>
-                                                <ColumnDefinition Width="120"/>
-                                                <ColumnDefinition Width="80"/>
-                                                <ColumnDefinition Width="80"/>
-                                                <ColumnDefinition Width="80"/>
-                                                <ColumnDefinition Width="125"/>
-                                                <ColumnDefinition Width="125"/>
+                                                <ColumnDefinition Width="90"/>
+                                                <ColumnDefinition Width="56"/>
+                                                <ColumnDefinition Width="56"/>
+                                                <ColumnDefinition Width="56"/>
+                                                <ColumnDefinition Width="97"/>
+                                                <ColumnDefinition Width="88"/>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="60"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <TextBlock Grid.Column="0" Text="{Binding Name}"
-                                                       Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                            <!-- Physical Maestro channel.  This exists only on
+                                                 individual servo rows, never on gang headers. -->
+                                            <TextBox Grid.Column="0" Margin="0,0,4,0"
+                                                     HorizontalContentAlignment="Center"
+                                                     MaxLength="2"
+                                                     PreviewTextInput="Port_PreviewTextInput"
+                                                     DataObject.Pasting="Port_Pasting"
+                                                     ToolTip="Pololu Maestro channel (0-23) used by this physical servo"
+                                                     Text="{Binding MaestroPort, UpdateSourceTrigger=LostFocus}">
+                                                <TextBox.Style>
+                                                    <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                                        <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+                                                        <Setter Property="FontWeight" Value="Normal"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding HasPortConflict}" Value="True">
+                                                                <Setter Property="Foreground" Value="#FF3030"/>
+                                                                <Setter Property="FontWeight" Value="Bold"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBox.Style>
+                                            </TextBox>
+
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}"
+                                                       VerticalAlignment="Center" Margin="4,0,0,0">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+                                                        <Setter Property="FontWeight" Value="Normal"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding HasPortConflict}" Value="True">
+                                                                <Setter Property="Foreground" Value="#FF3030"/>
+                                                                <Setter Property="FontWeight" Value="Bold"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
 
                                             <!-- Normal / Reversed relative to the gang -->
-                                            <ComboBox Grid.Column="1" Margin="0,0,6,0"
+                                            <ComboBox Grid.Column="2" Margin="0,0,6,0"
                                                       ItemsSource="{Binding DirectionOptions}"
                                                       SelectedItem="{Binding Direction}"/>
 
-                                            <TextBox Grid.Column="2" Margin="0,0,4,0"
-                                                     Text="{Binding DefaultPwm, UpdateSourceTrigger=LostFocus}"/>
                                             <TextBox Grid.Column="3" Margin="0,0,4,0"
-                                                     Text="{Binding MinPwm, UpdateSourceTrigger=LostFocus}"/>
+                                                     Text="{Binding DefaultPwm, UpdateSourceTrigger=LostFocus}"/>
                                             <TextBox Grid.Column="4" Margin="0,0,4,0"
+                                                     Text="{Binding MinPwm, UpdateSourceTrigger=LostFocus}"/>
+                                            <TextBox Grid.Column="5" Margin="0,0,4,0"
                                                      Text="{Binding MaxPwm, UpdateSourceTrigger=LostFocus}"/>
 
-                                            <TextBox Grid.Column="5" Margin="0,0,4,0"
-                                                     Text="{Binding SpeedsText, UpdateSourceTrigger=LostFocus}"/>
                                             <TextBox Grid.Column="6" Margin="0,0,4,0"
+                                                     Text="{Binding SpeedsText, UpdateSourceTrigger=LostFocus}"/>
+                                            <TextBox Grid.Column="7" Margin="0,0,4,0"
                                                      Text="{Binding AccelsText, UpdateSourceTrigger=LostFocus}"/>
 
                                             <!-- Verify slider: drives the servo -->
-                                            <Slider Grid.Column="7" Margin="6,0"
+                                            <Slider Grid.Column="8" Margin="6,0"
                                                     VerticalAlignment="Center"
                                                     Minimum="{Binding MinPwm}"
                                                     Maximum="{Binding MaxPwm}"
                                                     Value="{Binding SliderPwm, Mode=TwoWay}"/>
 
-                                            <TextBlock Grid.Column="8" Text="{Binding SliderPwm, StringFormat=F0}"
+                                            <TextBlock Grid.Column="9" Text="{Binding SliderPwm, StringFormat=F0}"
                                                        Foreground="{DynamicResource WarningText}" VerticalAlignment="Center"/>
                                         </Grid>
                                     </DataTemplate>

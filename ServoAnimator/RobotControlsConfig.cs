@@ -18,7 +18,9 @@
 //   EyesVerticalUp      -> LeftLensVertical, RightLensVertical
 //   (single-control names map 1:1; RGBCommand and the eye pops map to none)
 //
-// The default configuration values were scraped from ConfigureServos.cs.
+// The built-in defaults match ServoConfig.default.json. RobotControls keeps
+// the historical Maestro channels as default assignments, while each servo's
+// MaestroPort field can remap its physical output channel.
 // ---------------------------------------------------------------------------
 
 using System.IO;
@@ -28,10 +30,11 @@ using System.Text.Json.Serialization;
 namespace ServoAnimator
 {
     /// <summary>
-    /// The physical channels, with values matching Servos.cs: 0..23 map
-    /// directly to the 24-port Maestro card's channels ((int)control is the
-    /// channel number), 200s are the Tic T249 eye-pop steppers, and 100s
-    /// identify the Arduino RGB rings.
+    /// The physical controls. Values 0..23 preserve the historical Maestro
+    /// channel assignments and are used as the default MaestroPort for older
+    /// configuration files. The actual Maestro channel is configurable per
+    /// ServoConfigEntry. Values in the 200s are Tic eye-pop steppers and the
+    /// 100s identify Arduino RGB-ring controls.
     /// </summary>
     public enum RobotControls
     {
@@ -91,6 +94,23 @@ namespace ServoAnimator
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public RobotControls Control { get; set; }
 
+        /// <summary>Pololu Maestro channel (0-23) used by this physical
+        /// servo. Older ServoConfig.json files do not contain this field;
+        /// when absent, the historical RobotControls enum value is used so
+        /// existing configurations retain their current channel assignments.</summary>
+        [JsonPropertyName("maestroPort")]
+        public int MaestroPort
+        {
+            get
+            {
+                if (_maestroPort.HasValue) return ClampMaestroPort(_maestroPort.Value);
+                int legacy = (int)Control;
+                return legacy >= 0 && legacy <= 23 ? legacy : 0;
+            }
+            set => _maestroPort = ClampMaestroPort(value);
+        }
+        private int? _maestroPort;
+
         /// <summary>Direction relative to its ganged ServoName: false =
         /// Normal, true = Reversed.</summary>
         [JsonPropertyName("reversed")]
@@ -117,6 +137,7 @@ namespace ServoAnimator
         public int[] Accels { get; set; } = new int[4];
 
         public static int ClampPwm(int v) => Math.Clamp(v, PwmFloor, PwmCeiling);
+        public static int ClampMaestroPort(int v) => Math.Clamp(v, 0, 23);
     }
 
     /// <summary>The whole servo configuration document (JSON root).</summary>
@@ -249,7 +270,8 @@ namespace ServoAnimator
         {
             ServoConfigEntry E(RobotControls c, bool rev, int def, int min, int max,
                                int[] sp, int[] ac) => new()
-            { Control = c, Reversed = rev, DefaultPwm = def, MinPwm = min, MaxPwm = max,
+            { Control = c, MaestroPort = (int)c, Reversed = rev,
+              DefaultPwm = def, MinPwm = min, MaxPwm = max,
               Speeds = (int[])sp.Clone(), Accels = (int[])ac.Clone() };
 
             int[] nose = { 100, 50, 0, 50 }, noseA = { 30, 15, 0, 15 };

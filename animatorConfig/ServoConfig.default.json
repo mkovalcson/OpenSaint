@@ -1,8 +1,8 @@
 {
+  "leftTicSerialNumber": "00475552",
   "servos": [
     {
       "control": "NoseBasket",
-      "maestroPort": 9,
       "reversed": false,
       "defaultPwm": 850,
       "minPwm": 850,
@@ -22,7 +22,6 @@
     },
     {
       "control": "NoseBody",
-      "maestroPort": 8,
       "reversed": true,
       "defaultPwm": 1200,
       "minPwm": 1000,
@@ -42,7 +41,6 @@
     },
     {
       "control": "NeckTiltLeft",
-      "maestroPort": 4,
       "reversed": false,
       "defaultPwm": 1533,
       "minPwm": 1445,
@@ -62,7 +60,6 @@
     },
     {
       "control": "NeckTiltRight",
-      "maestroPort": 13,
       "reversed": true,
       "defaultPwm": 1480,
       "minPwm": 1400,
@@ -82,7 +79,6 @@
     },
     {
       "control": "NeckTurn",
-      "maestroPort": 22,
       "reversed": false,
       "defaultPwm": 1325,
       "minPwm": 850,
@@ -102,7 +98,6 @@
     },
     {
       "control": "LeftLensHorizontal",
-      "maestroPort": 2,
       "reversed": false,
       "defaultPwm": 1450,
       "minPwm": 650,
@@ -122,7 +117,6 @@
     },
     {
       "control": "RightLensHorizontal",
-      "maestroPort": 15,
       "reversed": false,
       "defaultPwm": 1450,
       "minPwm": 650,
@@ -142,7 +136,6 @@
     },
     {
       "control": "LeftLensVertical",
-      "maestroPort": 3,
       "reversed": true,
       "defaultPwm": 1400,
       "minPwm": 600,
@@ -162,7 +155,6 @@
     },
     {
       "control": "RightLensVertical",
-      "maestroPort": 14,
       "reversed": false,
       "defaultPwm": 1520,
       "minPwm": 720,
@@ -182,7 +174,6 @@
     },
     {
       "control": "LeftIris",
-      "maestroPort": 1,
       "reversed": false,
       "defaultPwm": 1575,
       "minPwm": 1350,
@@ -202,7 +193,6 @@
     },
     {
       "control": "RightIris",
-      "maestroPort": 16,
       "reversed": false,
       "defaultPwm": 975,
       "minPwm": 750,
@@ -222,7 +212,6 @@
     },
     {
       "control": "BrowLeftTopOpen",
-      "maestroPort": 6,
       "reversed": true,
       "defaultPwm": 1523,
       "minPwm": 920,
@@ -242,7 +231,6 @@
     },
     {
       "control": "BrowRightTopOpen",
-      "maestroPort": 11,
       "reversed": false,
       "defaultPwm": 866,
       "minPwm": 637,
@@ -262,7 +250,6 @@
     },
     {
       "control": "BrowLeftTopTilt",
-      "maestroPort": 7,
       "reversed": true,
       "defaultPwm": 1800,
       "minPwm": 910,
@@ -282,7 +269,6 @@
     },
     {
       "control": "BrowRightTopTilt",
-      "maestroPort": 10,
       "reversed": false,
       "defaultPwm": 1100,
       "minPwm": 1000,
@@ -302,7 +288,6 @@
     },
     {
       "control": "BrowLeftBottomOpen",
-      "maestroPort": 5,
       "reversed": false,
       "defaultPwm": 1750,
       "minPwm": 940,
@@ -322,7 +307,6 @@
     },
     {
       "control": "BrowRightBottomOpen",
-      "maestroPort": 12,
       "reversed": true,
       "defaultPwm": 1100,
       "minPwm": 700,
@@ -342,7 +326,6 @@
     },
     {
       "control": "LeftEyeVent",
-      "maestroPort": 0,
       "reversed": false,
       "defaultPwm": 1765,
       "minPwm": 1765,
@@ -362,7 +345,6 @@
     },
     {
       "control": "RightEyeVent",
-      "maestroPort": 17,
       "reversed": true,
       "defaultPwm": 1125,
       "minPwm": 835,
@@ -382,7 +364,6 @@
     },
     {
       "control": "MFR_Rotate",
-      "maestroPort": 21,
       "reversed": true,
       "defaultPwm": 1320,
       "minPwm": 800,
@@ -402,7 +383,6 @@
     },
     {
       "control": "MFR_UpDown",
-      "maestroPort": 20,
       "reversed": true,
       "defaultPwm": 550,
       "minPwm": 550,
@@ -422,7 +402,6 @@
     },
     {
       "control": "Whip_Antenna_RaiseLower",
-      "maestroPort": 18,
       "reversed": true,
       "defaultPwm": 2200,
       "minPwm": 1620,
@@ -442,7 +421,6 @@
     },
     {
       "control": "Whip_Antenna_Rotate",
-      "maestroPort": 19,
       "reversed": false,
       "defaultPwm": 1400,
       "minPwm": 500,
@@ -462,7 +440,6 @@
     },
     {
       "control": "Microphone_RaiseLower",
-      "maestroPort": 23,
       "reversed": false,
       "defaultPwm": 1625,
       "minPwm": 1625,
@@ -490,7 +467,7 @@
     {
       "servo": "FlapsOpen",
       "control": "BrowRightTopOpen",
-      "reversed": true
+      "reversed": false
     },
     {
       "servo": "FlapsOpen",
@@ -500,12 +477,12 @@
     {
       "servo": "FlapsOpen",
       "control": "BrowRightBottomOpen",
-      "reversed": false
+      "reversed": true
     },
     {
       "servo": "FlapTiltUp",
       "control": "BrowLeftTopTilt",
-      "reversed": false
+      "reversed": true
     },
     {
       "servo": "FlapTiltUp",
@@ -525,12 +502,12 @@
     {
       "servo": "EyesHorizontalRight",
       "control": "LeftLensHorizontal",
-      "reversed": true
+      "reversed": false
     },
     {
       "servo": "EyesHorizontalRight",
       "control": "RightLensHorizontal",
-      "reversed": true
+      "reversed": false
     },
     {
       "servo": "EyesVerticalUp",
@@ -540,22 +517,22 @@
     {
       "servo": "EyesVerticalUp",
       "control": "RightLensVertical",
-      "reversed": true
+      "reversed": false
     },
     {
       "servo": "VentsOpen",
       "control": "LeftEyeVent",
-      "reversed": true
+      "reversed": false
     },
     {
       "servo": "VentsOpen",
       "control": "RightEyeVent",
-      "reversed": false
+      "reversed": true
     },
     {
       "servo": "NeckTiltRight",
       "control": "NeckTiltLeft",
-      "reversed": true
+      "reversed": false
     },
     {
       "servo": "NeckTiltRight",
@@ -570,8 +547,7 @@
     {
       "servo": "NeckNodUp",
       "control": "NeckTiltRight",
-      "reversed": true
+      "reversed": false
     }
-  ],
-  "leftTicSerialNumber": "00475552"
+  ]
 }

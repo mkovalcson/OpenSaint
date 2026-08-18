@@ -1,0 +1,110 @@
+{
+  "description": "Test adding new description for an library item",
+  "commands": [
+    {
+      "offsetSeconds": 0.358,
+      "servo": "NoseBody",
+      "value": 49,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 0.415,
+      "servo": "NeckTurn",
+      "value": 0,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 0.445,
+      "servo": "FlapsOpen",
+      "value": 0,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 0.445,
+      "servo": "IrisClose",
+      "value": -10,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 1.891,
+      "servo": "NeckTurn",
+      "value": 69,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 1.891,
+      "servo": "NeckTurn",
+      "value": 69,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 2.214,
+      "servo": "FlapsOpen",
+      "value": -93,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 3.361,
+      "servo": "FlapsOpen",
+      "value": 33,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 3.489,
+      "servo": "IrisClose",
+      "value": 91,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 4.022,
+      "servo": "NeckTurn",
+      "value": -27,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 4.699,
+      "servo": "FlapsOpen",
+      "value": 85,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 5.894,
+      "servo": "FlapsOpen",
+      "value": -79,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 6.5,
+      "servo": "IrisClose",
+      "value": -64,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 6.5,
+      "servo": "NeckTurn",
+      "value": 41,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 6.819,
+      "servo": "FlapsOpen",
+      "value": 25,
+      "speed": "Default",
+      "reason": ""
+    }
+  ]
+}

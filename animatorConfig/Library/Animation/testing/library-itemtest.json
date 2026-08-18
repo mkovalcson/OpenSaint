@@ -1,0 +1,82 @@
+{
+  "description": "This is a simple test file",
+  "commands": [
+    {
+      "offsetSeconds": 1.4,
+      "servo": "NeckTurn",
+      "value": 69,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 1.4,
+      "servo": "NeckTurn",
+      "value": 69,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 1.723,
+      "servo": "FlapsOpen",
+      "value": -93,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 2.87,
+      "servo": "FlapsOpen",
+      "value": 33,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 2.998,
+      "servo": "IrisClose",
+      "value": 91,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 3.531,
+      "servo": "NeckTurn",
+      "value": -27,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 4.208,
+      "servo": "FlapsOpen",
+      "value": 85,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 5.403,
+      "servo": "FlapsOpen",
+      "value": -79,
+      "speed": "Default",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 6.009,
+      "servo": "IrisClose",
+      "value": -64,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 6.009,
+      "servo": "NeckTurn",
+      "value": 41,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 6.328,
+      "servo": "FlapsOpen",
+      "value": 25,
+      "speed": "Default",
+      "reason": ""
+    }
+  ]
+}
