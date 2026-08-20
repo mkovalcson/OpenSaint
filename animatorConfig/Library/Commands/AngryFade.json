@@ -1,0 +1,41 @@
+{
+  "description": "Angry Fade to red",
+  "commands": [
+    {
+      "offsetSeconds": 0,
+      "servo": "NoseBody",
+      "value": -100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "FlapsOpen",
+      "value": -100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "FlapTiltUp",
+      "value": 38,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "IrisClose",
+      "value": -36,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "RGBCommand",
+      "value": "Fade,255,0,0,200,Eyes,LR,20,In,5,0",
+      "speed": "N/C",
+      "reason": "",
+      "color": "#FF0000"
+    }
+  ]
+}

@@ -66,6 +66,12 @@
   <material name="pupil_dynamic">
     <color rgba="0.02 0.02 0.025 1" />
   </material>
+  <material name="left_pupil_dynamic">
+    <color rgba="0 0 0 1" />
+  </material>
+  <material name="right_pupil_dynamic">
+    <color rgba="0 0 0 1" />
+  </material>
   <material name="iris_blue">
     <color rgba="0.18 0.50 0.91 1" />
   </material>
@@ -1528,7 +1534,7 @@
       <geometry>
         <cylinder radius="0.022860" length="0.003704" />
       </geometry>
-      <material name="pupil_dynamic" />
+      <material name="left_pupil_dynamic" />
     </visual>
     <collision name="auto_collision_left_pupil_aperture">
       <origin xyz="0.000000 0.000000 0.000000" rpy="0 1.5708 0" />
@@ -1742,7 +1748,7 @@
       <geometry>
         <cylinder radius="0.022860" length="0.003704" />
       </geometry>
-      <material name="pupil_dynamic" />
+      <material name="right_pupil_dynamic" />
     </visual>
     <collision name="auto_collision_right_pupil_aperture">
       <origin xyz="0.000000 0.000000 0.000000" rpy="0 1.5708 0" />

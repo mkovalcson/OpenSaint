@@ -218,8 +218,8 @@ namespace ServoAnimator
 
     /// <summary>The Arduino RGB ring lights: one text command per line
     /// (open/write/close per command, matching RGBLight.cs). The command
-    /// strings are what the RGB command builder produces - e.g.
-    /// "SetRGBColor,255,0,64,200,Eyes,LR".</summary>
+    /// strings passed here are already in Arduino wire order. For commands
+    /// with explicit colors that means Green,Red,Blue.</summary>
     public class RGBLight
     {
         private readonly string _portName;

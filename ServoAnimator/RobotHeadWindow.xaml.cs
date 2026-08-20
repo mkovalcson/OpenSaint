@@ -12,6 +12,8 @@ namespace ServoAnimator
         public RobotHeadWindow()
         {
             InitializeComponent();
+            HelpSystem.EnableContextHelp(this, "urdf-viewer");
+            HelpSystem.SetTopic(HeadView, "urdf-viewer");
             HeadView.DockToggleRequested += () => DockRequested?.Invoke();
             HeadView.SetDetachedHostState();
         }

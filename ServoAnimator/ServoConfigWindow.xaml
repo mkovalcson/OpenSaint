@@ -79,7 +79,7 @@
             <TextBlock Grid.Column="9" Text="PWM"         Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
         </Grid>
 
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <ScrollViewer x:Name="MainScroll" VerticalScrollBarVisibility="Auto">
             <ItemsControl x:Name="GroupList">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>

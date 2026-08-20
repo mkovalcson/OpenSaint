@@ -1,0 +1,146 @@
+{
+  "description": "Sets all controls to default and clears the eyes.",
+  "commands": [
+    {
+      "offsetSeconds": 0,
+      "servo": "NeckTurn",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "BothEyePop",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "FlapsOpen",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "FlapTiltUp",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "IrisClose",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "LeftEyePop",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "MFR_Rotate",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "MFR_UpDown",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "Microphone_RaiseLower",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "NeckNodUp",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "NeckTiltRight",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "NoseBasket",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "NoseBody",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "RGBCommand",
+      "value": "ClearAll",
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "RightEyePop",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "VentsOpen",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "Whip_Antenna_RaiseLower",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "Whip_Antenna_Rotate",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    }
+  ],
+  "image": "ResetToDefaults-image.jpg"
+}

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "topics": [
+    {"id":"getting-started","title":"Getting Started","file":"GettingStarted.md","keywords":["start","overview","sequence","movie","audio","workflow"],"related":["interface","sequence-editor","servo-grid","controls-hotkeys"]},
+    {"id":"interface","title":"Editor Interface","file":"Interface.md","keywords":["layout","panels","commands","timeline","URDF","dock","description"],"related":["sequence-editor","servo-grid","urdf-viewer","files-configuration"]},
+    {"id":"sequence-editor","title":"Sequence Editor and Audio Timeline","file":"SequenceEditor.md","keywords":["sequence","audio","waveform","timeline","cursor","command triangle","zoom","pan","description"],"related":["commands","spline-editor","servo-grid","controls-hotkeys"]},
+    {"id":"servo-grid","title":"Servo Grid","file":"ServoGrid.md","keywords":["grid","servo","manual","generate commands","speed","gang","child","section"],"related":["commands","servo-configuration","live-drive-hardware","urdf-configuration"]},
+    {"id":"commands","title":"Commands and Edit Commands","file":"Commands.md","keywords":["command","triangle","edit","speed","N/C","disable","reason","RGB","generate"],"related":["servo-grid","sequence-editor","live-drive-hardware","rgb-lighting"]},
+    {"id":"spline-editor","title":"Spline Editor","file":"SplineEditor.md","keywords":["spline","control point","Hermite","interpolation","drag","curve"],"related":["sequence-editor","servo-grid","commands","controls-hotkeys"]},
+    {"id":"movie-timeline","title":"Movie Timeline","file":"MovieTimeline.md","keywords":["movie","blocks","sequence","reorder","insert","remove","play next","save movie"],"related":["sequence-editor","files-configuration","controls-hotkeys"]},
+    {"id":"servo-configuration","title":"Servo Configuration","file":"ServoConfiguration.md","keywords":["Maestro","Port","PWM","Default","Min","Max","Speed","Acceleration","Direction","ganged","Tic"],"related":["live-drive-hardware","servo-grid","commands","files-configuration"]},
+    {"id":"urdf-configuration","title":"URDF Configuration and Calibration","file":"UrdfConfiguration.md","keywords":["URDF","calibration","Min Extent","Max Extent","Zero Point","Direction","flaps","Eye Pop","gain"],"related":["urdf-viewer","collision-warning","servo-grid"]},
+    {"id":"urdf-viewer","title":"URDF 3D Viewer","file":"UrdfViewer.md","keywords":["URDF","3D","dock","undock","camera","drive","resize","model"],"related":["urdf-configuration","collision-warning","live-drive-hardware"]},
+    {"id":"collision-warning","title":"Collision Warning","file":"CollisionWarning.md","keywords":["collision","flaps","eye tube","gimbal","lens","red","triangle","warning"],"related":["urdf-viewer","urdf-configuration","commands"]},
+    {"id":"live-drive-hardware","title":"Live Drive and Hardware","file":"LiveDriveHardware.md","keywords":["Live Drive","Maestro","Tic","Arduino","servo","speed","acceleration","Reset","Disable"],"related":["servo-configuration","commands","servo-grid","rgb-lighting"]},
+    {"id":"rgb-lighting","title":"RGB and Mouth Lighting","file":"RgbLighting.md","keywords":["RGB","Arduino","ClearAll","LED","mouth","lip","audio","gain","lights"],"related":["commands","urdf-configuration","live-drive-hardware"]},
+    {"id":"animation-library","title":"Animation Library","file":"AnimationLibrary.md","keywords":["library","insert","create","manage","sequence","range"],"related":["sequence-editor","movie-timeline"]},
+    {"id":"files-configuration","title":"Files, Configuration, and Open Recent","file":"FilesConfiguration.md","keywords":["files","animatorConfig","ServoConfig.json","URDFconfig.json","RecentFiles.json","EditorLayout.json","Open Recent","save"],"related":["getting-started","servo-configuration","urdf-configuration","movie-timeline"]},
+    {"id":"controls-hotkeys","title":"Controls and Hotkeys","file":"ControlsHotkeys.md","keywords":["hotkeys","keyboard","mouse","F1","arrow","undo","redo","spline","movie"],"related":["sequence-editor","spline-editor","movie-timeline"]},
+    {"id":"troubleshooting","title":"Troubleshooting","file":"Troubleshooting.md","keywords":["troubleshooting","missing","hardware","audio","URDF","configuration","collision","recent"],"related":["live-drive-hardware","files-configuration","urdf-viewer"]}
+  ]
+}

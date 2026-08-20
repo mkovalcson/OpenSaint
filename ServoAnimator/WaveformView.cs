@@ -85,7 +85,7 @@ namespace ServoAnimator
         //   * Range mode  - a GREEN start arrow and a RED end arrow (both
         //     pointing down at the top of the timeline, draggable with the
         //     left mouse button; the red arrow can never sit left of the
-        //     green one). Create Library Item exports the commands between
+        //     green one). Create Library Sequence exports the commands between
         //     them, re-based so the green arrow is 0 s.
         //   * Insert mode - a single BLUE arrow marking where a library
         //     sequence will be inserted.

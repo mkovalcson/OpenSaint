@@ -24,24 +24,53 @@
       "reason": ""
     },
     {
-      "offsetSeconds": 2.132,
+      "offsetSeconds": 1.099,
       "servo": "RGBCommand",
-      "value": "",
-      "speed": "Default",
+      "value": "SetRGBColor,0,255,0,200,Eyes,LR",
+      "speed": "N/C",
       "reason": "",
-      "color": "#FF1E1E"
+      "color": "#00FF00"
     },
     {
-      "offsetSeconds": 3.577,
-      "servo": "EyesVerticalUp",
-      "value": 0,
-      "speed": "Default",
+      "offsetSeconds": 1.392,
+      "servo": "VentsOpen",
+      "value": 100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 1.684,
+      "servo": "RGBCommand",
+      "value": "SetRGBColor,0,255,0,200,Both,LR",
+      "speed": "N/C",
+      "reason": "",
+      "color": "#00FF00"
+    },
+    {
+      "offsetSeconds": 2.108,
+      "servo": "RGBCommand",
+      "value": "ClearAll",
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 2.667,
+      "servo": "RGBCommand",
+      "value": "RainbowChase,200,LR,20",
+      "speed": "N/C",
       "reason": ""
     },
     {
       "offsetSeconds": 3.577,
       "servo": "NoseBody",
       "value": 49,
+      "speed": "Default",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 3.577,
+      "servo": "EyesVerticalUp",
+      "value": 0,
       "speed": "Default",
       "reason": ""
     },
@@ -138,8 +167,8 @@
     },
     {
       "offsetSeconds": 9.719,
-      "servo": "BothEyePop",
-      "value": 0,
+      "servo": "IrisClose",
+      "value": -64,
       "speed": "Default",
       "reason": ""
     },
@@ -152,8 +181,8 @@
     },
     {
       "offsetSeconds": 9.719,
-      "servo": "IrisClose",
-      "value": -64,
+      "servo": "BothEyePop",
+      "value": 0,
       "speed": "Default",
       "reason": ""
     },

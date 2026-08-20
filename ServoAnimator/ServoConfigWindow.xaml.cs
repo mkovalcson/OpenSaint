@@ -36,6 +36,7 @@ namespace ServoAnimator
         private readonly string _configFolder;
         private string _path;
         private readonly List<ServoConfigVM> _allConfigVms = new();
+        private static double _sessionScrollOffset;
 
         public ServoConfigWindow(ServoConfiguration config,
                                  Action<RobotControls, int> driveServo,
@@ -44,6 +45,10 @@ namespace ServoAnimator
                                  string configFolder)
         {
             InitializeComponent();
+            HelpSystem.EnableContextHelp(this, "servo-configuration");
+            HelpSystem.SetTopic(GroupList, "servo-configuration");
+            HelpSystem.SetTopic(LeftTicBox, "servo-configuration");
+            HelpSystem.SetTopic(ConfigPathText, "files-configuration");
             _config = config;
             _drive = driveServo;
             _driveGang = driveGang;
@@ -62,6 +67,8 @@ namespace ServoAnimator
             }
 
             BuildGroups();
+            Loaded += (_, _) => MainScroll.ScrollToVerticalOffset(_sessionScrollOffset);
+            Closed += (_, _) => _sessionScrollOffset = MainScroll.VerticalOffset;
         }
 
         private void LeftTic_LostFocus(object sender, RoutedEventArgs e) =>

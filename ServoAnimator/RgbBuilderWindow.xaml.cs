@@ -1,8 +1,10 @@
 // ---------------------------------------------------------------------------
 // RgbBuilderWindow.xaml.cs
 //
-// Builds RGBCommand text values that match the string.Format outputs in
-// RGBLight.cs EXACTLY - same command word, same argument order:
+// Builds RGBCommand text values in editor/storage order. Explicit colors are
+// kept as Red,Green,Blue here for readability and existing sequence
+// compatibility. RgbCommandWireFormat rotates them to Green,Red,Blue only
+// when passed to the Arduino or Arduino emulator:
 //
 //   ClearAll
 //   Clear,{ring},{side}
@@ -28,6 +30,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace ServoAnimator
 {
@@ -35,6 +38,7 @@ namespace ServoAnimator
     {
         /// <summary>The generated command text (valid after OK).</summary>
         public string ResultText { get; private set; } = "";
+        public string ResultColorHex { get; private set; } = "";
 
         private readonly ObservableCollection<RgbArgVM> _args = new();
         private readonly int _r, _g, _b;   // palette prefill for r/g/b args
@@ -83,15 +87,53 @@ namespace ServoAnimator
             ("delayMs", (string[])null, "20"),
         };
 
-        public RgbBuilderWindow(string prefillColorHex = "")
+        public RgbBuilderWindow(string prefillCommandText = "", string prefillColorHex = "")
         {
             InitializeComponent();
+            HelpSystem.EnableContextHelp(this, "rgb-lighting");
+            HelpSystem.SetTopic(CommandCombo, "rgb-lighting");
+            HelpSystem.SetTopic(ArgList, "rgb-lighting");
+            HelpSystem.SetTopic(PreviewText, "rgb-lighting");
 
-            // Prefill r/g/b from the command's palette color when one is set.
+            // Parse the existing command text so reopening Build RGB Command
+            // restores BOTH the command picklist and all of its argument values.
+            // Editor/storage text remains Red,Green,Blue; only the Arduino
+            // transport layer rotates those channels to Green,Red,Blue.
             (_r, _g, _b) = (255, 0, 0);
+            string[] prefillParts = (prefillCommandText ?? "")
+                .Split(',', StringSplitOptions.None)
+                .Select(p => p.Trim())
+                .ToArray();
+            string prefillCommand = prefillParts.Length > 0
+                ? Specs.Keys.FirstOrDefault(k =>
+                    k.Equals(prefillParts[0], StringComparison.OrdinalIgnoreCase))
+                : null;
+
+            bool parsedTextColor = false;
+            if (prefillCommand != null && Specs.TryGetValue(prefillCommand, out var prefillSpec))
+            {
+                int redIndex = Array.FindIndex(prefillSpec, a =>
+                    a.Name.Equals("red", StringComparison.OrdinalIgnoreCase));
+                int greenIndex = Array.FindIndex(prefillSpec, a =>
+                    a.Name.Equals("green", StringComparison.OrdinalIgnoreCase));
+                int blueIndex = Array.FindIndex(prefillSpec, a =>
+                    a.Name.Equals("blue", StringComparison.OrdinalIgnoreCase));
+                if (redIndex >= 0 && greenIndex >= 0 && blueIndex >= 0 &&
+                    prefillParts.Length > 1 + Math.Max(redIndex, Math.Max(greenIndex, blueIndex)) &&
+                    int.TryParse(prefillParts[redIndex + 1], out int pr) &&
+                    int.TryParse(prefillParts[greenIndex + 1], out int pg) &&
+                    int.TryParse(prefillParts[blueIndex + 1], out int pb))
+                {
+                    (_r, _g, _b) = (Math.Clamp(pr, 0, 255),
+                                     Math.Clamp(pg, 0, 255),
+                                     Math.Clamp(pb, 0, 255));
+                    parsedTextColor = true;
+                }
+            }
+
             try
             {
-                if (!string.IsNullOrEmpty(prefillColorHex))
+                if (!parsedTextColor && !string.IsNullOrEmpty(prefillColorHex))
                 {
                     var c = (System.Windows.Media.Color)System.Windows.Media
                         .ColorConverter.ConvertFromString(prefillColorHex);
@@ -102,7 +144,22 @@ namespace ServoAnimator
 
             ArgList.ItemsSource = _args;
             foreach (var cmd in Specs.Keys) CommandCombo.Items.Add(cmd);
-            CommandCombo.SelectedIndex = 2;   // SetRGBColor
+
+            // Setting SelectedItem invokes CommandCombo_SelectionChanged,
+            // which creates the correct argument controls for this command.
+            CommandCombo.SelectedItem = prefillCommand ?? "SetRGBColor";
+
+            // Replace the defaults with every value parsed from the existing
+            // Text Value. This restores ring/side, brightness, delays, fade
+            // direction, pulse counts, etc., not just the RGB channels.
+            if (prefillCommand != null && Specs.TryGetValue(prefillCommand, out var existingSpec))
+            {
+                int count = Math.Min(existingSpec.Length, Math.Max(0, prefillParts.Length - 1));
+                for (int i = 0; i < count && i < _args.Count; i++)
+                    _args[i].Text = prefillParts[i + 1];
+                UpdatePreview();
+                UpdateColorSelector();
+            }
         }
 
         private void CommandCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -121,10 +178,15 @@ namespace ServoAnimator
                     _ => def,
                 };
                 var vm = new RgbArgVM { Label = name, EnumOptions = options, Text = value };
-                vm.PropertyChanged += (_, _) => UpdatePreview();
+                vm.PropertyChanged += (_, _) =>
+                {
+                    UpdatePreview();
+                    UpdateColorSelector();
+                };
                 _args.Add(vm);
             }
             UpdatePreview();
+            UpdateColorSelector();
         }
 
         private string Compose()
@@ -137,9 +199,69 @@ namespace ServoAnimator
 
         private void UpdatePreview() => PreviewText.Text = Compose();
 
+        private void UpdateColorSelector()
+        {
+            bool hasRgb = TryGetRgbArgs(out var red, out var green, out var blue);
+            ColorPickerButton.Visibility = hasRgb ? Visibility.Visible : Visibility.Collapsed;
+            if (!hasRgb) return;
+
+            if (int.TryParse(red.Text, out int r) && int.TryParse(green.Text, out int g) &&
+                int.TryParse(blue.Text, out int b))
+            {
+                var color = Color.FromRgb(
+                    (byte)Math.Clamp(r, 0, 255),
+                    (byte)Math.Clamp(g, 0, 255),
+                    (byte)Math.Clamp(b, 0, 255));
+                SelectedColorSwatch.Background = new SolidColorBrush(color);
+            }
+        }
+
+        private bool TryGetRgbArgs(out RgbArgVM red, out RgbArgVM green, out RgbArgVM blue)
+        {
+            red = _args.FirstOrDefault(a => a.Label.Equals("red", StringComparison.OrdinalIgnoreCase));
+            green = _args.FirstOrDefault(a => a.Label.Equals("green", StringComparison.OrdinalIgnoreCase));
+            blue = _args.FirstOrDefault(a => a.Label.Equals("blue", StringComparison.OrdinalIgnoreCase));
+            return red != null && green != null && blue != null;
+        }
+
+        private void ColorPicker_Click(object sender, RoutedEventArgs e)
+        {
+            if (!TryGetRgbArgs(out var red, out var green, out var blue)) return;
+
+            int.TryParse(red.Text, out int r);
+            int.TryParse(green.Text, out int g);
+            int.TryParse(blue.Text, out int b);
+            var initial = Color.FromRgb(
+                (byte)Math.Clamp(r, 0, 255),
+                (byte)Math.Clamp(g, 0, 255),
+                (byte)Math.Clamp(b, 0, 255));
+
+            var picker = new RgbColorPickerWindow(initial) { Owner = this };
+            if (picker.ShowDialog() != true) return;
+
+            Color chosen = picker.SelectedColor;
+            red.Text = chosen.R.ToString();
+            green.Text = chosen.G.ToString();
+            blue.Text = chosen.B.ToString();
+            UpdatePreview();
+            UpdateColorSelector();
+        }
+
         private void Ok_Click(object sender, RoutedEventArgs e)
         {
             ResultText = Compose();
+            // Preserve ColorHex only as backward-compatible metadata. The URDF
+            // preview now derives its real color from the Arduino command text.
+            var args = _args.ToDictionary(a => a.Label, a => a.Text ?? "",
+                                          StringComparer.OrdinalIgnoreCase);
+            if (args.TryGetValue("red", out string rs) &&
+                args.TryGetValue("green", out string gs) &&
+                args.TryGetValue("blue", out string bs) &&
+                int.TryParse(rs, out int r) && int.TryParse(gs, out int g) &&
+                int.TryParse(bs, out int b))
+            {
+                ResultColorHex = $"#{Math.Clamp(r,0,255):X2}{Math.Clamp(g,0,255):X2}{Math.Clamp(b,0,255):X2}";
+            }
             DialogResult = true;
         }
 

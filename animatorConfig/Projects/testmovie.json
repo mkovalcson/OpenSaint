@@ -1,4 +1,6 @@
 {
+  "description": "",
+  "createdDate": "2026-08-19",
   "sequences": [
     "MyProject\\LightningRound_demo_seq.json",
     "MyProject\\LightningRound_seq.json"

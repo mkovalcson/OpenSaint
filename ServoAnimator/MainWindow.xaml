@@ -381,10 +381,11 @@
                 <MenuItem Header="Set _Paths…" Click="SetFolders_Click"/>
             </MenuItem>
             <MenuItem Header="_Animation Library" Style="{StaticResource TopLevelMenuItem}">
-                <MenuItem Header="_Create Library Item…" Click="LibraryCreate_Click"/>
+                <MenuItem Header="_Create Library Sequence…" Click="LibraryCreate_Click"/>
                 <MenuItem Header="_Insert Library Sequence…" Click="LibraryInsert_Click"/>
                 <Separator/>
-                <MenuItem Header="_Manage Library Items…" Click="LibraryManage_Click"/>
+                <MenuItem Header="_Manage Library Sequences…" Click="LibraryManage_Click"/>
+                <MenuItem Header="Manage Library _Commands…" Click="LibraryCommandsManage_Click"/>
             </MenuItem>
             <MenuItem Header="_View" Style="{StaticResource TopLevelMenuItem}">
                 <MenuItem x:Name="ViewMovieTimelineMenuItem" Header="_Movie Timeline" IsCheckable="True"
@@ -401,8 +402,10 @@
                               Tag="Violet" Click="ThemeMenuItem_Click"/>
                 </MenuItem>
             </MenuItem>
-            <MenuItem Header="_Help" Style="{StaticResource TopLevelMenuItem}">
-                <MenuItem Header="Controls &amp; _Hotkeys…" Click="HelpControls_Click"/>
+            <MenuItem x:Name="HelpMenuItem" Header="_Help" Style="{StaticResource TopLevelMenuItem}">
+                <MenuItem x:Name="HelpContentsMenuItem" Header="_Contents &amp; Search…" Click="HelpContents_Click"/>
+                <MenuItem x:Name="HelpContextMenuItem" Header="_Context Help" InputGestureText="F1" Click="HelpContext_Click"/>
+                <MenuItem x:Name="HelpControlsMenuItem" Header="Controls &amp; _Hotkeys…" Click="HelpControls_Click"/>
                 <Separator/>
                 <MenuItem Header="_About Animation Editor &amp; Player" Click="About_Click"/>
             </MenuItem>

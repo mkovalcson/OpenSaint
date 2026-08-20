@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // LibraryRangePromptWindow.xaml.cs
 //
-// Modeless movable Create Library Item prompt. Because it is modeless, the
+// Modeless movable Create Library Sequence prompt. Because it is modeless, the
 // timeline arrows remain draggable while the ten-line description is shown.
 // ---------------------------------------------------------------------------
 
@@ -21,6 +21,7 @@ namespace ServoAnimator
                                         Action cancelled)
         {
             InitializeComponent();
+            HelpSystem.EnableContextHelp(this, "animation-library");
             DescriptionBox.Text = description ?? "";
             _accepted = accepted;
             _cancelled = cancelled;

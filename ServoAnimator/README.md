@@ -222,7 +222,7 @@ startup; closing it hides it — reopen from the Robot Head menu) loads
 the same grid and spline-interpolated values as the former 2-D schematic.
 Drag the window to orbit the camera, use the mouse wheel to zoom, and
 double-click to reset the view. A lower-left **Drive: On / Drive: Off** button
-sits beside **Recenter Camera**. Drive defaults to **On**. With Drive **Off**,
+sits above the camera row (**← / Recenter / →**). Drive defaults to **On**. With Drive **Off**,
 the URDF model is frozen: servo/timeline pose changes, RGB eye-color changes,
 and mouth LED amplitude changes are not applied to the WPF 3-D scene. Camera
 orbit, zoom, reset, and recentering remain available. This allows the preview
@@ -452,11 +452,12 @@ configured Home/Min/Max exactly like Servos.cs' MapDeltatoServo; the eye
 pops go to the Tics; RGB text goes verbatim to the Arduino). The Tic path
 expects Pololu's `ticcmd` under `TIC\` next to the exe.
 
-RGB rows in the command editor gained a **Build…** button: pick any command
-from RGBLight.cs (SetRGBColor, Fade, Pulse, TheaterChase, Rainbow…), fill
-its arguments (enums as drop-downs, r/g/b prefilled from the palette
-color), and the generated text matches the RGBLight.cs `string.Format`
-output exactly (including RainbowWipe's quirk of omitting `cycles`).
+RGB rows in the command editor have a **Build…** button: pick any command
+from the Arduino RGB command set (SetRGBColor, Fade, Pulse, TheaterChase,
+Cylon, Rainbow…), fill its arguments, and the generated text is sent verbatim
+to the hardware. The old color-patch palette was removed in v1.9.2 because
+the URDF now emulates all four physical 16-LED NeoPixel rings directly from
+timeline time. LED 0 is assumed at 12 o'clock on every ring.
 
 ## Hardware integration points (stubs)
 
@@ -774,3 +775,6 @@ URDF Range Calibration Minimum/Maximum Extent values can now be typed directly i
 - The existing RobotControls values remain the default port assignments, so older `ServoConfig.json` files without `maestroPort` preserve the current channel mapping.
 - Maestro hardware output now uses the configured port number; saving/loading Servo Configuration rebuilds the connected servo objects so port changes take effect through the existing reconfiguration path.
 - Moved Load, Save, Save As, and Close under a **File** menu at the top of Servo Configuration. The active configuration filename remains visible to the right of File, followed by the Left Tic serial number.
+
+### Library Commands
+Edit Commands now provides **Create Library Command**, which saves the commands in that dialog as a single-time-point JSON item under `Library\Commands` with a name and description. Audio Timeline right-click provides **Insert Library Command**, which browses those items and inserts every selected command at the current cursor time. The older **Insert commands from JSON file** remains a generic relative-time importer.

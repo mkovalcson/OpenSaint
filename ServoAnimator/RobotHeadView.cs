@@ -28,8 +28,10 @@ namespace ServoAnimator
 
         // Iris geometry (inches converted to metres for the URDF/WPF scene).
         // The blue iris is a true annulus. Its outer diameter is fixed while
-        // IrisClose changes only the inner opening. The RGB backing disc stays
-        // full-size behind the annulus and is colored independently.
+        // IrisClose changes only the inner opening. The full-size backing
+        // disc stays behind the annulus as a black light baffle. When the
+        // front NeoPixel eye ring emits, it becomes a smoky translucent
+        // diffuser with a soft blended emissive tint.
         private const double InchToMetres = 0.0254;
         private const double IrisOuterDiameterInches = 1.80;
         private const double IrisDefaultInnerDiameterInches = 0.90;
@@ -63,9 +65,12 @@ namespace ServoAnimator
         private readonly TextBlock _status = new();
         private readonly StackPanel _bottomControls = new();
         private readonly Button _recenterButton = new();
+        private readonly Button _cameraMinus90Button = new();
+        private readonly Button _cameraPlus90Button = new();
         private readonly Button _driveToggleButton = new();
         private readonly Button _collisionToggleButton = new();
         private readonly Button _dockToggleButton = new();
+        private readonly StackPanel _cameraRow = new();
         private readonly Thumb _verticalResizeHandle = new();
         private bool _hostIsDocked = true;
         private bool _urdfDriveEnabled = true;
@@ -80,9 +85,19 @@ namespace ServoAnimator
         private double _cameraYaw = 0;
         private double _cameraPitch = 0;
         private double _cameraDistance = 1.15;
-        // Camera yaw orbits the same vertical line as the physical NeckTurn
-        // joint. Z stays near the visual center of the head for framing.
-        private readonly Point3D _cameraTarget = new(0.123658047, 0.000000084, 0.26);
+        private double _openingCameraYaw;
+        private double _openingCameraPitch;
+        private double _openingCameraDistance = 1.15;
+        private bool _openingCameraCaptured;
+        // The camera continues to orbit the same vertical line as the physical
+        // NeckTurn joint, but its target Z is calculated for each frame so the
+        // physical neck base stays at a fixed screen-space height. This keeps
+        // the model anchored 35 pixels above the bottom of the URDF viewport
+        // during wheel zooming and docked/undocked viewport resizing.
+        private static readonly Point3D NeckBaseScreenAnchor =
+            new(0.123658047, 0.000000084, 0.131272970);
+        private const double NeckBaseBottomAnchor = 35.0;
+        private const double FallbackCameraTargetZ = 0.300;
 
         private double _neckNodLeft;
         private double _neckNodRight;
@@ -120,7 +135,7 @@ namespace ServoAnimator
             _status.IsHitTestVisible = false;
 
             // Bottom-left URDF controls, stacked vertically in the requested order:
-            // Collision Warning, Drive, UnDock/Dock, Recenter Camera.
+            // Collision Warning, Drive, UnDock/Dock, camera turn/Recenter row.
             _bottomControls.Orientation = Orientation.Vertical;
             _bottomControls.HorizontalAlignment = HorizontalAlignment.Left;
             _bottomControls.VerticalAlignment = VerticalAlignment.Bottom;
@@ -150,11 +165,30 @@ namespace ServoAnimator
             _dockToggleButton.Click += (_, _) => DockToggleRequested?.Invoke();
             _bottomControls.Children.Add(_dockToggleButton);
 
-            _recenterButton.Content = "Recenter Camera";
+            // Camera turn/recenter row: left 90°, Recenter, right 90°.
+            _cameraRow.Orientation = Orientation.Horizontal;
+            _cameraRow.Margin = new Thickness(0, 0, 0, 3);
+
+            _cameraMinus90Button.Content = "←";
+            _cameraMinus90Button.Padding = new Thickness(5, 2, 5, 2);
+            _cameraMinus90Button.Margin = new Thickness(0, 0, 3, 0);
+            _cameraMinus90Button.ToolTip = "Turn the camera 90° to the left";
+            _cameraMinus90Button.Click += (_, _) => TurnCameraDegrees(-90.0);
+            _cameraRow.Children.Add(_cameraMinus90Button);
+
+            _recenterButton.Content = "Recenter";
             _recenterButton.Padding = new Thickness(5, 2, 5, 2);
+            _recenterButton.Margin = new Thickness(0, 0, 3, 0);
             _recenterButton.ToolTip = "Set camera yaw and pitch to 0° while preserving zoom";
             _recenterButton.Click += (_, _) => RecenterCamera();
-            _bottomControls.Children.Add(_recenterButton);
+            _cameraRow.Children.Add(_recenterButton);
+
+            _cameraPlus90Button.Content = "→";
+            _cameraPlus90Button.Padding = new Thickness(5, 2, 5, 2);
+            _cameraPlus90Button.ToolTip = "Turn the camera 90° to the right";
+            _cameraPlus90Button.Click += (_, _) => TurnCameraDegrees(90.0);
+            _cameraRow.Children.Add(_cameraPlus90Button);
+            _bottomControls.Children.Add(_cameraRow);
             Children.Add(_bottomControls);
 
             // Keep the URDF legend at the lower-right, independent of the controls.
@@ -189,8 +223,17 @@ namespace ServoAnimator
             MouseWheel += OnMouseWheel;
             LostMouseCapture += (_, _) => _orbiting = false;
 
+            // Recalculate camera framing whenever the available viewport changes
+            // so the neck base remains 35 pixels above its bottom edge.
+            SizeChanged += (_, _) => UpdateCamera();
+
             ResetCamera();
             LoadUrdf();
+            Loaded += (_, _) =>
+            {
+                UpdateCamera();
+                CaptureOpeningCameraIfNeeded();
+            };
         }
 
         private void LoadUrdf()
@@ -260,7 +303,7 @@ namespace ServoAnimator
                             double neckNod = 0, double neckTurn = 0,
                             double whip = 0, double mic = 0, double mfr = 0,
                             double noseBody = 0,
-                            double noseBasket = 0, string eyeColorHex = "",
+                            double noseBasket = 0,
                             double leftEyePop = 0, double rightEyePop = 0,
                             double whipRotate = 0, double mfrRotate = 0)
         {
@@ -299,7 +342,6 @@ namespace ServoAnimator
             SetServo(ServoNames.NoseBasket, noseBasket);
             SetServo(ServoNames.LeftEyePop, leftEyePop);
             SetServo(ServoNames.RightEyePop, rightEyePop);
-            SetEyeColor(eyeColorHex);
             }
             finally
             {
@@ -922,7 +964,8 @@ namespace ServoAnimator
 
             // Replace the original solid blue cylinder with an annular cylinder
             // whose inner boundary is the visible iris opening. The fixed-size
-            // pupil_dynamic/RGB disc remains behind it and shows through.
+            // The pupil backing remains behind it; RGB simulation switches
+            // that backing between black and transparent as the eye LEDs glow.
             _scene.SetVisualAnnularCylinder(
                 $"{side}_iris_disc",
                 IrisOuterRadiusMetres,
@@ -931,20 +974,15 @@ namespace ServoAnimator
                 72);
         }
 
-        public void SetEyeColor(string hex)
+        /// <summary>Apply all 64 Arduino NeoPixel colors to the URDF eye and
+        /// vent rings. The front iris backing is opaque black when its eye
+        /// ring is dark and fades transparent as that ring emits light.</summary>
+        public void SetRgbRingFrame(RgbRingFrame frame)
         {
-            if (_scene == null || !_urdfDriveEnabled) return;
-            Color color = Colors.Black;
-            if (!string.IsNullOrWhiteSpace(hex))
-            {
-                try { color = (Color)ColorConverter.ConvertFromString(hex); }
-                catch { color = Colors.Black; }
-            }
-
-            // pupil_dynamic is used by the fixed-size left/right RGB backing
-            // circles behind the iris annuli. IrisClose changes the opening;
-            // RGBCommand changes only this backing color.
-            _scene.SetMaterialColor("pupil_dynamic", color);
+            if (_scene == null || !_urdfDriveEnabled || frame == null) return;
+            double eyeIntensity = Math.Clamp(_urdfConfiguration?.EyeLightIntensity ?? 1.0, 1.0, 20.0);
+            double ventIntensity = Math.Clamp(_urdfConfiguration?.VentLightIntensity ?? 1.0, 1.0, 20.0);
+            _scene.SetNeoPixelFrame(frame, eyeIntensity, ventIntensity);
         }
 
         /// <summary>True when servo/timeline-driven updates are applied to the
@@ -1031,12 +1069,56 @@ namespace ServoAnimator
 
         /// <summary>Return to a straight-on camera orientation while preserving
         /// the current zoom distance. This is the action exposed by the
-        /// on-screen Recenter Camera button.</summary>
+        /// on-screen Recenter button.</summary>
         public void RecenterCamera()
         {
             _cameraYaw = 0;
             _cameraPitch = 0;
             UpdateCamera();
+        }
+
+        public void TurnCameraDegrees(double degrees)
+        {
+            _cameraYaw += degrees * Deg;
+            UpdateCamera();
+        }
+
+        private void CaptureOpeningCameraIfNeeded()
+        {
+            if (_openingCameraCaptured) return;
+            _openingCameraYaw = _cameraYaw;
+            _openingCameraPitch = _cameraPitch;
+            _openingCameraDistance = _cameraDistance;
+            _openingCameraCaptured = true;
+        }
+
+        public void CaptureCurrentCameraAsOpeningView()
+        {
+            _openingCameraYaw = _cameraYaw;
+            _openingCameraPitch = _cameraPitch;
+            _openingCameraDistance = _cameraDistance;
+            _openingCameraCaptured = true;
+        }
+
+        public void RestoreOpeningCamera()
+        {
+            if (!_openingCameraCaptured)
+                CaptureOpeningCameraIfNeeded();
+            _cameraYaw = _openingCameraYaw;
+            _cameraPitch = _openingCameraPitch;
+            _cameraDistance = _openingCameraDistance;
+            UpdateCamera();
+        }
+
+        public void CopyCameraFrom(RobotHeadView source, bool makeOpeningView = false)
+        {
+            if (source == null) return;
+            _cameraYaw = source._cameraYaw;
+            _cameraPitch = source._cameraPitch;
+            _cameraDistance = source._cameraDistance;
+            UpdateCamera();
+            if (makeOpeningView)
+                CaptureCurrentCameraAsOpeningView();
         }
 
         private void ResetCamera()
@@ -1047,16 +1129,58 @@ namespace ServoAnimator
 
         private void UpdateCamera()
         {
+            Point3D cameraTarget = CalculateAnchoredCameraTarget();
             double cp = Math.Cos(_cameraPitch);
             var position = new Point3D(
-                _cameraTarget.X + _cameraDistance * cp * Math.Cos(_cameraYaw),
-                _cameraTarget.Y + _cameraDistance * cp * Math.Sin(_cameraYaw),
-                _cameraTarget.Z + _cameraDistance * Math.Sin(_cameraPitch));
+                cameraTarget.X + _cameraDistance * cp * Math.Cos(_cameraYaw),
+                cameraTarget.Y + _cameraDistance * cp * Math.Sin(_cameraYaw),
+                cameraTarget.Z + _cameraDistance * Math.Sin(_cameraPitch));
             _camera.Position = position;
-            _camera.LookDirection = _cameraTarget - position;
+            _camera.LookDirection = cameraTarget - position;
             _camera.UpDirection = new Vector3D(0, 0, 1);
             _camera.NearPlaneDistance = .01;
             _camera.FarPlaneDistance = 20;
+        }
+
+        /// <summary>
+        /// Calculates the camera target needed to keep the physical bottom of the
+        /// neck exactly 35 pixels above the bottom edge of the URDF viewport.
+        /// Perspective projection normally makes that point drift when the camera
+        /// distance or viewport aspect ratio changes. Solving the projection for
+        /// target Z removes that drift without changing yaw/pitch semantics.
+        /// </summary>
+        private Point3D CalculateAnchoredCameraTarget()
+        {
+            double width = _viewport.ActualWidth > 1.0 ? _viewport.ActualWidth : ActualWidth;
+            double height = _viewport.ActualHeight > 1.0 ? _viewport.ActualHeight : ActualHeight;
+            // During construction WPF has not measured the viewport yet. Use the
+            // established opening framing until real viewport dimensions exist.
+            if (width <= 1.0 || height <= 1.0)
+                return new Point3D(NeckBaseScreenAnchor.X, NeckBaseScreenAnchor.Y, FallbackCameraTargetZ);
+
+            // Anchor the physical neck base to the URDF viewport itself rather
+            // than to any overlay controls. This applies identically when docked
+            // or undocked and is independent of button-stack height.
+            double desiredScreenY = height - NeckBaseBottomAnchor;
+            desiredScreenY = Math.Clamp(desiredScreenY, 1.0, height - 1.0);
+
+            // WPF PerspectiveCamera.FieldOfView is horizontal. Convert its tangent
+            // to the current vertical field of view before solving for target Z.
+            double normalizedY = 1.0 - (2.0 * desiredScreenY / height);
+            double tanHorizontalHalfFov = Math.Tan((_camera.FieldOfView * Deg) * 0.5);
+            double tanVerticalHalfFov = tanHorizontalHalfFov * (height / width);
+
+            double cp = Math.Cos(_cameraPitch);
+            double sp = Math.Sin(_cameraPitch);
+            double denominator = cp + normalizedY * tanVerticalHalfFov * sp;
+            if (Math.Abs(denominator) < 0.000001)
+                return new Point3D(NeckBaseScreenAnchor.X, NeckBaseScreenAnchor.Y, FallbackCameraTargetZ);
+
+            double anchorToTargetZ =
+                normalizedY * tanVerticalHalfFov * _cameraDistance / denominator;
+            double targetZ = NeckBaseScreenAnchor.Z - anchorToTargetZ;
+
+            return new Point3D(NeckBaseScreenAnchor.X, NeckBaseScreenAnchor.Y, targetZ);
         }
     }
 
@@ -1076,6 +1200,11 @@ namespace ServoAnimator
         private readonly List<PointLight> _lipPointLights = new();
         private readonly List<SideMouthLed> _sideMouthLeds = new();
         private readonly List<SideMouthLightGroup> _sideMouthLightGroups = new();
+        private readonly Dictionary<NeoPixelRingId, List<NeoPixelVisual>> _neoPixelLeds = new();
+        private readonly Dictionary<NeoPixelRingId, PointLight> _neoPixelPointLights = new();
+        private readonly Dictionary<NeoPixelRingId, List<SpotLight>> _neoPixelCenterLights = new();
+        private readonly Dictionary<NeoPixelRingId, List<SpotLight>> _neoPixelVentLights = new();
+        private readonly Dictionary<NeoPixelRingId, VentTubeGlowVisual> _neoPixelVentTubeGlows = new();
         private readonly Dictionary<string, MeshGeometry3D> _geometryCache = new(StringComparer.Ordinal);
         private readonly Dictionary<MeshGeometry3D, IReadOnlyList<Rect3D>> _collisionBoundsCache = new();
         private readonly Dictionary<string, UrdfJoint> _parentJointByChild = new(StringComparer.Ordinal);
@@ -1112,6 +1241,7 @@ namespace ServoAnimator
             scene.BuildTree(robot);
             scene.InitializeLipLighting();
             scene.InitializeSideMouthLighting();
+            scene.InitializeNeoPixelLighting();
             return scene;
         }
 
@@ -1482,6 +1612,476 @@ namespace ServoAnimator
             public PointLight Light { get; }
         }
 
+        // -----------------------------------------------------------------
+        // Arduino NeoPixel eye + vent rings
+        // -----------------------------------------------------------------
+
+        /// <summary>Apply the emulated Arduino output to all four 16-pixel
+        /// rings. Front Eye output is confined to the iris/diffuser surfaces;
+        /// rear Vent output drives a 360-degree inner-tube wash plus localized
+        /// radial and rear-facing flood lights.</summary>
+        public void SetNeoPixelFrame(RgbRingFrame frame, double eyeIntensity, double ventIntensity)
+        {
+            eyeIntensity = Math.Clamp(eyeIntensity, 1.0, 20.0);
+            ventIntensity = Math.Clamp(ventIntensity, 1.0, 20.0);
+
+            ApplyNeoPixelRing(NeoPixelRingId.LeftEye, frame.LeftEye, eyeIntensity);
+            ApplyNeoPixelRing(NeoPixelRingId.LeftVent, frame.LeftVent, ventIntensity);
+            ApplyNeoPixelRing(NeoPixelRingId.RightEye, frame.RightEye, eyeIntensity);
+            ApplyNeoPixelRing(NeoPixelRingId.RightVent, frame.RightVent, ventIntensity);
+
+            // The old front RGB disc is now a light baffle/diffuser: opaque
+            // black when dark, then smoky translucent with a blended glow
+            // whenever the corresponding front eye ring is visibly on.
+            SetEyeBacking("left_pupil_dynamic", frame.LeftEye, eyeIntensity);
+            SetEyeBacking("right_pupil_dynamic", frame.RightEye, eyeIntensity);
+        }
+
+        private void InitializeNeoPixelLighting()
+        {
+            _neoPixelLeds.Clear();
+            _neoPixelPointLights.Clear();
+            _neoPixelCenterLights.Clear();
+            _neoPixelVentLights.Clear();
+            _neoPixelVentTubeGlows.Clear();
+
+            // Exact physical positions derived from EyeMechanism.step's two
+            // [ELEC-BULB-NEORING16] NeoPixel Ring 16 instances. The product's
+            // LED centers lie at radius 18.975 mm. Ring 1 faces forward and is
+            // used for the eye; Ring 2 faces rearward and is used for the vent.
+            AddNeoPixelRing("left_eye_pop_link", NeoPixelRingId.LeftEye,
+                forwardFacing: true);
+            AddNeoPixelRing("left_eye_pop_link", NeoPixelRingId.LeftVent,
+                forwardFacing: false);
+            AddNeoPixelRing("right_eye_pop_link", NeoPixelRingId.RightEye,
+                forwardFacing: true);
+            AddNeoPixelRing("right_eye_pop_link", NeoPixelRingId.RightVent,
+                forwardFacing: false);
+
+            // The eye tubes themselves are fixed to the head, so their 360-degree
+            // interior glow is attached to head_link rather than the moving Eye Pop
+            // assemblies. The dimensions are derived from the eye-tube CAD: inner
+            // radius ~= 42.79 mm, center X ~= 137.625 mm in head-link coordinates.
+            AddVentTubeGlow(NeoPixelRingId.LeftVent, +0.099822);
+            AddVentTubeGlow(NeoPixelRingId.RightVent, -0.099822);
+        }
+
+        private void AddNeoPixelRing(string linkName, NeoPixelRingId id, bool forwardFacing)
+        {
+            if (!_links.TryGetValue(linkName, out var link)) return;
+
+            const double radius = 0.018975;
+            const double ledSize = 0.00455;
+            const double ledThickness = 0.00072;
+
+            // LED emitting-face centers use the physical CAD ring centers,
+            // while the user's installation assumption defines pixel 0 at
+            // exactly 12 o'clock on every ring.
+            double x = forwardFacing ? 0.02495 : 0.00789;
+            double centerZ = forwardFacing ? 0.0 : 0.00508;
+            double startDeg = 0.0;
+            double stepDeg = forwardFacing ? 22.5 : -22.5;
+            double normal = forwardFacing ? 1.0 : -1.0;
+
+            var leds = new List<NeoPixelVisual>(16);
+            for (int i = 0; i < 16; i++)
+            {
+                // LED 0 is exactly 12 o'clock by configuration assumption.
+                // Indices proceed clockwise viewed from the emitting side.
+                double angleDeg = startDeg + stepDeg * i;
+                double a = angleDeg * Deg;
+                double y = radius * Math.Sin(a);
+                double z = centerZ + radius * Math.Cos(a);
+
+                var diffuse = new SolidColorBrush(Color.FromRgb(11, 11, 12));
+                var emissive = new SolidColorBrush(Colors.Black);
+                var material = new MaterialGroup();
+                material.Children.Add(new DiffuseMaterial(diffuse));
+                material.Children.Add(new EmissiveMaterial(emissive));
+
+                GeometryModel3D lens;
+                if (forwardFacing)
+                {
+                    // The front Eye ring is rendered as sixteen contiguous-looking
+                    // annular LED segments rather than sixteen square LED packages.
+                    // Each 22.5-degree segment still maps one-to-one to Arduino
+                    // pixel 0..15, with a small angular gap so adjacent colors remain
+                    // visually distinct through the iris diffuser.
+                    const double innerRadius = radius - ledSize / 2.0;
+                    const double outerRadius = radius + ledSize / 2.0;
+                    const double segmentGapDeg = 1.4;
+                    double halfStep = Math.Abs(stepDeg) / 2.0;
+                    double segStart = angleDeg - halfStep + segmentGapDeg / 2.0;
+                    double segEnd = angleDeg + halfStep - segmentGapDeg / 2.0;
+                    lens = new GeometryModel3D(
+                        PrimitiveMeshes.AnnularSectorX(innerRadius, outerRadius,
+                            ledThickness, segStart, segEnd, 5), material)
+                    {
+                        BackMaterial = material,
+                        Transform = new TranslateTransform3D(x, 0, centerZ),
+                    };
+                }
+                else
+                {
+                    // Rear Vent rings retain the physical individual NeoPixel
+                    // package representation; only the front Eye rings use segments.
+                    var transform = new Transform3DGroup();
+                    transform.Children.Add(new RotateTransform3D(
+                        new AxisAngleRotation3D(new Vector3D(1, 0, 0), angleDeg)));
+                    transform.Children.Add(new TranslateTransform3D(x, y, z));
+                    lens = new GeometryModel3D(
+                        PrimitiveMeshes.Box(ledThickness, ledSize, ledSize), material)
+                    {
+                        BackMaterial = material,
+                        Transform = transform,
+                    };
+                }
+                link.Children.Add(lens);
+
+                var haloBrush = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+                if (!forwardFacing)
+                {
+                    var haloMaterial = new MaterialGroup();
+                    haloMaterial.Children.Add(new DiffuseMaterial(haloBrush));
+                    haloMaterial.Children.Add(new EmissiveMaterial(haloBrush));
+                    var halo = new GeometryModel3D(
+                        PrimitiveMeshes.Sphere(0.0105, 14, 10), haloMaterial)
+                    {
+                        BackMaterial = haloMaterial,
+                        Transform = new TranslateTransform3D(
+                            x + normal * 0.0017, y, z),
+                    };
+                    link.Children.Add(halo);
+                }
+
+                leds.Add(new NeoPixelVisual(diffuse, emissive, haloBrush));
+            }
+            _neoPixelLeds[id] = leds;
+
+            // Front Eye rings intentionally do not create WPF lights. Their
+            // illumination is confined to the iris-center diffusion disk and the
+            // NeoPixel emissive surfaces themselves, so no Eye light can spill onto
+            // the eye tube, head shell, gimbal, or surrounding geometry.
+            if (forwardFacing)
+                return;
+
+            // Rear-facing Vent lighting has two jobs:
+            //  1) light the complete 360-degree inner circumference of the tube;
+            //  2) throw a broad wash rearward through the vent openings.
+            // Use one rear-facing output cone plus sixteen short-range radial cones.
+            // The radial cones stop at roughly the inner tube wall, preventing them
+            // from intentionally projecting through the tube onto its outside skin.
+            var ventLights = new List<SpotLight>(17);
+
+            var centralPosition = new Point3D(x - 0.0045, 0, centerZ);
+            var centralSpot = new SpotLight
+            {
+                Color = Colors.Black,
+                Position = centralPosition,
+                Direction = new Vector3D(-1.0, 0.0, 0.0),
+                InnerConeAngle = 62.0,
+                OuterConeAngle = 104.0,
+                Range = 0.135,
+                ConstantAttenuation = 0.18,
+                LinearAttenuation = 2.0,
+                QuadraticAttenuation = 5.5,
+            };
+            link.Children.Add(centralSpot);
+            ventLights.Add(centralSpot);
+
+            for (int q = 0; q < 16; q++)
+            {
+                double angle = q * 22.5 * Deg;
+                double sy = radius * 0.96 * Math.Sin(angle);
+                double szOffset = radius * 0.96 * Math.Cos(angle);
+                var position = new Point3D(x - 0.0010, sy, centerZ + szOffset);
+
+                // Nearly radial direction with a small rearward component. From
+                // the 18.975-mm LED radius to the 42.79-mm inner wall is about
+                // 23.8 mm, so a 27-mm range gives strong wall illumination without
+                // deliberately extending far beyond the physical tube wall.
+                var direction = new Vector3D(
+                    -0.16,
+                    Math.Sin(angle),
+                    Math.Cos(angle));
+                direction.Normalize();
+
+                var spot = new SpotLight
+                {
+                    Color = Colors.Black,
+                    Position = position,
+                    Direction = direction,
+                    InnerConeAngle = 44.0,
+                    OuterConeAngle = 78.0,
+                    Range = 0.027,
+                    ConstantAttenuation = 0.14,
+                    LinearAttenuation = 1.8,
+                    QuadraticAttenuation = 4.8,
+                };
+                link.Children.Add(spot);
+                ventLights.Add(spot);
+            }
+
+            _neoPixelVentLights[id] = ventLights;
+        }
+
+        private void AddVentTubeGlow(NeoPixelRingId id, double centerY)
+        {
+            if (!_links.TryGetValue("head_link", out var head)) return;
+
+            // Slightly inset from the CAD inner radius to avoid z-fighting while
+            // keeping the emissive surface visually on the inside wall.
+            const double innerGlowRadius = 0.04245;
+            const double glowLength = 0.0910;
+            const double centerX = 0.137625;
+
+            var diffuse = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+            var emissive = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+            var material = new MaterialGroup();
+            material.Children.Add(new DiffuseMaterial(diffuse));
+            material.Children.Add(new EmissiveMaterial(emissive));
+
+            var transform = new Transform3DGroup();
+            // Primitive cylinder axis is +Z; rotate it to the eye-tube +X axis.
+            transform.Children.Add(new RotateTransform3D(
+                new AxisAngleRotation3D(new Vector3D(0, 1, 0), 90.0)));
+            transform.Children.Add(new TranslateTransform3D(centerX, centerY, 0.0));
+
+            var shell = new GeometryModel3D(
+                PrimitiveMeshes.OpenCylinder(innerGlowRadius, glowLength, 96), material)
+            {
+                BackMaterial = material,
+                Transform = transform,
+            };
+            head.Children.Add(shell);
+            _neoPixelVentTubeGlows[id] = new VentTubeGlowVisual(diffuse, emissive);
+        }
+
+        private void ApplyNeoPixelRing(NeoPixelRingId id, IReadOnlyList<Color> colors, double intensityMultiplier)
+        {
+            if (!_neoPixelLeds.TryGetValue(id, out var leds) || colors == null) return;
+            intensityMultiplier = Math.Clamp(intensityMultiplier, 1.0, 20.0);
+            int n = Math.Min(leds.Count, colors.Count);
+            double sumR = 0, sumG = 0, sumB = 0;
+            double maxLevel = 0;
+
+            for (int i = 0; i < n; i++)
+            {
+                Color c = colors[i];
+                double level = Math.Max(c.R, Math.Max(c.G, c.B)) / 255.0;
+                maxLevel = Math.Max(maxLevel, level);
+                var led = leds[i];
+
+                if (level <= 0.001)
+                {
+                    led.Diffuse.Color = Color.FromRgb(11, 11, 12);
+                    led.Emissive.Color = Colors.Black;
+                    led.Halo.Color = Color.FromArgb(0, 0, 0, 0);
+                    continue;
+                }
+
+                // The Arduino frame already contains brightness scaling. Boost
+                // only the rendered emission so the physical command semantics
+                // remain unchanged while the eye LEDs look more luminous.
+                Color hue = NormalizeHue(c);
+                led.Diffuse.Color = BlendColorLocal(c, hue, 0.22 + 0.20 * level);
+                double emissiveBoost = id is NeoPixelRingId.LeftVent or NeoPixelRingId.RightVent ? 3.10 : 1.75;
+                // Surface emission is also boosted, but with square-root scaling
+                // so the 20x light setting retains visible RGB detail instead of
+                // immediately clipping every LED surface to white/full channel.
+                led.Emissive.Color = BoostColor(c, emissiveBoost * Math.Sqrt(intensityMultiplier));
+
+                bool ventRing = id is NeoPixelRingId.LeftVent or NeoPixelRingId.RightVent;
+                byte alpha = ventRing
+                    ? (byte)Math.Clamp(Math.Round(190.0 * Math.Pow(level, 0.52) * Math.Sqrt(intensityMultiplier)), 0, 250)
+                    : (byte)0;
+                led.Halo.Color = Color.FromArgb(alpha, hue.R, hue.G, hue.B);
+
+                sumR += c.R;
+                sumG += c.G;
+                sumB += c.B;
+            }
+
+            Color pooledColor = Colors.Black;
+            if (maxLevel > 0.001)
+            {
+                // Average color establishes hue; stronger front-eye gain makes
+                // the ring illuminate the iris rather than reading as 16 dim dots.
+                // Environmental spill is intentionally restrained. Front-eye
+                // light is concentrated by the inward spotlights and diffuser
+                // disk, while vent rings get a stronger but still localized
+                // pooled light so they read clearly through the vents.
+                double gain = id is NeoPixelRingId.LeftEye or NeoPixelRingId.RightEye ? 1.35 : 5.60;
+                double boost = id is NeoPixelRingId.LeftEye or NeoPixelRingId.RightEye
+                    ? (0.18 + 0.32 * maxLevel)
+                    : (0.52 + 0.95 * maxLevel);
+                pooledColor = Color.FromRgb(
+                    (byte)Math.Clamp(Math.Round((sumR / Math.Max(1, n)) * gain * boost), 0, 255),
+                    (byte)Math.Clamp(Math.Round((sumG / Math.Max(1, n)) * gain * boost), 0, 255),
+                    (byte)Math.Clamp(Math.Round((sumB / Math.Max(1, n)) * gain * boost), 0, 255));
+            }
+
+            if (_neoPixelVentLights.TryGetValue(id, out var ventLights))
+            {
+                // Central cone drives light out through the vent openings.
+                if (ventLights.Count > 0)
+                {
+                    ventLights[0].Color = pooledColor;
+                    ventLights[0].ConstantAttenuation = 0.18 / intensityMultiplier;
+                    ventLights[0].LinearAttenuation = 2.0 / intensityMultiplier;
+                    ventLights[0].QuadraticAttenuation = 5.5 / intensityMultiplier;
+                }
+
+                // One radial light per NeoPixel paints the complete inner tube
+                // circumference. Keep each range short and use that pixel's own
+                // color so wipe/rainbow/chase animations still travel around the
+                // physical ring rather than becoming one flat flood color.
+                for (int q = 0; q < 16 && q + 1 < ventLights.Count; q++)
+                {
+                    var spot = ventLights[q + 1];
+                    Color source = q < n ? colors[q] : Colors.Black;
+                    spot.Color = Color.FromRgb(
+                        (byte)Math.Clamp(Math.Round(source.R * 6.4), 0, 255),
+                        (byte)Math.Clamp(Math.Round(source.G * 6.4), 0, 255),
+                        (byte)Math.Clamp(Math.Round(source.B * 6.4), 0, 255));
+                    spot.ConstantAttenuation = 0.14 / intensityMultiplier;
+                    spot.LinearAttenuation = 1.8 / intensityMultiplier;
+                    spot.QuadraticAttenuation = 4.8 / intensityMultiplier;
+                }
+            }
+
+            if (_neoPixelVentTubeGlows.TryGetValue(id, out var tubeGlow))
+            {
+                if (maxLevel <= 0.001)
+                {
+                    tubeGlow.Diffuse.Color = Color.FromArgb(0, 0, 0, 0);
+                    tubeGlow.Emissive.Color = Color.FromArgb(0, 0, 0, 0);
+                }
+                else
+                {
+                    Color hue = NormalizeHue(pooledColor);
+                    double strength = Math.Min(1.0, maxLevel * Math.Sqrt(intensityMultiplier));
+                    byte diffuseAlpha = (byte)Math.Clamp(Math.Round(38.0 + 58.0 * strength), 0, 110);
+                    byte emissiveAlpha = (byte)Math.Clamp(Math.Round(120.0 + 115.0 * strength), 0, 245);
+                    tubeGlow.Diffuse.Color = Color.FromArgb(
+                        diffuseAlpha,
+                        (byte)Math.Clamp(Math.Round(hue.R * 0.28 * strength), 0, 255),
+                        (byte)Math.Clamp(Math.Round(hue.G * 0.28 * strength), 0, 255),
+                        (byte)Math.Clamp(Math.Round(hue.B * 0.28 * strength), 0, 255));
+                    tubeGlow.Emissive.Color = Color.FromArgb(
+                        emissiveAlpha,
+                        (byte)Math.Clamp(Math.Round(hue.R * 0.78 * strength), 0, 255),
+                        (byte)Math.Clamp(Math.Round(hue.G * 0.78 * strength), 0, 255),
+                        (byte)Math.Clamp(Math.Round(hue.B * 0.78 * strength), 0, 255));
+                }
+            }
+        }
+
+        private void SetEyeBacking(string materialName, IReadOnlyList<Color> colors, double intensityMultiplier)
+        {
+            intensityMultiplier = Math.Clamp(intensityMultiplier, 1.0, 20.0);
+            double sumR = 0, sumG = 0, sumB = 0;
+            int litCount = 0;
+            double maxLevel = 0;
+
+            if (colors != null)
+            {
+                foreach (var c in colors)
+                {
+                    double level = Math.Max(c.R, Math.Max(c.G, c.B)) / 255.0;
+                    if (level < 2.0 / 255.0) continue;
+                    sumR += c.R;
+                    sumG += c.G;
+                    sumB += c.B;
+                    maxLevel = Math.Max(maxLevel, level);
+                    litCount++;
+                }
+            }
+
+            if (litCount == 0)
+            {
+                SetMaterialColor(materialName, Color.FromArgb(255, 0, 0, 0));
+                SetMaterialEmissive(materialName, Colors.Black);
+                return;
+            }
+
+            Color average = Color.FromRgb(
+                (byte)Math.Clamp(Math.Round(sumR / litCount), 0, 255),
+                (byte)Math.Clamp(Math.Round(sumG / litCount), 0, 255),
+                (byte)Math.Clamp(Math.Round(sumB / litCount), 0, 255));
+            Color hue = NormalizeHue(average);
+
+            // A smoky translucent diffuser obscures the individual LED packages
+            // while allowing their light through. The subtle averaged emissive
+            // tint visually blends adjacent NeoPixel colors across the disk.
+            byte alpha = (byte)Math.Round(150.0 - 38.0 * maxLevel); // 112..150
+            byte tint = (byte)Math.Round(12.0 + 16.0 * maxLevel);
+            SetMaterialColor(materialName, Color.FromArgb(alpha, tint, tint, tint));
+            double diffuserBoost = Math.Sqrt(intensityMultiplier);
+            SetMaterialEmissive(materialName, Color.FromRgb(
+                (byte)Math.Clamp(Math.Round(hue.R * 0.34 * maxLevel * diffuserBoost), 0, 255),
+                (byte)Math.Clamp(Math.Round(hue.G * 0.34 * maxLevel * diffuserBoost), 0, 255),
+                (byte)Math.Clamp(Math.Round(hue.B * 0.34 * maxLevel * diffuserBoost), 0, 255)));
+        }
+
+        private static Color NormalizeHue(Color c)
+        {
+            // Preserve the RGB channel ratios while normalizing the strongest
+            // component to full intensity. This separates hue from the Arduino
+            // brightness already encoded in the ring frame.
+            double maxChannel = Math.Max(c.R, Math.Max(c.G, c.B));
+            if (maxChannel <= 0.0)
+                return Colors.Black;
+
+            double scale = 255.0 / maxChannel;
+            return Color.FromRgb(
+                (byte)Math.Clamp(Math.Round(c.R * scale), 0, 255),
+                (byte)Math.Clamp(Math.Round(c.G * scale), 0, 255),
+                (byte)Math.Clamp(Math.Round(c.B * scale), 0, 255));
+        }
+
+        private static Color BoostColor(Color c, double factor)
+        {
+            return Color.FromRgb(
+                (byte)Math.Clamp(Math.Round(c.R * factor), 0, 255),
+                (byte)Math.Clamp(Math.Round(c.G * factor), 0, 255),
+                (byte)Math.Clamp(Math.Round(c.B * factor), 0, 255));
+        }
+
+        private enum NeoPixelRingId
+        {
+            LeftEye,
+            LeftVent,
+            RightEye,
+            RightVent,
+        }
+
+        private sealed class VentTubeGlowVisual
+        {
+            public VentTubeGlowVisual(SolidColorBrush diffuse, SolidColorBrush emissive)
+            {
+                Diffuse = diffuse;
+                Emissive = emissive;
+            }
+
+            public SolidColorBrush Diffuse { get; }
+            public SolidColorBrush Emissive { get; }
+        }
+
+        private sealed class NeoPixelVisual
+        {
+            public NeoPixelVisual(SolidColorBrush diffuse, SolidColorBrush emissive,
+                                  SolidColorBrush halo)
+            {
+                Diffuse = diffuse;
+                Emissive = emissive;
+                Halo = halo;
+            }
+            public SolidColorBrush Diffuse { get; }
+            public SolidColorBrush Emissive { get; }
+            public SolidColorBrush Halo { get; }
+        }
+
         /// <summary>
         /// Captures only the kinematic state that can change while the editor is
         /// running. This is used when rebuilding the neutral collision-contact
@@ -1682,15 +2282,28 @@ namespace ServoAnimator
 
             var materials = new MaterialGroup();
             materials.Children.Add(new DiffuseMaterial(brush));
-            materials.Children.Add(new SpecularMaterial(
-                new SolidColorBrush(Color.FromArgb(130, 255, 255, 255)), 32));
+            bool isPupilBacking = materialName is "left_pupil_dynamic" or "right_pupil_dynamic";
+            if (!isPupilBacking)
+            {
+                materials.Children.Add(new SpecularMaterial(
+                    new SolidColorBrush(Color.FromArgb(130, 255, 255, 255)), 32));
+            }
+            else
+            {
+                // The pupil backing doubles as the front-eye diffusion disk.
+                // Its emissive tint is driven from the blended NeoPixel frame.
+                var diffuserEmissive = new SolidColorBrush(Colors.Black);
+                materials.Children.Add(new EmissiveMaterial(diffuserEmissive));
+                _emissiveBrushes[materialName] = diffuserEmissive;
+            }
 
             // Lip voice LEDs get a separately mutable emissive channel. The
             // diffuse color keeps inactive lenses visibly dull orange, while
             // SetMouth drives emission independently as the audio level rises.
             if ((materialName.StartsWith("lip_led_", StringComparison.Ordinal) ||
                  materialName.StartsWith("mouth_side_red_", StringComparison.Ordinal) ||
-                 materialName.StartsWith("mouth_side_green_", StringComparison.Ordinal)) &&
+                 materialName.StartsWith("mouth_side_green_", StringComparison.Ordinal) ||
+                 materialName.StartsWith("neopixel_", StringComparison.Ordinal)) &&
                 materialName.EndsWith("_dynamic", StringComparison.Ordinal))
             {
                 var emissiveBrush = new SolidColorBrush(Colors.Black);
@@ -2655,6 +3268,97 @@ namespace ServoAnimator
 
             AddCap(m, radius, z1, segments, true);
             AddCap(m, radius, z0, segments, false);
+            m.Freeze();
+            return m;
+        }
+
+        /// <summary>Create one annular arc segment in the Y/Z plane with its
+        /// thickness along X. Angles use the eye convention: 0 degrees is
+        /// 12 o'clock (+Z), increasing toward +Y. Used by the front Eye RGB
+        /// ring so the 16 Arduino pixels appear as 16 illuminated arc segments.</summary>
+        public static MeshGeometry3D AnnularSectorX(double innerRadius,
+                                                     double outerRadius,
+                                                     double thickness,
+                                                     double startDegrees,
+                                                     double endDegrees,
+                                                     int subdivisions)
+        {
+            innerRadius = Math.Max(0, innerRadius);
+            outerRadius = Math.Max(innerRadius, outerRadius);
+            thickness = Math.Max(0.00001, thickness);
+            subdivisions = Math.Max(1, subdivisions);
+
+            var m = new MeshGeometry3D();
+            double x0 = -thickness / 2.0;
+            double x1 = thickness / 2.0;
+            double start = startDegrees * Math.PI / 180.0;
+            double end = endDegrees * Math.PI / 180.0;
+
+            Point3D P(double x, double r, double a) =>
+                new Point3D(x, r * Math.Sin(a), r * Math.Cos(a));
+
+            for (int s = 0; s < subdivisions; s++)
+            {
+                double a0 = start + (end - start) * s / subdivisions;
+                double a1 = start + (end - start) * (s + 1) / subdivisions;
+                double am = (a0 + a1) / 2.0;
+
+                var fi0 = P(x1, innerRadius, a0);
+                var fo0 = P(x1, outerRadius, a0);
+                var fo1 = P(x1, outerRadius, a1);
+                var fi1 = P(x1, innerRadius, a1);
+                AddFace(m, fi0, fo0, fo1, fi1, new Vector3D(1, 0, 0));
+
+                var bi0 = P(x0, innerRadius, a0);
+                var bo0 = P(x0, outerRadius, a0);
+                var bo1 = P(x0, outerRadius, a1);
+                var bi1 = P(x0, innerRadius, a1);
+                AddFace(m, bi1, bo1, bo0, bi0, new Vector3D(-1, 0, 0));
+
+                var outward = new Vector3D(0, Math.Sin(am), Math.Cos(am));
+                AddFace(m, bo0, P(x1, outerRadius, a0), P(x1, outerRadius, a1), bo1, outward);
+
+                var inward = new Vector3D(0, -Math.Sin(am), -Math.Cos(am));
+                AddFace(m, bi1, P(x1, innerRadius, a1), P(x1, innerRadius, a0), bi0, inward);
+            }
+
+            var startOut = new Vector3D(0, -Math.Cos(start), Math.Sin(start));
+            AddFace(m,
+                P(x0, innerRadius, start), P(x0, outerRadius, start),
+                P(x1, outerRadius, start), P(x1, innerRadius, start), startOut);
+
+            var endOut = new Vector3D(0, Math.Cos(end), -Math.Sin(end));
+            AddFace(m,
+                P(x0, outerRadius, end), P(x0, innerRadius, end),
+                P(x1, innerRadius, end), P(x1, outerRadius, end), endOut);
+
+            m.Freeze();
+            return m;
+        }
+
+        /// <summary>Create only the curved side wall of a cylinder, without
+        /// end caps. The axis is Z. BackMaterial can be assigned by the caller
+        /// when the inside surface also needs to be visible.</summary>
+        public static MeshGeometry3D OpenCylinder(double radius, double length, int segments)
+        {
+            segments = Math.Max(12, segments);
+            var m = new MeshGeometry3D();
+            double z0 = -length / 2.0, z1 = length / 2.0;
+            for (int i = 0; i < segments; i++)
+            {
+                double a0 = 2.0 * Math.PI * i / segments;
+                double a1 = 2.0 * Math.PI * (i + 1) / segments;
+                var n0 = new Vector3D(Math.Cos(a0), Math.Sin(a0), 0);
+                var n1 = new Vector3D(Math.Cos(a1), Math.Sin(a1), 0);
+                int k = m.Positions.Count;
+                m.Positions.Add(new Point3D(radius * n0.X, radius * n0.Y, z0));
+                m.Positions.Add(new Point3D(radius * n1.X, radius * n1.Y, z0));
+                m.Positions.Add(new Point3D(radius * n1.X, radius * n1.Y, z1));
+                m.Positions.Add(new Point3D(radius * n0.X, radius * n0.Y, z1));
+                m.Normals.Add(n0); m.Normals.Add(n1); m.Normals.Add(n1); m.Normals.Add(n0);
+                m.TriangleIndices.Add(k); m.TriangleIndices.Add(k + 1); m.TriangleIndices.Add(k + 2);
+                m.TriangleIndices.Add(k); m.TriangleIndices.Add(k + 2); m.TriangleIndices.Add(k + 3);
+            }
             m.Freeze();
             return m;
         }

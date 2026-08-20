@@ -1,0 +1,57 @@
+<Window x:Class="ServoAnimator.HelpWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Animation Editor &amp; Player Help"
+        Width="1040" Height="720" MinWidth="760" MinHeight="500"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource AppBackground}">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300"/>
+            <ColumnDefinition Width="8"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="360"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Search Help:" VerticalAlignment="Center" Margin="0,0,8,0"
+                       Foreground="{DynamicResource HeaderText}" FontWeight="SemiBold"/>
+            <TextBox x:Name="SearchBox" Grid.Column="1" TextChanged="SearchBox_TextChanged"
+                     ToolTip="Search topic titles, keywords and help text"/>
+            <TextBlock x:Name="SearchStatus" Grid.Column="2" Margin="10,0"
+                       VerticalAlignment="Center" Foreground="{DynamicResource SecondaryText}"/>
+            <Button Grid.Column="3" Content="Close" Padding="10,4" Click="Close_Click"/>
+        </Grid>
+
+        <Border Grid.Row="1" Grid.Column="0" CornerRadius="7" Padding="6"
+                Background="{DynamicResource PanelBackground}"
+                BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Contents / Search Results" Margin="5,4,5,8"
+                           Foreground="{DynamicResource HeaderText}" FontWeight="SemiBold"/>
+                <ListBox x:Name="TopicList" SelectionChanged="TopicList_SelectionChanged"
+                         DisplayMemberPath="Title"/>
+            </DockPanel>
+        </Border>
+
+        <GridSplitter Grid.Row="1" Grid.Column="1" Width="8" HorizontalAlignment="Stretch"
+                      Background="Transparent"/>
+
+        <Border Grid.Row="1" Grid.Column="2" CornerRadius="7" Padding="8"
+                Background="{DynamicResource PanelBackground}"
+                BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1">
+            <FlowDocumentScrollViewer x:Name="DocumentViewer" IsToolBarVisible="False"
+                                      VerticalScrollBarVisibility="Auto"
+                                      Background="Transparent" Foreground="{DynamicResource PrimaryText}"/>
+        </Border>
+    </Grid>
+</Window>

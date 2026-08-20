@@ -57,6 +57,18 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
+        <Button x:Name="ColorPickerButton" Visibility="Collapsed"
+                HorizontalAlignment="Left" Margin="150,7,0,0" Padding="7,3"
+                Click="ColorPicker_Click"
+                ToolTip="Choose a color and fill the Red, Green and Blue fields">
+            <StackPanel Orientation="Horizontal">
+                <Border x:Name="SelectedColorSwatch" Width="26" Height="16"
+                        CornerRadius="3" BorderBrush="{DynamicResource DividerBrush}"
+                        BorderThickness="1" Margin="0,0,7,0"/>
+                <TextBlock Text="Select Color…" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Button>
+
         <Border Background="#1B1E23" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
                 CornerRadius="3" Padding="8" Margin="0,10,0,0">
             <TextBlock x:Name="PreviewText" Foreground="{DynamicResource WarningText}"

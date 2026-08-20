@@ -39,6 +39,7 @@ namespace ServoAnimator
                                      string defaultPath)
         {
             InitializeComponent();
+            HelpSystem.EnableContextHelp(this, "files-configuration");
             _hzOptions = hzOptions;
 
             ModeCombo.Items.Add("Animate ganged");

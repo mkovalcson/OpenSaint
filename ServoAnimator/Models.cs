@@ -353,6 +353,10 @@ namespace ServoAnimator
             }
         }
 
+        [JsonPropertyName("image")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string ImageFile { get; set; }
+
         [JsonPropertyName("commands")]
         public List<ServoCommand> Commands { get; set; } = new();
     }
@@ -517,7 +521,7 @@ namespace ServoAnimator
         }
 
         /// <summary>
-        /// Writes a LIBRARY ITEM file. The top-level description is a short
+        /// Writes a LIBRARY SEQUENCE file. The top-level description is a short
         /// human-readable header used by the library browser; commands are
         /// the selected timeline range rebased to zero.
         /// </summary>
@@ -533,7 +537,26 @@ namespace ServoAnimator
             File.WriteAllText(path, JsonSerializer.Serialize(wrapper, JsonOpts));
         }
 
-        /// <summary>Reads a library item, including its description header.
+        /// <summary>Write a single-time-point Library Command using the
+        /// same description + commands JSON shape as a Library Sequence. Command
+        /// order is preserved because same-time command ordering can matter for
+        /// ganged/child overrides.</summary>
+        public static void SaveLibraryCommand(string path, IEnumerable<ServoCommand> commands,
+                                              string description = "", string imageFile = null)
+        {
+            var wrapper = new LibraryItemDocument
+            {
+                Description = description ?? "",
+                ImageFile = string.IsNullOrWhiteSpace(imageFile) ? null : imageFile,
+                Commands = commands?.Select(c => c.Clone()).ToList()
+                           ?? new List<ServoCommand>(),
+            };
+            foreach (var command in wrapper.Commands)
+                command.OffsetSeconds = 0.0;
+            File.WriteAllText(path, JsonSerializer.Serialize(wrapper, JsonOpts));
+        }
+
+        /// <summary>Reads a Library Sequence/Command, including its description header.
         /// Older command-only objects, full animation documents and bare
         /// command arrays are all accepted for backward compatibility.</summary>
         public static LibraryItemDocument LoadLibraryItem(string path)
@@ -556,7 +579,7 @@ namespace ServoAnimator
         }
 
         /// <summary>Update only the description header of an existing
-        /// library item while retaining its commands.</summary>
+        /// Library Sequence/Command while retaining its commands.</summary>
         public static void UpdateLibraryDescription(string path, string description)
         {
             string text = File.ReadAllText(path).TrimStart();
@@ -586,9 +609,36 @@ namespace ServoAnimator
             }
 
             // A legacy bare command array is upgraded to the current library
-            // item object when its description is first edited.
+            // sequence object when its description is first edited.
             var item = LoadLibraryItem(path);
             SaveCommandsOnly(path, item.Commands, description);
+        }
+
+        /// <summary>Update the optional image reference on a Library Command
+        /// while preserving its description, commands, and any future fields.
+        /// The image path is normally stored relative to the JSON file.</summary>
+        public static void UpdateLibraryImage(string path, string imageFile)
+        {
+            string text = File.ReadAllText(path).TrimStart();
+            JsonNode node = JsonNode.Parse(text, null, new JsonDocumentOptions
+            {
+                CommentHandling = JsonCommentHandling.Skip,
+                AllowTrailingCommas = true,
+            });
+
+            if (node is JsonObject obj)
+            {
+                if (string.IsNullOrWhiteSpace(imageFile))
+                    obj.Remove("image");
+                else
+                    obj["image"] = imageFile;
+                File.WriteAllText(path, obj.ToJsonString(JsonOpts));
+                return;
+            }
+
+            // Upgrade a legacy bare command array to the current library object.
+            var item = LoadLibraryItem(path);
+            SaveLibraryCommand(path, item.Commands, item.Description, imageFile);
         }
 
         /// <summary>

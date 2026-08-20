@@ -21,13 +21,13 @@
                 <TextBlock Foreground="#D9DDE4" TextWrapping="Wrap" Margin="0,0,0,10">
                     <Run Text="Left click" FontWeight="SemiBold"/> positions the cursor.  <Run Text="Mouse wheel" FontWeight="SemiBold"/> zooms.  <Run Text="Middle drag" FontWeight="SemiBold"/> pans.  <Run Text="Right click" FontWeight="SemiBold"/> opens context actions.  Drag a gold downward triangle marker to move its complete command group. Nearby markers stagger vertically when they overlap.
                 </TextBlock>
-                <TextBlock Text="Movie blocks" Foreground="#E2BE7E" FontSize="15" FontWeight="SemiBold" Margin="0,10,0,5"/>
-                <TextBlock Foreground="#D9DDE4" TextWrapping="Wrap" Margin="0,0,0,10">
-                    Drag a block using the left mouse button to reorder it; the gold insertion line shows the destination. Right-click a block to remove it or right-click a sequence boundary to insert. The movie wheel zoom and middle-drag pan work independently of the sequence timeline.
-                </TextBlock>
                 <TextBlock Text="Spline editor" Foreground="#8FB9E3" FontSize="15" FontWeight="SemiBold" Margin="0,10,0,5"/>
                 <TextBlock Foreground="#D9DDE4" TextWrapping="Wrap" Margin="0,0,0,10">
                     Left-drag a control point vertically to change value. Right-drag a point horizontally to change time. Ctrl+left-click a spline line to add a point. Select a point and press Delete to remove it. Hovering shows the exact servo, time and value.
+                </TextBlock>
+                <TextBlock Text="Movie blocks" Foreground="#E2BE7E" FontSize="15" FontWeight="SemiBold" Margin="0,10,0,5"/>
+                <TextBlock Foreground="#D9DDE4" TextWrapping="Wrap" Margin="0,0,0,10">
+                    Drag a block using the left mouse button to reorder it; the gold insertion line shows the destination. Right-click a block to remove it or right-click a sequence boundary to insert. The movie wheel zoom and middle-drag pan work independently of the sequence timeline.
                 </TextBlock>
                 <TextBlock Text="Editing" Foreground="#A8D2A8" FontSize="15" FontWeight="SemiBold" Margin="0,10,0,5"/>
                 <TextBlock Foreground="#D9DDE4" TextWrapping="Wrap">

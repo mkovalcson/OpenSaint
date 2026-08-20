@@ -1,0 +1,42 @@
+{
+  "description": "Angry with Red eyes on.",
+  "commands": [
+    {
+      "offsetSeconds": 0,
+      "servo": "NoseBody",
+      "value": -100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "FlapsOpen",
+      "value": -100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "FlapTiltUp",
+      "value": 38,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "IrisClose",
+      "value": -36,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "RGBCommand",
+      "value": "SetRGBColor,255,0,0,200,Eyes,LR",
+      "speed": "N/C",
+      "reason": "",
+      "color": "#FF0000"
+    }
+  ],
+  "image": "Angry-image.jpg"
+}

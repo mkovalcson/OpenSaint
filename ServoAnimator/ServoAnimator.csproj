@@ -25,9 +25,9 @@
     <AssemblyTitle>Animation Editor &amp; Player</AssemblyTitle>
     <Product>Animation Editor &amp; Player</Product>
     <RootNamespace>ServoAnimator</RootNamespace>
-    <Version>1.8.3</Version>
-    <AssemblyVersion>1.8.3.0</AssemblyVersion>
-    <FileVersion>1.8.3.0</FileVersion>
+    <Version>1.10.6</Version>
+    <AssemblyVersion>1.10.6.0</AssemblyVersion>
+    <FileVersion>1.10.6.0</FileVersion>
     <!-- Explicit entry point (Program.cs). Normally WPF auto-generates
          Main from App.xaml, but if App.xaml's build action isn't
          "ApplicationDefinition" (e.g. after importing the files into an
@@ -50,6 +50,7 @@
     <None Update="Models\servo_joint_map.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Models\Meshes\**\*.obj" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Models\Meshes\**\*.stl" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Help\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

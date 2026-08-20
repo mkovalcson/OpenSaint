@@ -21,8 +21,12 @@ namespace ServoAnimator
         private readonly Action _zeroFlaps;
         private readonly string _defaultPath;
         private readonly Action _saved;
+        private readonly Action _restored;
+        private readonly UrdfConfiguration _openingConfig;
         private readonly ObservableCollection<UrdfCalibrationSectionVM> _groups = new();
         private bool _syncingAudioLedGain;
+        private bool _syncingLightIntensity;
+        private static double _sessionScrollOffset;
 
         public UrdfConfigWindow(UrdfConfiguration config,
                                 ServoConfiguration servoConfig,
@@ -30,21 +34,37 @@ namespace ServoAnimator
                                 Action<ServoNames, RobotControls, double> previewChild,
                                 Action zeroFlaps,
                                 string configFolder,
-                                Action saved = null)
+                                Action saved = null,
+                                Action restored = null)
         {
             InitializeComponent();
+            HelpSystem.EnableContextHelp(this, "urdf-configuration");
+            HelpSystem.SetTopic(GroupList, "urdf-configuration");
+            HelpSystem.SetTopic(AudioLedGainSlider, "rgb-lighting");
+            HelpSystem.SetTopic(AudioLedGainText, "rgb-lighting");
+            HelpSystem.SetTopic(EyeLightIntensitySlider, "rgb-lighting");
+            HelpSystem.SetTopic(EyeLightIntensityText, "rgb-lighting");
+            HelpSystem.SetTopic(VentLightIntensitySlider, "rgb-lighting");
+            HelpSystem.SetTopic(VentLightIntensityText, "rgb-lighting");
+            HelpSystem.SetTopic(ConfigPathText, "files-configuration");
             _config = config;
             _servoConfig = servoConfig;
             _previewGang = previewGang;
             _previewChild = previewChild;
             _zeroFlaps = zeroFlaps;
             _saved = saved;
+            _restored = restored;
+            _openingConfig = UrdfConfiguration.CreateDefault();
+            _openingConfig.CopyFrom(config);
             _defaultPath = Path.Combine(
                 string.IsNullOrWhiteSpace(configFolder) ? AppContext.BaseDirectory : configFolder,
                 "URDFconfig.json");
             ConfigPathText.Text = "Default: " + _defaultPath;
             SyncAudioLedGainControls();
+            SyncLightIntensityControls();
             BuildGroups();
+            Loaded += (_, _) => MainScroll.ScrollToVerticalOffset(_sessionScrollOffset);
+            Closed += (_, _) => _sessionScrollOffset = MainScroll.VerticalOffset;
         }
 
         /// <summary>
@@ -139,10 +159,21 @@ namespace ServoAnimator
             GroupList.ItemsSource = _groups;
         }
 
+        private void Back_Click(object sender, RoutedEventArgs e)
+        {
+            _config.CopyFrom(_openingConfig);
+            SyncAudioLedGainControls();
+            SyncLightIntensityControls();
+            BuildGroups();
+            _restored?.Invoke();
+            ConfigPathText.Text = "Restored values from when URDF Configuration was opened. Save Default to persist.";
+        }
+
         private void ResetDefaults_Click(object sender, RoutedEventArgs e)
         {
             _config.CopyFrom(UrdfConfiguration.CreateDefault());
             SyncAudioLedGainControls();
+            SyncLightIntensityControls();
             BuildGroups();
         }
 
@@ -179,6 +210,7 @@ namespace ServoAnimator
         public void ReloadFromSharedConfig()
         {
             SyncAudioLedGainControls();
+            SyncLightIntensityControls();
             BuildGroups();
         }
 
@@ -247,6 +279,81 @@ namespace ServoAnimator
             if (e.Key != Key.Enter) return;
             CommitAudioLedGainText();
             AudioLedGainText.SelectAll();
+            e.Handled = true;
+        }
+
+        private void SyncLightIntensityControls()
+        {
+            if (EyeLightIntensitySlider == null || EyeLightIntensityText == null ||
+                VentLightIntensitySlider == null || VentLightIntensityText == null) return;
+
+            _syncingLightIntensity = true;
+            try
+            {
+                double eye = Math.Clamp(_config?.EyeLightIntensity ?? 1.0, 1.0, 20.0);
+                double vent = Math.Clamp(_config?.VentLightIntensity ?? 1.0, 1.0, 20.0);
+                EyeLightIntensitySlider.Value = eye;
+                EyeLightIntensityText.Text = eye.ToString("0.0", CultureInfo.InvariantCulture);
+                VentLightIntensitySlider.Value = vent;
+                VentLightIntensityText.Text = vent.ToString("0.0", CultureInfo.InvariantCulture);
+            }
+            finally
+            {
+                _syncingLightIntensity = false;
+            }
+        }
+
+        private void EyeLightIntensitySlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (_syncingLightIntensity || _config == null) return;
+            _config.EyeLightIntensity = Math.Clamp(e.NewValue, 1.0, 20.0);
+            SyncLightIntensityControls();
+        }
+
+        private void VentLightIntensitySlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (_syncingLightIntensity || _config == null) return;
+            _config.VentLightIntensity = Math.Clamp(e.NewValue, 1.0, 20.0);
+            SyncLightIntensityControls();
+        }
+
+        private void CommitLightIntensityText(TextBox textBox, bool eye)
+        {
+            if (_syncingLightIntensity || _config == null || textBox == null) return;
+            string text = textBox.Text?.Trim();
+            bool parsed = double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out double value) ||
+                          double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
+            if (!parsed)
+            {
+                SyncLightIntensityControls();
+                return;
+            }
+
+            value = Math.Clamp(value, 1.0, 20.0);
+            if (eye) _config.EyeLightIntensity = value;
+            else _config.VentLightIntensity = value;
+            SyncLightIntensityControls();
+        }
+
+        private void EyeLightIntensityText_LostFocus(object sender, RoutedEventArgs e) =>
+            CommitLightIntensityText(EyeLightIntensityText, eye: true);
+
+        private void VentLightIntensityText_LostFocus(object sender, RoutedEventArgs e) =>
+            CommitLightIntensityText(VentLightIntensityText, eye: false);
+
+        private void EyeLightIntensityText_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+            CommitLightIntensityText(EyeLightIntensityText, eye: true);
+            EyeLightIntensityText.SelectAll();
+            e.Handled = true;
+        }
+
+        private void VentLightIntensityText_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+            CommitLightIntensityText(VentLightIntensityText, eye: false);
+            VentLightIntensityText.SelectAll();
             e.Handled = true;
         }
 

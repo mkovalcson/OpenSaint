@@ -18,8 +18,9 @@
 //     PWM for the verify sliders
 //   * LeftEyePop / RightEyePop -> the Tic steppers (0..2000 clamped into
 //     the Tic's 0..2100 range)
-//   * RGBCommand         -> the Arduino (the command TEXT is sent verbatim,
-//     matching the RGBLight.cs string.Format outputs)
+//   * RGBCommand         -> the Arduino. Saved/editor color commands remain
+//     Red,Green,Blue, but the serial wire swaps the first two color arguments
+//     to Green,Red,Blue to match ArduinoOpenSaintRGB.ino.
 // ---------------------------------------------------------------------------
 
 using System.Diagnostics;
@@ -270,11 +271,14 @@ namespace ServoAnimator
             Guard(() => s.GoValue(pwm), control.ToString());
         }
 
-        /// <summary>RGB command text, sent verbatim to the Arduino.</summary>
+        /// <summary>RGB command text. Editor commands use Red,Green,Blue;
+        /// color-bearing commands are rotated to Green,Red,Blue on the serial
+        /// wire to match ArduinoOpenSaintRGB.ino.</summary>
         public void DriveRgb(string commandText)
         {
             if (_lights == null || string.IsNullOrWhiteSpace(commandText)) return;
-            Guard(() => _lights.Command(commandText), "RGB");
+            string wireCommand = RgbCommandWireFormat.ToArduinoWireOrder(commandText);
+            Guard(() => _lights.Command(wireCommand), "RGB");
         }
 
         private static void DriveEyePop(TicController tic, int value)

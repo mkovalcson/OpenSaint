@@ -21,12 +21,22 @@ namespace ServoAnimator
 {
     public sealed class UrdfConfiguration
     {
-        public int Version { get; set; } = 8;
+        public int Version { get; set; } = 9;
 
         /// <summary>Multiplier applied to the normalized audio amplitude before
         /// it drives the URDF mouth LEDs. 1.0 preserves the raw audio level;
         /// the calibration screen constrains this to 0.5x..2.0x.</summary>
         public double AudioLedGain { get; set; } = 1.0;
+
+        /// <summary>URDF-only rendered intensity multiplier for the two front-facing
+        /// eye NeoPixel rings. 1.0 preserves the v1.9.6 appearance; the
+        /// calibration screen allows 1.0x..20.0x.</summary>
+        public double EyeLightIntensity { get; set; } = 1.0;
+
+        /// <summary>URDF-only rendered intensity multiplier for the two rear-facing
+        /// vent NeoPixel rings. 1.0 preserves the v1.9.6 appearance; the
+        /// calibration screen allows 1.0x..20.0x.</summary>
+        public double VentLightIntensity { get; set; } = 1.0;
 
         public List<UrdfMotionSetting> Motions { get; set; } = new();
 
@@ -212,7 +222,9 @@ namespace ServoAnimator
             }
 
             defaults.AudioLedGain = Math.Clamp(saved.AudioLedGain, 0.5, 2.0);
-            defaults.Version = 8;
+            defaults.EyeLightIntensity = Math.Clamp(saved.EyeLightIntensity, 1.0, 20.0);
+            defaults.VentLightIntensity = Math.Clamp(saved.VentLightIntensity, 1.0, 20.0);
+            defaults.Version = 9;
             defaults.Normalize();
             defaults.Reindex();
             return defaults;
@@ -220,7 +232,7 @@ namespace ServoAnimator
 
         public void Save(string path)
         {
-            Version = 8;
+            Version = 9;
             Normalize();
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
             File.WriteAllText(path, JsonSerializer.Serialize(this, JsonOptions()));
@@ -230,6 +242,8 @@ namespace ServoAnimator
         {
             if (other == null) return;
             AudioLedGain = Math.Clamp(other.AudioLedGain, 0.5, 2.0);
+            EyeLightIntensity = Math.Clamp(other.EyeLightIntensity, 1.0, 20.0);
+            VentLightIntensity = Math.Clamp(other.VentLightIntensity, 1.0, 20.0);
             foreach (var source in other.Motions)
             {
                 var target = Get(source.Servo, source.Control);
@@ -239,7 +253,7 @@ namespace ServoAnimator
                 target.ZeroExtent = source.ZeroExtent;
                 target.ReverseOverride = source.ReverseOverride;
             }
-            Version = 8;
+            Version = 9;
             Normalize();
             Reindex();
         }
@@ -386,6 +400,8 @@ namespace ServoAnimator
         private void Normalize()
         {
             AudioLedGain = Math.Clamp(AudioLedGain, 0.5, 2.0);
+            EyeLightIntensity = Math.Clamp(EyeLightIntensity, 1.0, 20.0);
+            VentLightIntensity = Math.Clamp(VentLightIntensity, 1.0, 20.0);
 
             foreach (var m in Motions)
             {

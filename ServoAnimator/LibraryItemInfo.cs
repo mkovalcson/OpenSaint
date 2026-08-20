@@ -7,6 +7,8 @@
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace ServoAnimator
 {
@@ -17,7 +19,23 @@ namespace ServoAnimator
 
         public string FullPath { get; init; } = "";
         public string RelativePath { get; init; } = "";
+        public string Folder { get; init; } = "";
+        public string FileName { get; init; } = "";
         public string AudioFiles { get; init; } = "";
+        private string _imagePath = "";
+        private ImageSource _imageSource;
+
+        public string ImagePath
+        {
+            get => _imagePath;
+            private set { _imagePath = value ?? ""; OnPropertyChanged(); }
+        }
+
+        public ImageSource ImageSource
+        {
+            get => _imageSource;
+            private set { _imageSource = value; OnPropertyChanged(); }
+        }
         public string ReadError { get; init; } = "";
         public bool IsValid => string.IsNullOrEmpty(ReadError);
 
@@ -82,21 +100,32 @@ namespace ServoAnimator
                         .Where(n => !string.IsNullOrWhiteSpace(n))
                         .Distinct(StringComparer.OrdinalIgnoreCase));
 
+                    string folder = Path.GetDirectoryName(relative) ?? "";
+                    if (folder == ".") folder = "";
+                    string imagePath = ResolveImagePath(path, item.ImageFile);
                     results.Add(new LibraryItemInfo
                     {
                         FullPath = path,
                         RelativePath = relative,
+                        Folder = folder,
+                        FileName = Path.GetFileName(relative),
                         Modified = File.GetLastWriteTime(path),
                         Description = item.Description ?? "",
                         AudioFiles = audio,
+                        ImagePath = imagePath,
+                        ImageSource = LoadImage(imagePath),
                     });
                 }
                 catch (Exception ex)
                 {
+                    string folder = Path.GetDirectoryName(relative) ?? "";
+                    if (folder == ".") folder = "";
                     results.Add(new LibraryItemInfo
                     {
                         FullPath = path,
                         RelativePath = relative,
+                        Folder = folder,
+                        FileName = Path.GetFileName(relative),
                         Modified = File.GetLastWriteTime(path),
                         Description = "[Unreadable JSON]",
                         ReadError = ex.Message,
@@ -108,5 +137,41 @@ namespace ServoAnimator
                 .OrderBy(i => i.RelativePath, StringComparer.OrdinalIgnoreCase)
                 .ToList();
         }
+
+        public void SetImagePath(string path)
+        {
+            ImagePath = path ?? "";
+            ImageSource = LoadImage(ImagePath);
+        }
+
+        private static string ResolveImagePath(string jsonPath, string imageFile)
+        {
+            if (string.IsNullOrWhiteSpace(imageFile)) return "";
+            try
+            {
+                string candidate = Path.IsPathRooted(imageFile)
+                    ? imageFile
+                    : Path.Combine(Path.GetDirectoryName(jsonPath) ?? "", imageFile);
+                return File.Exists(candidate) ? candidate : "";
+            }
+            catch { return ""; }
+        }
+
+        private static ImageSource LoadImage(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return null;
+            try
+            {
+                var image = new BitmapImage();
+                image.BeginInit();
+                image.CacheOption = BitmapCacheOption.OnLoad;
+                image.UriSource = new Uri(path, UriKind.Absolute);
+                image.EndInit();
+                image.Freeze();
+                return image;
+            }
+            catch { return null; }
+        }
+
     }
 }

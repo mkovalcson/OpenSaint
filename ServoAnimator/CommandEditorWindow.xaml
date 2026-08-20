@@ -1,7 +1,6 @@
 <Window x:Class="ServoAnimator.CommandEditorWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:ServoAnimator"
         Title="Edit Commands"
         Width="1080" SizeToContent="Height" MaxHeight="640"
         WindowStartupLocation="CenterOwner"
@@ -16,8 +15,8 @@
            * numeric servos: slider whose Min/Max come from the view-model
              (0..2000 for LeftEyePop/RightEyePop, -100..100 otherwise),
              plus a numeric TextBox. Moving either calls MoveServoNow().
-           * RGBCommand: the slider/number are replaced by a free-text box;
-             committing the text calls the text MoveServoNow() overload.
+           * RGBCommand: the slider/number are replaced by a free-text box
+             plus Build…; the URDF eye/vent rings provide the visual preview.
 
          Rows bind directly to CommandVM wrappers around the live command
          objects, so edits take effect immediately; MainWindow refreshes
@@ -49,6 +48,9 @@
         <!-- Bottom buttons -->
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
                     HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button Content="Create Library Command" Padding="10,4" Margin="4,0"
+                    ToolTip="Save the commands currently shown here as one reusable single-time-point Library Command"
+                    Click="CreateLibraryCommand_Click"/>
             <Button Content="Add Command" Padding="10,4" Margin="4,0" Click="AddCommand_Click"/>
             <Button Content="Close"       Padding="10,4" Margin="4,0" Click="Close_Click" IsDefault="True"/>
         </StackPanel>
@@ -133,13 +135,15 @@
                                 </TextBox.Style>
                             </TextBox>
 
-                            <!-- 24-bit color picker (RGBCommand only): the
-                                 button shows the chosen color; clicking opens
-                                 a palette popup that also displays the 0-255
-                                 R/G/B values of the selection. -->
-                            <Grid Grid.Column="3" Margin="0,0,6,0">
-                                <Grid.Style>
-                                    <Style TargetType="Grid">
+                            <!-- RGB command builder. The old color-patch/palette
+                                 preview is intentionally removed: the URDF now
+                                 previews the four physical NeoPixel rings directly. -->
+                            <Button Grid.Column="3" Content="Build…" Height="22"
+                                    Margin="0,0,6,0" VerticalAlignment="Center"
+                                    ToolTip="Build the RGB command text from the Arduino RGB command list"
+                                    Click="BuildRgb_Click">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
                                         <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsTextServo}" Value="True">
@@ -147,52 +151,8 @@
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
-                                </Grid.Style>
-
-                                <StackPanel Orientation="Horizontal">
-                                <Button Content="Build…" Height="22" Margin="0,0,4,0"
-                                        ToolTip="Build the RGB command text from the RGBLight command list"
-                                        Click="BuildRgb_Click"/>
-                                <ToggleButton x:Name="ColorToggle"
-                                              ToolTip="{Binding RgbText}"
-                                              VerticalAlignment="Center" Height="22">
-                                    <Border Width="34" Height="14"
-                                            Background="{Binding ColorBrush}"
-                                            BorderBrush="{DynamicResource HeaderText}" BorderThickness="1"/>
-                                </ToggleButton>
-
-                                <Popup IsOpen="{Binding IsChecked, ElementName=ColorToggle}"
-                                       StaysOpen="False" Placement="Bottom"
-                                       PlacementTarget="{Binding ElementName=ColorToggle}">
-                                    <Border Background="{DynamicResource MenuBackground}" BorderBrush="{DynamicResource FocusBorder}"
-                                            BorderThickness="1" Padding="8" CornerRadius="{StaticResource PanelCornerRadius}">
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding RgbText}"
-                                                       Foreground="{DynamicResource PrimaryText}" FontWeight="Bold"
-                                                       Margin="0,0,0,6"/>
-                                            <ItemsControl ItemsSource="{x:Static local:CommandVM.PaletteBrushes}">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate>
-                                                        <UniformGrid Columns="8"/>
-                                                    </ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <Border Width="20" Height="20" Margin="1"
-                                                                Background="{Binding}"
-                                                                BorderBrush="#16181C" BorderThickness="1"
-                                                                Cursor="Hand"
-                                                                Tag="{Binding DataContext,
-                                                                      RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                                MouseLeftButtonDown="PaletteSwatch_Click"/>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </StackPanel>
-                                    </Border>
-                                </Popup>
-                                </StackPanel>
-                            </Grid>
+                                </Button.Style>
+                            </Button>
 
                             <!-- Disable: this command turns its servo(s)
                                  OFF instead of moving them; exports write

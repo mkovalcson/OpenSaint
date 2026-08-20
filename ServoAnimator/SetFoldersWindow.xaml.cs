@@ -24,6 +24,7 @@ namespace ServoAnimator
         public SetFoldersWindow(FolderSettings settings, bool firstRun)
         {
             InitializeComponent();
+            HelpSystem.EnableContextHelp(this, "files-configuration");
             _settings = settings;
             ConfigBox.Text = settings.ConfigFolder ?? "";
             if (firstRun)

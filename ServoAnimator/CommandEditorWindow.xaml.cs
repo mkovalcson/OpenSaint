@@ -29,6 +29,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
@@ -45,6 +46,7 @@ namespace ServoAnimator
         private readonly Action<ServoSpeed, ServoNames> _configureGangSpeedNow;
         private readonly Action<ServoSpeed, ServoNames, RobotControls> _configureChildSpeedNow;
         private readonly ObservableCollection<CommandVM> _items = new();
+        private readonly string _libraryCommandsFolder;
 
         public CommandEditorWindow(AnimationDocument doc, double time,
                                    Action<ServoSpeed, ServoNames, int> moveServoNow,
@@ -52,9 +54,12 @@ namespace ServoAnimator
                                    Action<ServoSpeed, ServoNames, RobotControls, int> moveChildNow,
                                    Action<ServoSpeed, ServoNames> configureGangSpeedNow,
                                    Action<ServoSpeed, ServoNames, RobotControls> configureChildSpeedNow,
+                                   string libraryCommandsFolder,
                                    ServoCommand focusCommand = null)
         {
             InitializeComponent();
+            HelpSystem.EnableContextHelp(this, "commands");
+            HelpSystem.SetTopic(CmdList, "commands");
             _doc = doc;
             _timeKey = ServoCommand.TimeKey(time);
             _moveServoNow = moveServoNow;
@@ -62,6 +67,7 @@ namespace ServoAnimator
             _moveChildNow = moveChildNow;
             _configureGangSpeedNow = configureGangSpeedNow;
             _configureChildSpeedNow = configureChildSpeedNow;
+            _libraryCommandsFolder = libraryCommandsFolder ?? "";
 
             Title = $"Edit Commands @ {_timeKey:F3} s";
 
@@ -98,6 +104,101 @@ namespace ServoAnimator
             _items.Remove(vm);
         }
 
+
+        /// <summary>Save every command currently shown in this Edit Commands
+        /// window as one single-time-point Library Command. All saved offsets
+        /// are normalized to zero so insertion always places the entire group
+        /// at the selected timeline point.</summary>
+        private void CreateLibraryCommand_Click(object sender, RoutedEventArgs e)
+        {
+            if (_items.Count == 0)
+            {
+                MessageBox.Show(this, "There are no commands in this window to save.",
+                                "Create Library Command", MessageBoxButton.OK,
+                                MessageBoxImage.Information);
+                return;
+            }
+
+            try { Directory.CreateDirectory(_libraryCommandsFolder); }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Could not create the Library\\Commands folder:\n" + ex.Message,
+                                "Create Library Command", MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+                return;
+            }
+
+            var prompt = new LibraryCommandSaveWindow { Owner = this };
+            if (prompt.ShowDialog() != true) return;
+
+            string path = Path.Combine(_libraryCommandsFolder, prompt.FileNameText);
+            if (File.Exists(path))
+            {
+                var overwrite = MessageBox.Show(this,
+                    $"'{prompt.FileNameText}' already exists. Replace it?",
+                    "Create Library Command", MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+                if (overwrite != MessageBoxResult.Yes) return;
+            }
+
+            var commands = _items.Select(vm =>
+            {
+                var copy = vm.Command.Clone();
+                copy.OffsetSeconds = 0.0;
+                return copy;
+            }).ToList();
+
+            try
+            {
+                string imageFile = null;
+                string oldImagePath = null;
+                if (File.Exists(path))
+                {
+                    try
+                    {
+                        var old = AnimationDocument.LoadLibraryItem(path);
+                        if (!string.IsNullOrWhiteSpace(old.ImageFile))
+                        {
+                            imageFile = old.ImageFile;
+                            oldImagePath = Path.IsPathRooted(old.ImageFile)
+                                ? old.ImageFile
+                                : Path.Combine(Path.GetDirectoryName(path) ?? "", old.ImageFile);
+                        }
+                    }
+                    catch { }
+                }
+
+                if (!string.IsNullOrWhiteSpace(prompt.ImageSourcePath))
+                {
+                    string ext = Path.GetExtension(prompt.ImageSourcePath);
+                    if (string.IsNullOrWhiteSpace(ext)) ext = ".png";
+                    imageFile = Path.GetFileNameWithoutExtension(path) + "_image" + ext.ToLowerInvariant();
+                    string destination = Path.Combine(Path.GetDirectoryName(path) ?? _libraryCommandsFolder, imageFile);
+                    if (!Path.GetFullPath(prompt.ImageSourcePath).Equals(Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase))
+                        File.Copy(prompt.ImageSourcePath, destination, overwrite: true);
+
+                    if (!string.IsNullOrWhiteSpace(oldImagePath) &&
+                        !Path.GetFullPath(oldImagePath).Equals(Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase) &&
+                        File.Exists(oldImagePath))
+                    {
+                        try { File.Delete(oldImagePath); } catch { }
+                    }
+                }
+
+                AnimationDocument.SaveLibraryCommand(path, commands, prompt.DescriptionText, imageFile);
+                MessageBox.Show(this,
+                    $"Library Command saved:\n{path}",
+                    "Create Library Command", MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Could not save the Library Command:\n" + ex.Message,
+                                "Create Library Command", MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+            }
+        }
+
         private void Close_Click(object sender, RoutedEventArgs e) => Close();
 
         /// <summary>Open the RGB command builder for this row: pick one of
@@ -107,30 +208,15 @@ namespace ServoAnimator
         {
             if ((sender as FrameworkElement)?.DataContext is not CommandVM vm) return;
 
-            var builder = new RgbBuilderWindow(vm.ColorHex) { Owner = this };
+            var builder = new RgbBuilderWindow(vm.TextValue, vm.ColorHex) { Owner = this };
             if (builder.ShowDialog() == true)
+            {
                 vm.TextValue = builder.ResultText;
+                if (!string.IsNullOrWhiteSpace(builder.ResultColorHex))
+                    vm.ColorHex = builder.ResultColorHex; // legacy file compatibility
+            }
         }
 
-        /// <summary>A palette swatch was clicked: store the 24-bit color on
-        /// the row's command and close the popup. The swatch's Tag carries
-        /// the row VM (bound in XAML); its Background is the color.</summary>
-        private void PaletteSwatch_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            if (sender is not FrameworkElement fe) return;
-            if (fe.Tag is not CommandVM vm) return;
-            if ((fe as System.Windows.Controls.Border)?.Background
-                    is not SolidColorBrush brush) return;
-
-            var c = brush.Color;
-            vm.ColorHex = $"#{c.R:X2}{c.G:X2}{c.B:X2}";
-
-            // Close the popup containing the swatch.
-            DependencyObject d = fe;
-            while (d != null && d is not Popup)
-                d = LogicalTreeHelper.GetParent(d) ?? VisualTreeHelper.GetParent(d);
-            if (d is Popup p) p.IsOpen = false;
-        }
     }
 
     /// <summary>
@@ -216,45 +302,6 @@ namespace ServoAnimator
             }
         }
 
-
-        /// <summary>The 24-bit color palette (shared by every RGB row):
-        /// a grayscale ramp plus 7 hues x 7 lightness steps.</summary>
-        public static List<SolidColorBrush> PaletteBrushes { get; } = BuildPalette();
-
-        private static List<SolidColorBrush> BuildPalette()
-        {
-            var list = new List<SolidColorBrush>();
-            for (int i = 0; i < 8; i++)                      // grayscale row
-            {
-                byte g = (byte)(i * 255 / 7);
-                list.Add(new SolidColorBrush(Color.FromRgb(g, g, g)));
-            }
-            double[] hues = { 0, 30, 60, 120, 180, 240, 300 };
-            double[] lts = { 0.20, 0.32, 0.44, 0.56, 0.68, 0.80, 0.90, 0.96 };
-            foreach (double h in hues)
-                foreach (double l in lts)
-                    list.Add(new SolidColorBrush(HslToRgb(h, 1.0, l)));
-            foreach (var b in list) b.Freeze();
-            return list;
-        }
-
-        private static Color HslToRgb(double h, double s, double l)
-        {
-            double c = (1 - Math.Abs(2 * l - 1)) * s;
-            double x = c * (1 - Math.Abs(h / 60 % 2 - 1));
-            double m = l - c / 2;
-            (double r, double g, double b) = h switch
-            {
-                < 60 => (c, x, 0.0),
-                < 120 => (x, c, 0.0),
-                < 180 => (0.0, c, x),
-                < 240 => (0.0, x, c),
-                < 300 => (x, 0.0, c),
-                _ => (c, 0.0, x),
-            };
-            return Color.FromRgb((byte)((r + m) * 255), (byte)((g + m) * 255),
-                                 (byte)((b + m) * 255));
-        }
 
         public CommandVM(ServoCommand command,
                          Action<ServoSpeed, ServoNames, int> moveServoNow,
@@ -374,41 +421,6 @@ namespace ServoAnimator
             {
                 Command.ColorHex = value ?? "";
                 Raise(nameof(ColorHex));
-                Raise(nameof(ColorBrush));
-                Raise(nameof(RgbText));
-            }
-        }
-
-        public Brush ColorBrush
-        {
-            get
-            {
-                try
-                {
-                    if (!string.IsNullOrEmpty(Command.ColorHex))
-                        return (Brush)new BrushConverter()
-                            .ConvertFromString(Command.ColorHex);
-                }
-                catch { }
-                return Brushes.Black;
-            }
-        }
-
-        /// <summary>The 0-255 red/green/blue readout for the chosen color.</summary>
-        public string RgbText
-        {
-            get
-            {
-                try
-                {
-                    if (!string.IsNullOrEmpty(Command.ColorHex))
-                    {
-                        var c = (Color)ColorConverter.ConvertFromString(Command.ColorHex);
-                        return $"R:{c.R} G:{c.G} B:{c.B}";
-                    }
-                }
-                catch { }
-                return "R:0 G:0 B:0";
             }
         }
 

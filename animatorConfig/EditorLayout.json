@@ -1,15 +1,15 @@
 {
-  "WindowLeft": -1617,
-  "WindowTop": 30,
-  "WindowWidth": 1578,
-  "WindowHeight": 1079,
+  "WindowLeft": -1675,
+  "WindowTop": 140,
+  "WindowWidth": 1250,
+  "WindowHeight": 880,
   "WindowState": "Normal",
   "ServoEditorColumn": {
-    "Value": 753.8305439330584,
+    "Value": 1,
     "Unit": "Star"
   },
   "UrdfEditorColumn": {
-    "Value": 800.1694560669416,
+    "Value": 1,
     "Unit": "Star"
   },
   "UndockedServoLeftColumn": {
@@ -21,7 +21,7 @@
     "Unit": "Star"
   },
   "TopEditorRow": {
-    "Value": 418,
+    "Value": 303,
     "Unit": "Pixel"
   },
   "AudioTimelineRow": {
@@ -29,18 +29,18 @@
     "Unit": "Star"
   },
   "LastSplineTimelineHeight": {
-    "Value": 137,
+    "Value": 190,
     "Unit": "Pixel"
   },
-  "CommandsVisible": false,
+  "CommandsVisible": true,
   "MovieTimelineVisible": true,
   "EmbeddedUrdfHeightStage": 0,
-  "EmbeddedUrdfHeightPixels": 418,
+  "EmbeddedUrdfHeightPixels": 0,
   "UrdfUndocked": false,
   "UrdfWindowLeft": 120,
   "UrdfWindowTop": 120,
   "UrdfWindowWidth": 900,
   "UrdfWindowHeight": 650,
   "UrdfWindowFullScreen": false,
-  "UrdfWindowState": "Maximized"
+  "UrdfWindowState": "Normal"
 }

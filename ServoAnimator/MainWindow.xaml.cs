@@ -178,12 +178,13 @@ namespace ServoAnimator
         // day, increment minor/reset patch on a new day, and major only on
         // explicit user request.
         private const string AppDisplayName = "Animation Editor & Player";
-        private const string AppVersion = "1.8.3";
+        private const string AppVersion = "1.10.6";
 
         /// <summary>Detached URDF preview used when the user presses Undock.
         /// The old View > Robot Head entry has been removed; docking is now
         /// controlled directly from the URDF view.</summary>
         private RobotHeadWindow _head;
+        private CommandEditorWindow _commandEditorWindow;
         private UrdfConfigWindow _urdfConfigWindow;
 
         // Live-reload the selected Configuration folder's URDFconfig.json.
@@ -215,6 +216,11 @@ namespace ServoAnimator
         /// Connect() then scans USB and reports anything missing in an
         /// error popup. Retried on later toggles while devices are absent.</summary>
         private readonly HardwareManager _hw = new();
+
+        /// <summary>Deterministic emulator of ArduinoOpenSaintRGB.ino used by
+        /// the URDF preview. It is timeline-time based, so pause/seek/scrub
+        /// reproduce the same four 16-LED ring state without a second timer.</summary>
+        private readonly ArduinoRgbTimelineSimulator _rgbSimulator = new();
 
         /// <summary>Configuration/project folder locations, normally from
         /// Paths.json beside the exe. On first run a sibling animatorConfig folder
@@ -320,6 +326,15 @@ namespace ServoAnimator
         public MainWindow()
         {
             InitializeComponent();
+
+            // Native searchable/context-sensitive Help is completely lazy.
+            // MainWindow owns the playback policy used by every child dialog:
+            // help can open only while transport is fully stopped.
+            HelpSystem.IsHelpAvailable = () => _mode == PlayMode.Stopped;
+            HelpSystem.EnableContextHelp(this, "getting-started");
+            ConfigureContextHelpTopics();
+            UpdateHelpAvailability();
+
             if (EmbeddedHeadView != null)
             {
                 EmbeddedHeadView.CollisionWarningEnabledChanged += HeadView_CollisionWarningEnabledChanged;
@@ -797,7 +812,9 @@ namespace ServoAnimator
 
             UpdateServoGrid(_cursorTime);
 
+            HelpSystem.CloseHelpWindow();
             _mode = PlayMode.Running;
+            UpdateHelpAvailability();
             _timer.Start();
             PlayPauseBtn.Content = "❚❚ Pause";
         }
@@ -810,6 +827,7 @@ namespace ServoAnimator
             _activeSource = null;
             _timer.Stop();
             _mode = PlayMode.Paused;
+            UpdateHelpAvailability();
             ForEachHeadView(v => v.SetMouth(0));
             PlayPauseBtn.Content = "▶ Resume";
         }
@@ -820,6 +838,7 @@ namespace ServoAnimator
             DisposeAudioDevice();
             _activeSource = null;
             _mode = PlayMode.Stopped;
+            UpdateHelpAvailability();
             ForEachHeadView(v => v.SetMouth(0));
             PlayPauseBtn.Content = "▶ Play";
             if (_moviePlaybackActive)
@@ -1525,7 +1544,7 @@ namespace ServoAnimator
                         if (row.IsTextRow)
                         {
                             row.TextValue = last.TextValue;        // last command text used
-                            row.ColorHex = last.ColorHex;          // palette color box
+                            row.ColorHex = last.ColorHex;          // legacy RGB metadata
                         }
                         else
                             row.Value = last.NumericValue;
@@ -1843,6 +1862,14 @@ namespace ServoAnimator
                     ConfigureUrdfConfigWatcher();
                     _urdfConfigWindow?.ReloadFromSharedConfig();
                     PushHeadPose();
+                },
+                () =>
+                {
+                    // URDF Configuration Back restores the in-memory snapshot
+                    // from when the window opened. Reapply it immediately without
+                    // writing URDFconfig.json.
+                    ApplyUrdfConfigurationToViews();
+                    PushHeadPose();
                 })
             { Owner = this };
 
@@ -1970,7 +1997,6 @@ namespace ServoAnimator
                 mfr: RV(ServoNames.MFR_UpDown),
                 noseBody: RV(ServoNames.NoseBody),
                 noseBasket: noseBasketVal,
-                eyeColorHex: _rows.First(r => r.Servo == ServoNames.RGBCommand).ColorHex,
                 leftEyePop: EyePopValue(leftPop),
                 rightEyePop: EyePopValue(rightPop),
                 whipRotate: RV(ServoNames.Whip_Antenna_Rotate),
@@ -1978,6 +2004,12 @@ namespace ServoAnimator
 
             if (EmbeddedHeadView != null) ApplyPose(EmbeddedHeadView);
             if (_head?.HeadView != null) ApplyPose(_head.HeadView);
+
+            // RGB rings are evaluated from the sequence playhead rather than a
+            // separate wall-clock timer. This makes the URDF match Arduino
+            // timing during playback and remain deterministic when scrubbing.
+            var rgbFrame = _rgbSimulator.Evaluate(_doc.Commands, _cursorTime);
+            ForEachHeadView(v => v.SetRgbRingFrame(rgbFrame));
         }
 
         private void LiveDrive_Changed(object sender, RoutedEventArgs e)
@@ -2115,8 +2147,11 @@ namespace ServoAnimator
             // LostFocus update, which would send the previous value).
             box.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
             _manualGridOverrides.Add(row.Servo);
-            ForEachHeadView(v => v.SetEyeColor(row.ColorHex));
             MoveServoNow(ServoSpeed.NoChange, row.Servo, row.TextValue);
+            // The grid value is staged rather than authored yet, so preview
+            // that one Arduino line after the hardware send/timeline refresh.
+            var preview = _rgbSimulator.PreviewCommand(row.TextValue);
+            ForEachHeadView(v => v.SetRgbRingFrame(preview));
         }
 
         /// <summary>Grid editor (slider / value box / RGB text box) gained
@@ -2294,6 +2329,7 @@ namespace ServoAnimator
             // previously played. Any command modification invalidates them;
             // playback will repopulate red markers from the edited sequence.
             ClearCollisionCommandWarnings();
+            _rgbSimulator.Invalidate();
             RebuildSplineData();   // control points may have changed
             RefreshMarkers();
             RefreshAudioClips();   // "Play" clips are derived from commands
@@ -2375,7 +2411,13 @@ namespace ServoAnimator
                 return mi;
             }
 
-            Item($"Insert new command at {_cursorTime:F3} s…", (_, _) => InsertNewCommand());
+            Item($"Insert new Command at {_cursorTime:F3} s…", (_, _) => InsertNewCommand());
+
+            Item($"Insert Library Command at {_cursorTime:F3} s…",
+                 (_, _) => InsertLibraryCommandAtCursor());
+
+            Item($"Insert Library Sequence at {_cursorTime:F3} s…",
+                 (_, _) => InsertLibrarySequenceAtCursor());
 
             Item($"Edit {atCursor.Count} command(s) at {_cursorTime:F3} s…",
                  (_, _) => EditCommandsAtCursor(), atCursor.Count > 0);
@@ -2423,11 +2465,20 @@ namespace ServoAnimator
             EditCommandsAtCursor();
         }
 
-        /// <summary>Open the modal editor for every command at the cursor.
-        /// The editor mutates the live ServoCommand objects, so a single
-        /// refresh after it closes brings the whole UI up to date.</summary>
+        /// <summary>Open the modeless editor for every command at the cursor.
+        /// Keeping this window modeless leaves the URDF camera/buttons fully
+        /// operational while commands are being edited. Command objects are live;
+        /// the timeline/grid receive their normal full refresh when the window closes.</summary>
         private void EditCommandsAtCursor(ServoCommand focusCommand = null)
         {
+            if (_commandEditorWindow != null)
+            {
+                if (_commandEditorWindow.WindowState == WindowState.Minimized)
+                    _commandEditorWindow.WindowState = WindowState.Normal;
+                _commandEditorWindow.Activate();
+                return;
+            }
+
             PushUndo();   // one undo step for the whole editor session
             var editor = new CommandEditorWindow(_doc, _cursorTime,
                                                  MoveServoNow,      // numeric variant
@@ -2435,12 +2486,20 @@ namespace ServoAnimator
                                                  MoveChildServoNow, // individual-control variant
                                                  ConfigureServoSpeedNow,
                                                  ConfigureChildServoSpeedNow,
+                                                 LibraryCommandsFolder(),
                                                  focusCommand)
             {
                 Owner = this,
             };
-            editor.ShowDialog();
-            RefreshAfterEdit();
+            _commandEditorWindow = editor;
+            editor.Closed += (_, _) =>
+            {
+                if (ReferenceEquals(_commandEditorWindow, editor))
+                    _commandEditorWindow = null;
+                RefreshAfterEdit();
+            };
+            editor.Show();
+            editor.Activate();
         }
 
         /// <summary>Delete every command at the cursor; the command marker is
@@ -2477,6 +2536,73 @@ namespace ServoAnimator
             }
             RefreshAfterEdit();
             ShowStatus($"{_clipboard.Count} command(s) pasted at {_cursorTime:F3} s");
+        }
+
+        /// <summary>Open the Library\Commands browser and insert the
+        /// selected single-time-point command group at the current cursor.
+        /// Every stored offset is intentionally ignored: all commands land at
+        /// exactly the selected timeline point.</summary>
+        private void InsertLibraryCommandAtCursor()
+        {
+            var win = new LibraryItemSelectionWindow(
+                LibraryCommandsFolder(), manageMode: false,
+                itemLabel: "Library Command", showAudioFiles: false)
+            {
+                Owner = this,
+            };
+            if (win.ShowDialog() != true || win.SelectedLibraryItem == null)
+                return;
+
+            try
+            {
+                var cmds = AnimationDocument.LoadCommandsOnly(
+                    win.SelectedLibraryItem.FullPath);
+                if (cmds.Count == 0)
+                {
+                    MessageBox.Show(this, "The selected Library Command contains no commands.",
+                                    "Insert Library Command", MessageBoxButton.OK,
+                                    MessageBoxImage.Information);
+                    return;
+                }
+
+                PushUndo();
+                double at = ServoCommand.TimeKey(_cursorTime);
+                foreach (var c in cmds)
+                {
+                    var copy = c.Clone();
+                    copy.OffsetSeconds = at;
+                    _doc.Commands.Add(copy);
+                }
+                RefreshAfterEdit();
+                ShowStatus($"Inserted Library Command '{Path.GetFileName(win.SelectedLibraryItem.FullPath)}' " +
+                           $"({cmds.Count} command(s)) at {at:F3} s");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Could not insert the Library Command:\n" + ex.Message,
+                                "Insert Library Command", MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>Open the Library Sequence browser and insert the
+        /// selected multi-time sequence directly at the current audio-timeline
+        /// cursor. Relative command offsets inside the Library Sequence are
+        /// preserved and rebased from the selected cursor time.</summary>
+        private void InsertLibrarySequenceAtCursor()
+        {
+            EndArrowPrompt();
+            var win = new LibraryItemSelectionWindow(
+                LibraryFolder(), manageMode: false,
+                itemLabel: "Library Sequence", showAudioFiles: true)
+            {
+                Owner = this,
+            };
+            if (win.ShowDialog() != true || win.SelectedLibraryItem == null)
+                return;
+
+            InsertLibrarySequence(win.SelectedLibraryItem.FullPath,
+                                  ServoCommand.TimeKey(_cursorTime));
         }
 
         /// <summary>
@@ -2846,6 +2972,7 @@ namespace ServoAnimator
                 _lastDesiredKey = null;
 
                 _doc = AnimationDocument.Load(path);
+                _rgbSimulator.Invalidate();
                 _jsonPath = path;
                 RememberSequencePath(path);
                 _undoStack.Clear();
@@ -3318,12 +3445,13 @@ namespace ServoAnimator
         #region 9. File menu (New / Exit) + About
         // ================================================================
 
-        /// <summary>File > New: clears everything - commands, audio,
-        /// description, offsets, spline state and undo history - after confirmation.</summary>
+        /// <summary>File > New: clears the current Sequence and Movie -
+        /// commands, audio, descriptions, movie blocks, offsets, spline state
+        /// and undo history - after confirmation.</summary>
         private void FileNew_Click(object sender, RoutedEventArgs e)
         {
             var answer = MessageBox.Show(this,
-                "Start a new project? This clears the timeline, audio and all settings.",
+                "Start a new project? This clears the current Sequence, Movie, timeline and audio.",
                 "New project", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (answer != MessageBoxResult.Yes) return;
 
@@ -3336,7 +3464,28 @@ namespace ServoAnimator
             SaveRecentFiles();
 
             _doc = new AnimationDocument();
+            _rgbSimulator.Invalidate();
             SetDescriptionText(_doc.Description);
+
+            // File > New starts a genuinely blank workspace. Do not leave the
+            // newly created Sequence attached to the previously loaded Movie.
+            _movieItems.Clear();
+            _moviePath = null;
+            _movieSelectedIndex = -1;
+            _moviePlaybackActive = false;
+            _moviePlaybackIndex = -1;
+            _movieDescription = "";
+            _movieCreatedDate = DateTime.Today.ToString("yyyy-MM-dd");
+            SetMovieDescriptionText("");
+            if (MovieTimeline != null)
+            {
+                MovieTimeline.CursorTime = 0;
+                MovieTimeline.SelectedIndex = -1;
+            }
+            if (MoviePlayButton != null)
+                MoviePlayButton.Content = "▶ Movie";
+            RefreshMovieMetadataView();
+            RefreshMovieTimelineView();
 
             Waveform.PrimaryAudioName = "";
             _primaryDuration = 0;
@@ -3363,8 +3512,9 @@ namespace ServoAnimator
             SyncScrollBar();
             UpdateTitle();
             _savedSequenceFingerprint = CurrentSequenceFingerprint();
+            _savedMovieFingerprint = CurrentMovieFingerprint();
             UpdateDocumentStatusIndicators();
-            ShowStatus("New sequence created");
+            ShowStatus("New Sequence and Movie workspace created");
         }
 
         /// <summary>Restore the last editor/window arrangement saved in the
@@ -3714,7 +3864,10 @@ namespace ServoAnimator
                 window.HeadView.SetUrdfConfiguration(_urdfConfig);
                 window.HeadView.SetServoConfiguration(_servoConfig);
                 if (EmbeddedHeadView != null)
+                {
                     window.HeadView.SetUrdfDriveEnabled(EmbeddedHeadView.UrdfDriveEnabled);
+                    window.HeadView.CopyCameraFrom(EmbeddedHeadView, makeOpeningView: true);
+                }
                 window.HeadView.SetDetachedHostState();
                 if (!window.IsVisible)
                     window.Show();
@@ -3727,7 +3880,10 @@ namespace ServoAnimator
                 _savedUrdfWindowBounds = _head.GetNormalBounds();
                 _savedUrdfWindowState = _head.WindowState;
                 if (EmbeddedHeadView != null)
+                {
                     EmbeddedHeadView.SetUrdfDriveEnabled(_head.HeadView.UrdfDriveEnabled);
+                    EmbeddedHeadView.CopyCameraFrom(_head.HeadView);
+                }
                 _head.Hide();
                 EmbeddedHeadView?.SetUrdfConfiguration(_urdfConfig);
                 EmbeddedHeadView?.SetServoConfiguration(_servoConfig);
@@ -3776,7 +3932,7 @@ namespace ServoAnimator
 
         private void About_Click(object sender, RoutedEventArgs e) =>
             MessageBox.Show(this,
-                $"{AppDisplayName}\nVersion {AppVersion}\nDesigned by Mark Kovalcson\n\n" +
+                $"{AppDisplayName}\nVersion {AppVersion}   Date 2026-08-20\nDesigned by Mark Kovalcson\n\n" +
                 "Edits servo animation timelines against an audio waveform.\n" +
                 "Cubic Hermite spline interpolation, live drive, an animation\n" +
                 "library, and a movie timeline for ordered sequence projects.\n\n" +
@@ -3784,9 +3940,57 @@ namespace ServoAnimator
                 $"About {AppDisplayName}", MessageBoxButton.OK, MessageBoxImage.Information);
 
 
-        private void HelpControls_Click(object sender, RoutedEventArgs e)
+        private void HelpContents_Click(object sender, RoutedEventArgs e) =>
+            HelpSystem.ShowContents(this);
+
+        private void HelpContext_Click(object sender, RoutedEventArgs e) =>
+            HelpSystem.ShowContextHelp(this);
+
+        private void HelpControls_Click(object sender, RoutedEventArgs e) =>
+            HelpSystem.ShowHelp(this, "controls-hotkeys");
+
+        private void UpdateHelpAvailability()
         {
-            new ControlsHelpWindow { Owner = this }.ShowDialog();
+            bool enabled = _mode == PlayMode.Stopped;
+            if (HelpContentsMenuItem != null) HelpContentsMenuItem.IsEnabled = enabled;
+            if (HelpContextMenuItem != null) HelpContextMenuItem.IsEnabled = enabled;
+            if (HelpControlsMenuItem != null) HelpControlsMenuItem.IsEnabled = enabled;
+        }
+
+        /// <summary>Attach F1 topics to major editor regions. Descendant controls
+        /// inherit the nearest topic unless a child window supplies a narrower one.</summary>
+        private void ConfigureContextHelpTopics()
+        {
+            HelpSystem.SetTopic(Waveform, "sequence-editor");
+            HelpSystem.SetTopic(VolumeSlider, "sequence-editor");
+            HelpSystem.SetTopic(DescriptionBox, "sequence-editor");
+            HelpSystem.SetTopic(DescriptionExpandedBox, "sequence-editor");
+
+            HelpSystem.SetTopic(ServoGridBorder, "servo-grid");
+            HelpSystem.SetTopic(DockedServoGridScroll, "servo-grid");
+            HelpSystem.SetTopic(UndockedServoGridColumns, "servo-grid");
+
+            HelpSystem.SetTopic(SplineArea, "spline-editor");
+            HelpSystem.SetTopic(Spline, "spline-editor");
+            HelpSystem.SetTopic(CommandsAtPointPanel, "commands");
+            HelpSystem.SetTopic(CommandsAtPointList, "commands");
+            HelpSystem.SetTopic(CommandsListToggle, "commands");
+
+            HelpSystem.SetTopic(MovieTimelinePanel, "movie-timeline");
+            HelpSystem.SetTopic(MovieTimeline, "movie-timeline");
+            HelpSystem.SetTopic(MovieDescriptionBox, "movie-timeline");
+            HelpSystem.SetTopic(MovieDescriptionExpandedBox, "movie-timeline");
+            HelpSystem.SetTopic(MovieTimelineToggle, "movie-timeline");
+
+            HelpSystem.SetTopic(LiveDriveBtn, "live-drive-hardware");
+            HelpSystem.SetTopic(MaestroStatusDot, "live-drive-hardware");
+            HelpSystem.SetTopic(ArduinoStatusDot, "live-drive-hardware");
+            HelpSystem.SetTopic(LeftTicStatusDot, "live-drive-hardware");
+            HelpSystem.SetTopic(RightTicStatusDot, "live-drive-hardware");
+
+            HelpSystem.SetTopic(RobotHeadEmbeddedBorder, "urdf-viewer");
+            HelpSystem.SetTopic(EmbeddedHeadView, "urdf-viewer");
+            HelpSystem.SetTopic(DockUrdfFromGridButton, "urdf-viewer");
         }
 
         private void ThemeMenuItem_Click(object sender, RoutedEventArgs e)
@@ -4252,10 +4456,25 @@ namespace ServoAnimator
             }
         }
 
-        /// <summary>File > Save Movie: save edits back to the currently loaded
-        /// movie file. A movie that has never been saved falls through to Save As.</summary>
+        /// <summary>Save a dirty sequence before writing its containing movie.
+        /// This keeps the movie block and the sequence JSON synchronized. If the
+        /// current sequence has no path, Save As is requested; canceling or a save
+        /// failure cancels the movie save as well.</summary>
+        private bool SaveModifiedSequenceBeforeMovie()
+        {
+            if (!SequenceHasUnsavedChanges()) return true;
+            return !string.IsNullOrWhiteSpace(_jsonPath)
+                ? SaveProjectTo(_jsonPath)
+                : SaveProjectAsInteractive();
+        }
+
+        /// <summary>File > Save Movie: save a modified current sequence first,
+        /// then save edits back to the currently loaded movie file. A movie that
+        /// has never been saved falls through to Save As.</summary>
         private void SaveMovie_Click(object sender, RoutedEventArgs e)
         {
+            if (!SaveModifiedSequenceBeforeMovie()) return;
+
             if (string.IsNullOrWhiteSpace(_moviePath))
             {
                 SaveMovieAs_Click(sender, e);
@@ -4267,6 +4486,8 @@ namespace ServoAnimator
 
         private void SaveMovieAs_Click(object sender, RoutedEventArgs e)
         {
+            if (!SaveModifiedSequenceBeforeMovie()) return;
+
             var dlg = new SaveFileDialog
             {
                 Title = "Save movie JSON",
@@ -4525,7 +4746,7 @@ namespace ServoAnimator
         // ================================================================
 
         /// <summary>
-        /// Begin a library-range selection. The movable modeless window keeps
+        /// Begin a Library Sequence range selection. The movable modeless window keeps
         /// the timeline active so the green/red arrows can be dragged while a
         /// ten-line description is visible and editable.
         /// </summary>
@@ -4539,7 +4760,7 @@ namespace ServoAnimator
                 _doc.Description,
                 description =>
                 {
-                    try { CreateLibraryItem(description); }
+                    try { CreateLibrarySequence(description); }
                     finally { EndArrowPrompt(); }
                 },
                 EndArrowPrompt)
@@ -4550,7 +4771,7 @@ namespace ServoAnimator
         }
 
         /// <summary>
-        /// Select the library item first. Once selected, display a blue arrow
+        /// Select the Library Sequence first. Once selected, display a blue arrow
         /// centered in the visible timeline. A right-click on the waveform
         /// asks for final confirmation and shows the selected description.
         /// </summary>
@@ -4572,11 +4793,24 @@ namespace ServoAnimator
         }
 
         /// <summary>Open the same recursive library browser in management
-        /// mode, where the selected item's description can be edited.</summary>
+        /// mode, where the selected Library Sequence's description can be edited.</summary>
         private void LibraryManage_Click(object sender, RoutedEventArgs e)
         {
             EndArrowPrompt();
             new LibraryItemSelectionWindow(LibraryFolder(), manageMode: true)
+            {
+                Owner = this,
+            }.ShowDialog();
+        }
+
+        /// <summary>Manage single-time-point Library Commands, including
+        /// descriptions, image previews and file deletion.</summary>
+        private void LibraryCommandsManage_Click(object sender, RoutedEventArgs e)
+        {
+            EndArrowPrompt();
+            new LibraryItemSelectionWindow(LibraryCommandsFolder(), manageMode: true,
+                                           itemLabel: "Library Command",
+                                           showAudioFiles: false)
             {
                 Owner = this,
             }.ShowDialog();
@@ -4734,7 +4968,7 @@ namespace ServoAnimator
         }
 
         /// <summary>Hide arrows, close the movable create prompt, and clear
-        /// any pending selected item.</summary>
+        /// any pending selected Library Sequence.</summary>
         private void EndArrowPrompt()
         {
             if (_endingLibraryOperation) return;
@@ -4758,7 +4992,7 @@ namespace ServoAnimator
             }
         }
 
-        /// <summary>Library animation items live in Library\Animation
+        /// <summary>Library Sequences live in Library\Animation
         /// inside the configuration folder (created on demand).</summary>
         private string LibraryFolder()
         {
@@ -4769,7 +5003,18 @@ namespace ServoAnimator
             return dir;
         }
 
-        /// <summary>Audio referenced by library items is copied into
+        /// <summary>Single-time-point Library Commands live in
+        /// Library\Commands inside the configuration folder.</summary>
+        private string LibraryCommandsFolder()
+        {
+            string dir = Path.Combine(
+                _folders?.ConfigFolderOrDefault ?? AppContext.BaseDirectory,
+                "Library", "Commands");
+            try { Directory.CreateDirectory(dir); } catch { }
+            return dir;
+        }
+
+        /// <summary>Audio referenced by Library Sequences is copied into
         /// Library\Audio inside the configuration folder.</summary>
         private string LibraryAudioFolder()
         {
@@ -4946,7 +5191,7 @@ namespace ServoAnimator
 
         /// <summary>Save commands at/between the arrows, rebased so the green
         /// start arrow is time zero, with the entered description header.</summary>
-        private void CreateLibraryItem(string description)
+        private void CreateLibrarySequence(string description)
         {
             double start = ServoCommand.TimeKey(Waveform.RangeStart);
             double end = ServoCommand.TimeKey(Waveform.RangeEnd);
@@ -4968,21 +5213,21 @@ namespace ServoAnimator
             if (items.Count == 0)
             {
                 MessageBox.Show(this, "No commands lie between the arrows.",
-                                "Create Library Item", MessageBoxButton.OK,
+                                "Create Library Sequence", MessageBoxButton.OK,
                                 MessageBoxImage.Information);
                 return;
             }
 
             var dlg = new SaveFileDialog
             {
-                Title = "Save library item JSON",
+                Title = "Save Library Sequence JSON",
                 Filter = "JSON files (*.json)|*.json",
-                FileName = "library-item.json",
+                FileName = "library-sequence.json",
                 InitialDirectory = LibraryFolder(),
             };
             if (dlg.ShowDialog() != true) return;
 
-            // Audio referenced by the item travels WITH the library.
+            // Audio referenced by the Library Sequence travels WITH the library.
             var libWarnings = new List<string>();
             foreach (var play in items.Where(c => c.Servo == ServoNames.Play))
             {
@@ -5008,14 +5253,14 @@ namespace ServoAnimator
             }
 
             AnimationDocument.SaveCommandsOnly(dlg.FileName, items, description);
-            ShowStatus($"Library item saved: {Path.GetFileName(dlg.FileName)}");
+            ShowStatus($"Library Sequence saved: {Path.GetFileName(dlg.FileName)}");
 
             if (libWarnings.Count > 0)
                 MessageBox.Show(this,
-                    "The item was saved, but these audio files could not " +
+                    "The Library Sequence was saved, but these audio files could not " +
                     "be copied into Library\\Audio (their original paths " +
                     "were kept):\n\n  • " + string.Join("\n  • ", libWarnings),
-                    "Create Library Item", MessageBoxButton.OK,
+                    "Create Library Sequence", MessageBoxButton.OK,
                     MessageBoxImage.Warning);
         }
 
@@ -5033,7 +5278,7 @@ namespace ServoAnimator
 
             var result = MessageBox.Show(this,
                 $"Insert '{name}' at {at:F3} seconds?\n\nDescription:\n{description}",
-                "Insert Library Item", MessageBoxButton.OKCancel,
+                "Insert Library Sequence", MessageBoxButton.OKCancel,
                 MessageBoxImage.Question);
             if (result != MessageBoxResult.OK) return;
 
@@ -5050,8 +5295,8 @@ namespace ServoAnimator
                 var cmds = AnimationDocument.LoadCommandsOnly(fileName);
                 if (cmds.Count == 0)
                 {
-                    MessageBox.Show(this, "The selected library item has no commands.",
-                                    "Insert Library Item", MessageBoxButton.OK,
+                    MessageBox.Show(this, "The selected Library Sequence has no commands.",
+                                    "Insert Library Sequence", MessageBoxButton.OK,
                                     MessageBoxImage.Information);
                     return;
                 }
@@ -5209,9 +5454,17 @@ namespace ServoAnimator
         /// </summary>
         public void MoveServoNow(ServoSpeed speed, ServoNames servo, string textValue)
         {
-            // RGB command text goes verbatim to the Arduino in Live Drive.
+            // RGB editor text remains Red,Green,Blue. HardwareManager rotates
+            // color-bearing commands to Green,Red,Blue on the Arduino wire.
             if (LiveDrive && _hw.Connected && servo == ServoNames.RGBCommand)
                 _hw.DriveRgb(textValue);
+
+            if (servo == ServoNames.RGBCommand)
+            {
+                _rgbSimulator.Invalidate();
+                var frame = _rgbSimulator.Evaluate(_doc.Commands, _cursorTime);
+                ForEachHeadView(v => v.SetRgbRingFrame(frame));
+            }
 
             Debug.WriteLine($"MoveServoNow(speed={speed}, servo={servo}, text=\"{textValue}\")");
         }
@@ -5225,13 +5478,6 @@ namespace ServoAnimator
         /// </summary>
         public void PlayBackServoValues(ServoCommand[] commandsAtOffset)
         {
-            // RGB commands also drive the URDF eye backing color. This is independent
-            // of Live Drive/hardware so the preview changes at the exact command
-            // boundary during ordinary timeline playback.
-            foreach (var c in commandsAtOffset)
-                if (c.Servo == ServoNames.RGBCommand && !c.Disable)
-                    ForEachHeadView(v => v.SetEyeColor(c.ColorHex));
-
             // Drive the physical robot during playback when Live Drive is On.
             if (LiveDrive && _hw.Connected)
             {
