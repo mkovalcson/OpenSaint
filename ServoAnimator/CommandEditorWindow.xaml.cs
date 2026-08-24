@@ -106,7 +106,7 @@ namespace ServoAnimator
 
 
         /// <summary>Save every command currently shown in this Edit Commands
-        /// window as one single-time-point Library Command. All saved offsets
+        /// window as one single-time-point Library Pose. All saved offsets
         /// are normalized to zero so insertion always places the entire group
         /// at the selected timeline point.</summary>
         private void CreateLibraryCommand_Click(object sender, RoutedEventArgs e)
@@ -114,7 +114,7 @@ namespace ServoAnimator
             if (_items.Count == 0)
             {
                 MessageBox.Show(this, "There are no commands in this window to save.",
-                                "Create Library Command", MessageBoxButton.OK,
+                                "Create Library Pose", MessageBoxButton.OK,
                                 MessageBoxImage.Information);
                 return;
             }
@@ -123,7 +123,7 @@ namespace ServoAnimator
             catch (Exception ex)
             {
                 MessageBox.Show(this, "Could not create the Library\\Commands folder:\n" + ex.Message,
-                                "Create Library Command", MessageBoxButton.OK,
+                                "Create Library Pose", MessageBoxButton.OK,
                                 MessageBoxImage.Error);
                 return;
             }
@@ -136,7 +136,7 @@ namespace ServoAnimator
             {
                 var overwrite = MessageBox.Show(this,
                     $"'{prompt.FileNameText}' already exists. Replace it?",
-                    "Create Library Command", MessageBoxButton.YesNo,
+                    "Create Library Pose", MessageBoxButton.YesNo,
                     MessageBoxImage.Question);
                 if (overwrite != MessageBoxResult.Yes) return;
             }
@@ -187,14 +187,14 @@ namespace ServoAnimator
 
                 AnimationDocument.SaveLibraryCommand(path, commands, prompt.DescriptionText, imageFile);
                 MessageBox.Show(this,
-                    $"Library Command saved:\n{path}",
-                    "Create Library Command", MessageBoxButton.OK,
+                    $"Library Pose saved:\n{path}",
+                    "Create Library Pose", MessageBoxButton.OK,
                     MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "Could not save the Library Command:\n" + ex.Message,
-                                "Create Library Command", MessageBoxButton.OK,
+                MessageBox.Show(this, "Could not save the Library Pose:\n" + ex.Message,
+                                "Create Library Pose", MessageBoxButton.OK,
                                 MessageBoxImage.Error);
             }
         }

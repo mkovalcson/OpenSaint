@@ -385,7 +385,7 @@
                 <MenuItem Header="_Insert Library Sequence…" Click="LibraryInsert_Click"/>
                 <Separator/>
                 <MenuItem Header="_Manage Library Sequences…" Click="LibraryManage_Click"/>
-                <MenuItem Header="Manage Library _Commands…" Click="LibraryCommandsManage_Click"/>
+                <MenuItem Header="Manage Library _Poses…" Click="LibraryCommandsManage_Click"/>
             </MenuItem>
             <MenuItem Header="_View" Style="{StaticResource TopLevelMenuItem}">
                 <MenuItem x:Name="ViewMovieTimelineMenuItem" Header="_Movie Timeline" IsCheckable="True"

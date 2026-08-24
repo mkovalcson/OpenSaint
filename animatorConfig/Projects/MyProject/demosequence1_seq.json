@@ -1,0 +1,299 @@
+{
+  "description": "",
+  "audioFiles": "LightningRound.mp3",
+  "audioFile": "LightningRound.mp3",
+  "audioFilePath": "X:\\Johnny5\\Software\\animatorConfig\\Projects\\MyProject\\LightningRound.mp3",
+  "durationSeconds": 13.34,
+  "audioStartOffsetSeconds": 0.058,
+  "splineServos": [
+    "NeckTurn",
+    "NeckTiltRight",
+    "FlapsOpen",
+    "FlapTiltUp"
+  ],
+  "splineSampleHz": 50,
+  "animateMode": "Individual",
+  "scaleValues": false,
+  "commands": [
+    {
+      "offsetSeconds": 0.124,
+      "servo": "NeckTurn",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "Whip_Antenna_RaiseLower",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "VentsOpen",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "RightEyePop",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "RGBCommand",
+      "value": "ClearAll",
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "NoseBody",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "NoseBasket",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "NeckTiltRight",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "NeckNodUp",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "Microphone_RaiseLower",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "Whip_Antenna_Rotate",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "MFR_Rotate",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "LeftEyePop",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "IrisClose",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "FlapTiltUp",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "FlapsOpen",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "BothEyePop",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 0.124,
+      "servo": "MFR_UpDown",
+      "value": 0,
+      "speed": "Default",
+      "reason": "generated from grid"
+    },
+    {
+      "offsetSeconds": 1.105,
+      "servo": "FlapsOpen",
+      "value": 51,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 1.377,
+      "servo": "NeckTiltRight",
+      "value": 92,
+      "speed": "N/C",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 1.401,
+      "servo": "FlapsOpen",
+      "value": 46,
+      "speed": "N/C",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 1.748,
+      "servo": "NeckTiltRight",
+      "value": 37,
+      "speed": "N/C",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 2.04,
+      "servo": "NeckTurn",
+      "value": 48,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 2.286,
+      "servo": "FlapsOpen",
+      "value": 2,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 2.286,
+      "servo": "FlapTiltUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 2.737,
+      "servo": "FlapTiltUp",
+      "value": 90,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 4.031,
+      "servo": "FlapTiltUp",
+      "value": -7,
+      "speed": "N/C",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 5.563,
+      "servo": "FlapTiltUp",
+      "value": 5,
+      "speed": "N/C",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 6.063,
+      "servo": "NeckTurn",
+      "value": -50,
+      "speed": "N/C",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 6.808,
+      "servo": "FlapTiltUp",
+      "value": 98,
+      "speed": "N/C",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 8.045,
+      "servo": "FlapsOpen",
+      "value": -4,
+      "speed": "N/C",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 8.127,
+      "servo": "FlapTiltUp",
+      "value": 1,
+      "speed": "N/C",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 9.716,
+      "servo": "FlapTiltUp",
+      "value": -4,
+      "speed": "N/C",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 11.06,
+      "servo": "NeckTurn",
+      "value": 51,
+      "speed": "N/C",
+      "reason": "spline point"
+    },
+    {
+      "offsetSeconds": 13.247,
+      "servo": "FlapsOpen",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 13.247,
+      "servo": "NeckTiltRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 13.247,
+      "servo": "NeckTurn",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 13.247,
+      "servo": "FlapTiltUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    }
+  ]
+}

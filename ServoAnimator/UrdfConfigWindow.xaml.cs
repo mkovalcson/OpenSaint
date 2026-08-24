@@ -422,8 +422,9 @@ namespace ServoAnimator
                 SynchronizeRangesFromFirst();
 
             Directions = new ObservableCollection<UrdfDirectionRow>(
-                _settings.Select(s => new UrdfDirectionRow(
-                    s, servoConfig, this, Preview, showZeroAdjustments, _individualRanges)));
+                _settings.Select((s, index) => new UrdfDirectionRow(
+                    s, servoConfig, this, Preview, showZeroAdjustments, _individualRanges,
+                    showPreview: index == 0)));
         }
 
         public string ServoName => _displayName ?? _servo.ToString();
@@ -474,6 +475,9 @@ namespace ServoAnimator
                 _testPosition = v;
                 Raise(nameof(TestPosition));
                 Raise(nameof(TestPositionText));
+                if (Directions != null)
+                    foreach (var row in Directions)
+                        row.RefreshTestPosition();
                 Preview();
             }
         }
@@ -549,7 +553,8 @@ namespace ServoAnimator
                                 UrdfMotionGroupVM parent,
                                 Action preview,
                                 bool showZeroAdjustment,
-                                bool showIndividualRangeAdjustment)
+                                bool showIndividualRangeAdjustment,
+                                bool showPreview)
         {
             _setting = setting;
             _servoConfig = servoConfig;
@@ -557,22 +562,44 @@ namespace ServoAnimator
             _preview = preview;
             ShowZeroAdjustment = showZeroAdjustment;
             ShowIndividualRangeAdjustment = showIndividualRangeAdjustment;
+            ShowPreview = showPreview;
+            EnforceLinearZero();
         }
 
         public string ChildServoName => _setting.Control.ToString();
         public bool ShowZeroAdjustment { get; }
         public bool ShowIndividualRangeAdjustment { get; }
+        public bool ShowPreview { get; }
         public string Unit => _setting.Unit;
+        public bool IsRotational => string.Equals(Unit, "deg", StringComparison.OrdinalIgnoreCase);
+        public bool IsLinear => string.Equals(Unit, "mm", StringComparison.OrdinalIgnoreCase);
+        public bool IsOther => !IsRotational && !IsLinear;
         public double ExtentSliderMin => _parent.ExtentSliderMin;
         public double ExtentSliderMax => _parent.ExtentSliderMax;
         public double ZeroSliderMin => ShowIndividualRangeAdjustment ? _setting.MinExtent : _parent.MinExtent;
         public double ZeroSliderMax => ShowIndividualRangeAdjustment ? _setting.MaxExtent : _parent.MaxExtent;
+        public double InputMin => _parent.InputMin;
+        public double InputMax => _parent.InputMax;
+
+        public double TestPosition
+        {
+            get => _parent.TestPosition;
+            set => _parent.TestPosition = value;
+        }
+
+        public string TestPositionText => _parent.TestPositionText;
 
         public double MinExtent
         {
             get => _setting.MinExtent;
             set
             {
+                if (!ShowIndividualRangeAdjustment)
+                {
+                    _parent.MinExtent = value;
+                    return;
+                }
+
                 double v = Math.Clamp(value, ExtentSliderMin, ExtentSliderMax);
                 double max = _setting.MaxExtent;
                 if (v > max) max = v;
@@ -585,6 +612,12 @@ namespace ServoAnimator
             get => _setting.MaxExtent;
             set
             {
+                if (!ShowIndividualRangeAdjustment)
+                {
+                    _parent.MaxExtent = value;
+                    return;
+                }
+
                 double v = Math.Clamp(value, ExtentSliderMin, ExtentSliderMax);
                 double min = _setting.MinExtent;
                 if (v < min) min = v;
@@ -598,7 +631,10 @@ namespace ServoAnimator
                 Math.Abs(_setting.MaxExtent - max) < 1e-9) return;
             _setting.MinExtent = min;
             _setting.MaxExtent = max;
-            _setting.ZeroExtent = Math.Clamp(_setting.ZeroExtent, min, max);
+            if (IsLinear)
+                EnforceLinearZero();
+            else
+                _setting.ZeroExtent = Math.Clamp(_setting.ZeroExtent, min, max);
             Raise(nameof(MinExtent));
             Raise(nameof(MaxExtent));
             Raise(nameof(ZeroSliderMin));
@@ -612,6 +648,16 @@ namespace ServoAnimator
             get => _setting.ZeroExtent;
             set
             {
+                // Linear calibration zero is derived: Minimum in normal direction,
+                // Maximum in reversed direction.  It is intentionally not a third
+                // independent linear calibration point.
+                if (IsLinear)
+                {
+                    EnforceLinearZero();
+                    Raise(nameof(ZeroExtent));
+                    return;
+                }
+
                 double v = Math.Clamp(value, ZeroSliderMin, ZeroSliderMax);
                 if (Math.Abs(_setting.ZeroExtent - v) < 1e-9) return;
                 _setting.ZeroExtent = v;
@@ -629,8 +675,11 @@ namespace ServoAnimator
                 if (_setting.ReverseOverride.HasValue && _setting.ReverseOverride.Value == value)
                     return;
                 _setting.ReverseOverride = value;
+                if (IsLinear)
+                    EnforceLinearZero();
                 Raise(nameof(Reverse));
                 Raise(nameof(ReverseText));
+                Raise(nameof(ZeroExtent));
                 _preview?.Invoke();
             }
         }
@@ -639,9 +688,18 @@ namespace ServoAnimator
             ? (Reverse ? "Override: Rev" : "Override: Normal")
             : (Reverse ? "Inherited: Rev" : "Inherited: Normal");
 
+        private void EnforceLinearZero()
+        {
+            if (!IsLinear) return;
+            _setting.ZeroExtent = Reverse ? _setting.MaxExtent : _setting.MinExtent;
+        }
+
         public void RefreshZeroRange()
         {
-            _setting.ZeroExtent = Math.Clamp(_setting.ZeroExtent, ZeroSliderMin, ZeroSliderMax);
+            if (IsLinear)
+                EnforceLinearZero();
+            else
+                _setting.ZeroExtent = Math.Clamp(_setting.ZeroExtent, ZeroSliderMin, ZeroSliderMax);
             Raise(nameof(MinExtent));
             Raise(nameof(MaxExtent));
             Raise(nameof(ZeroSliderMin));
@@ -651,8 +709,17 @@ namespace ServoAnimator
 
         public void RefreshDirection()
         {
+            if (IsLinear)
+                EnforceLinearZero();
             Raise(nameof(Reverse));
             Raise(nameof(ReverseText));
+            Raise(nameof(ZeroExtent));
+        }
+
+        public void RefreshTestPosition()
+        {
+            Raise(nameof(TestPosition));
+            Raise(nameof(TestPositionText));
         }
 
         private void Raise(string propertyName) =>

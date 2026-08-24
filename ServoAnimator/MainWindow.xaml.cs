@@ -178,7 +178,7 @@ namespace ServoAnimator
         // day, increment minor/reset patch on a new day, and major only on
         // explicit user request.
         private const string AppDisplayName = "Animation Editor & Player";
-        private const string AppVersion = "1.10.6";
+        private const string AppVersion = "1.13.3";
 
         /// <summary>Detached URDF preview used when the user presses Undock.
         /// The old View > Robot Head entry has been removed; docking is now
@@ -338,6 +338,10 @@ namespace ServoAnimator
             if (EmbeddedHeadView != null)
             {
                 EmbeddedHeadView.CollisionWarningEnabledChanged += HeadView_CollisionWarningEnabledChanged;
+                EmbeddedHeadView.PoseModeChanged += HeadView_PoseModeChanged;
+                EmbeddedHeadView.PoseRgbCommandChanged += HeadView_PoseRgbCommandChanged;
+                EmbeddedHeadView.LibraryPoseSaveRequested += HeadView_LibraryPoseSaveRequested;
+                EmbeddedHeadView.LibraryPoseLoadRequested += HeadView_LibraryPoseLoadRequested;
                 EmbeddedHeadView.DockToggleRequested += EmbeddedHeadView_DockToggleRequested;
                 EmbeddedHeadView.VerticalResizeDeltaRequested += EmbeddedHeadView_VerticalResizeDeltaRequested;
                 EmbeddedHeadView.SetDockedHostState();
@@ -393,6 +397,7 @@ namespace ServoAnimator
             Spline.PointValueChanged += Spline_PointValueChanged;
             Spline.PointTimeChanged += Spline_PointTimeChanged;
             Spline.PointAdded += Spline_PointAdded;
+            Spline.PointServoToggled += Spline_PointServoToggled;
             Spline.PointDeleted += Spline_PointDeleted;
             Spline.InfoChanged += text => { if (SplineInspectorText != null) SplineInspectorText.Text = text; };
             Spline.DragCompleted += () => { _dragUndoPushed = false; RefreshAfterEdit(); };
@@ -495,6 +500,50 @@ namespace ServoAnimator
             if (EmbeddedHeadView != null) action(EmbeddedHeadView);
             if (_head?.HeadView != null) action(_head.HeadView);
         }
+
+        private void HeadView_PoseModeChanged(bool enabled)
+        {
+            // Pose mode is a non-destructive draft.  When the user leaves it,
+            // immediately restore the model to the timeline/cursor state unless
+            // Insert Pose was used to commit the draft first.
+            if (!enabled)
+                PushHeadPose();
+        }
+
+        private void HeadView_PoseRgbCommandChanged(string command)
+        {
+            command = (command ?? string.Empty).Trim();
+
+            // An empty Pose RGB value means "clear the Pose lighting".  Keep the
+            // editable Pose command blank, but execute the Arduino ClearAll command
+            // against the simulator and Live Drive hardware so Face Reset behaves
+            // exactly like an RGB ClearAll without persisting ClearAll into the pose.
+            if (string.IsNullOrWhiteSpace(command))
+            {
+                ForEachHeadView(v => v.SetPoseRgbCommand(string.Empty));
+                var clearPreview = _rgbSimulator.PreviewCommand("ClearAll");
+                ForEachHeadView(v => v.SetRgbRingFrame(clearPreview));
+                if (LiveDrive && _hw.Connected)
+                    _hw.DriveRgb("ClearAll");
+                return;
+            }
+
+            // Keep docked/undocked Pose drafts synchronized without recursively
+            // firing the event, then make the command take effect immediately.
+            ForEachHeadView(v => v.SetPoseRgbCommand(command));
+            var preview = _rgbSimulator.PreviewCommand(command);
+            ForEachHeadView(v => v.SetRgbRingFrame(preview));
+
+            // Pose mode follows the same Live Drive rule as the normal RGB grid:
+            // preview is always visible in the URDF, physical Arduino output only
+            // occurs when Live Drive and hardware connectivity allow it.
+            if (LiveDrive && _hw.Connected)
+                _hw.DriveRgb(command);
+        }
+
+        private void HeadView_LibraryPoseSaveRequested(RobotHeadView view) => SaveLibraryPose(view);
+
+        private void HeadView_LibraryPoseLoadRequested(RobotHeadView view) => LoadLibraryPose(view);
 
         private void HeadView_CollisionWarningEnabledChanged(bool enabled)
         {
@@ -1558,7 +1607,8 @@ namespace ServoAnimator
                     // Outside the curve's range the ends hold (Eval clamps),
                     // and servos with fewer than 2 points fall back to the
                     // normal last-command behavior above.
-                    if (row.SplineEnabled && !row.IsTextRow)
+                    if (row.SplineEnabled && !row.IsTextRow &&
+                        !IsSharedNeckServo(row.Servo))
                     {
                         var curve = Spline?.Curves?.FirstOrDefault(
                             cv => cv.Servo == row.Servo);
@@ -1566,6 +1616,25 @@ namespace ServoAnimator
                             row.Value = Math.Clamp(
                                 SplineUtil.Eval(curve.T, curve.V, curve.M, t),
                                 curve.Min, curve.Max);
+                    }
+                }
+
+                // The neck pair is one mutually-exclusive physical control.
+                // In spline mode show the common interpolated value only on
+                // the row that currently owns the neck; the other row is zero.
+                var nodSplineRow = _rows.First(r => r.Servo == ServoNames.NeckNodUp);
+                var tiltSplineRow = _rows.First(r => r.Servo == ServoNames.NeckTiltRight);
+                if ((nodSplineRow.SplineEnabled || tiltSplineRow.SplineEnabled) &&
+                    !_manualGridOverrides.Contains(ServoNames.NeckNodUp) &&
+                    !_manualGridOverrides.Contains(ServoNames.NeckTiltRight))
+                {
+                    var neckState = SharedNeckStateAt(t);
+                    if (neckState.Owner.HasValue)
+                    {
+                        nodSplineRow.Value = neckState.Owner.Value == ServoNames.NeckNodUp
+                            ? neckState.Value : 0;
+                        tiltSplineRow.Value = neckState.Owner.Value == ServoNames.NeckTiltRight
+                            ? neckState.Value : 0;
                     }
                 }
             }
@@ -1915,14 +1984,34 @@ namespace ServoAnimator
 
             var nodRow = Row(ServoNames.NeckNodUp);
             var tiltRow = Row(ServoNames.NeckTiltRight);
-            double nod = nodRow.Value, tilt = tiltRow.Value;
-            double? no = nodRow.Offset, to = tiltRow.Offset;
+            double nod = 0, tilt = 0;
+            ServoNames? neckOwner = null;
 
-            if (no.HasValue && (!to.HasValue || no.Value > to.Value))
-                tilt = 0;                        // nod command is newer
-            else if (to.HasValue)
-                nod = 0;                         // tilt newer (or tie -> tilt)
-            // neither servo has a command yet: both stay at their defaults (0)
+            // Manual grid staging must remain immediately visible. Otherwise
+            // use the shared time-ordered neck stream. This fixes the previous
+            // mismatch where two separately evaluated spline rows could leave
+            // NeckTiltRight visually inactive even though it owned the neck.
+            bool nodManual = _manualGridOverrides.Contains(ServoNames.NeckNodUp);
+            bool tiltManual = _manualGridOverrides.Contains(ServoNames.NeckTiltRight);
+            if (nodManual && !tiltManual)
+            {
+                neckOwner = ServoNames.NeckNodUp;
+                nod = nodRow.Value;
+            }
+            else if (tiltManual)
+            {
+                neckOwner = ServoNames.NeckTiltRight;
+                tilt = tiltRow.Value;              // tie: Tilt owns, as on timeline
+            }
+            else
+            {
+                var neckState = SharedNeckStateAt(_cursorTime);
+                neckOwner = neckState.Owner;
+                if (neckState.Owner == ServoNames.NeckNodUp)
+                    nod = neckState.Value;
+                else if (neckState.Owner == ServoNames.NeckTiltRight)
+                    tilt = neckState.Value;
+            }
 
             // NoseBasket is a positive 0..100 servo. Its default/neutral
             // authoring value is 0, matching both the grid and hardware
@@ -1991,6 +2080,7 @@ namespace ServoAnimator
                 ventsRight: Part(ServoNames.VentsOpen, RobotControls.LeftEyeVent),
                 neckTilt: tilt,
                 neckNod: nod,
+                neckOwner: neckOwner,
                 neckTurn: RV(ServoNames.NeckTurn),
                 whip: RV(ServoNames.Whip_Antenna_RaiseLower),
                 mic: RV(ServoNames.Microphone_RaiseLower),
@@ -2413,7 +2503,11 @@ namespace ServoAnimator
 
             Item($"Insert new Command at {_cursorTime:F3} s…", (_, _) => InsertNewCommand());
 
-            Item($"Insert Library Command at {_cursorTime:F3} s…",
+            Item($"Insert Pose at {_cursorTime:F3} s",
+                 (_, _) => InsertPoseAtCursor(),
+                 (_urdfUndocked ? _head?.HeadView : EmbeddedHeadView) != null);
+
+            Item($"Insert Library Pose at {_cursorTime:F3} s…",
                  (_, _) => InsertLibraryCommandAtCursor());
 
             Item($"Insert Library Sequence at {_cursorTime:F3} s…",
@@ -2546,7 +2640,7 @@ namespace ServoAnimator
         {
             var win = new LibraryItemSelectionWindow(
                 LibraryCommandsFolder(), manageMode: false,
-                itemLabel: "Library Command", showAudioFiles: false)
+                itemLabel: "Library Pose", showAudioFiles: false)
             {
                 Owner = this,
             };
@@ -2559,8 +2653,8 @@ namespace ServoAnimator
                     win.SelectedLibraryItem.FullPath);
                 if (cmds.Count == 0)
                 {
-                    MessageBox.Show(this, "The selected Library Command contains no commands.",
-                                    "Insert Library Command", MessageBoxButton.OK,
+                    MessageBox.Show(this, "The selected Library Pose contains no commands.",
+                                    "Insert Library Pose", MessageBoxButton.OK,
                                     MessageBoxImage.Information);
                     return;
                 }
@@ -2574,13 +2668,13 @@ namespace ServoAnimator
                     _doc.Commands.Add(copy);
                 }
                 RefreshAfterEdit();
-                ShowStatus($"Inserted Library Command '{Path.GetFileName(win.SelectedLibraryItem.FullPath)}' " +
+                ShowStatus($"Inserted Library Pose '{Path.GetFileName(win.SelectedLibraryItem.FullPath)}' " +
                            $"({cmds.Count} command(s)) at {at:F3} s");
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "Could not insert the Library Command:\n" + ex.Message,
-                                "Insert Library Command", MessageBoxButton.OK,
+                MessageBox.Show(this, "Could not insert the Library Pose:\n" + ex.Message,
+                                "Insert Library Pose", MessageBoxButton.OK,
                                 MessageBoxImage.Error);
             }
         }
@@ -2639,6 +2733,332 @@ namespace ServoAnimator
             }
         }
 
+        /// <summary>Translate a logical URDF pose into the same normal ServoCommand
+        /// representation used by the timeline and reusable Library Poses.</summary>
+        private List<ServoCommand> BuildCommandsFromPose(RobotPoseSnapshot pose, double t)
+        {
+            var commands = new List<ServoCommand>();
+
+            ServoCommand Cmd(ServoNames servo, double value, RobotControls? control = null) => new()
+            {
+                OffsetSeconds = t,
+                Servo = servo,
+                Control = control,
+                NumericValue = (int)Math.Round(value),
+                Speed = ServoSpeed.NoChange,
+                Reason = "pose",
+            };
+
+            ServoCommand TextCmd(ServoNames servo, string value) => new()
+            {
+                OffsetSeconds = t,
+                Servo = servo,
+                TextValue = value ?? string.Empty,
+                Speed = ServoSpeed.NoChange,
+                Reason = "pose",
+            };
+
+            bool Same(params double[] values) => values.Length < 2 ||
+                values.Skip(1).All(v => Math.Abs(v - values[0]) < 0.5);
+
+            void TwoSide(ServoNames servo, RobotControls leftControl, double left,
+                         RobotControls rightControl, double right)
+            {
+                if (Same(left, right)) commands.Add(Cmd(servo, left));
+                else
+                {
+                    commands.Add(Cmd(servo, left, leftControl));
+                    commands.Add(Cmd(servo, right, rightControl));
+                }
+            }
+
+            TwoSide(ServoNames.EyesHorizontalRight,
+                RobotControls.LeftLensHorizontal, pose.LeftEyeHorizontal,
+                RobotControls.RightLensHorizontal, pose.RightEyeHorizontal);
+            TwoSide(ServoNames.EyesVerticalUp,
+                RobotControls.LeftLensVertical, pose.LeftEyeVertical,
+                RobotControls.RightLensVertical, pose.RightEyeVertical);
+            TwoSide(ServoNames.IrisClose,
+                RobotControls.LeftIris, pose.LeftIris,
+                RobotControls.RightIris, pose.RightIris);
+
+            if (Same(pose.LeftTopFlapOpen, pose.RightTopFlapOpen,
+                     pose.LeftBottomFlapOpen, pose.RightBottomFlapOpen))
+            {
+                commands.Add(Cmd(ServoNames.FlapsOpen, pose.LeftTopFlapOpen));
+            }
+            else
+            {
+                commands.Add(Cmd(ServoNames.FlapsOpen, pose.LeftTopFlapOpen, RobotControls.BrowLeftTopOpen));
+                commands.Add(Cmd(ServoNames.FlapsOpen, pose.RightTopFlapOpen, RobotControls.BrowRightTopOpen));
+                commands.Add(Cmd(ServoNames.FlapsOpen, pose.LeftBottomFlapOpen, RobotControls.BrowLeftBottomOpen));
+                commands.Add(Cmd(ServoNames.FlapsOpen, pose.RightBottomFlapOpen, RobotControls.BrowRightBottomOpen));
+            }
+
+            TwoSide(ServoNames.FlapTiltUp,
+                RobotControls.BrowLeftTopTilt, pose.LeftTopFlapTilt,
+                RobotControls.BrowRightTopTilt, pose.RightTopFlapTilt);
+            TwoSide(ServoNames.VentsOpen,
+                RobotControls.LeftEyeVent, pose.LeftVent,
+                RobotControls.RightEyeVent, pose.RightVent);
+
+            commands.Add(Cmd(ServoNames.NeckTurn, pose.NeckTurn));
+            if (pose.NeckOwner == ServoNames.NeckTiltRight)
+                commands.Add(Cmd(ServoNames.NeckTiltRight, pose.NeckTilt));
+            else
+                commands.Add(Cmd(ServoNames.NeckNodUp, pose.NeckNod));
+
+            commands.Add(Cmd(ServoNames.NoseBody, pose.NoseBody));
+            commands.Add(Cmd(ServoNames.NoseBasket, pose.NoseBasket));
+
+            if (Same(pose.LeftEyePop, pose.RightEyePop))
+                commands.Add(Cmd(ServoNames.BothEyePop, pose.LeftEyePop));
+            else
+            {
+                commands.Add(Cmd(ServoNames.LeftEyePop, pose.LeftEyePop));
+                commands.Add(Cmd(ServoNames.RightEyePop, pose.RightEyePop));
+            }
+
+            commands.Add(Cmd(ServoNames.Whip_Antenna_RaiseLower, pose.WhipRaiseLower));
+            commands.Add(Cmd(ServoNames.Whip_Antenna_Rotate, pose.WhipRotate));
+            commands.Add(Cmd(ServoNames.MFR_UpDown, pose.MfrUpDown));
+            commands.Add(Cmd(ServoNames.MFR_Rotate, pose.MfrRotate));
+            commands.Add(Cmd(ServoNames.Microphone_RaiseLower, pose.MicrophoneRaiseLower));
+
+            string poseRgb = (pose.RgbCommand ?? string.Empty).Trim();
+            if (!string.IsNullOrWhiteSpace(poseRgb))
+                commands.Add(TextCmd(ServoNames.RGBCommand, poseRgb));
+
+            return commands;
+        }
+
+        /// <summary>Insert the exact logical pose currently visible in the active
+        /// URDF viewer. Joined values are emitted as compact ganged commands;
+        /// asymmetric/split values are emitted as individual RobotControl commands
+        /// so the pose survives round-tripping through the normal timeline model.</summary>
+        private void InsertPoseAtCursor()
+        {
+            RobotHeadView view = _urdfUndocked ? _head?.HeadView : EmbeddedHeadView;
+            if (view == null) return;
+
+            RobotPoseSnapshot pose = view.CapturePose();
+            double t = ServoCommand.TimeKey(_cursorTime);
+            var commands = BuildCommandsFromPose(pose, t);
+            string poseRgb = (pose.RgbCommand ?? string.Empty).Trim();
+
+            PushUndo();
+
+            // A pose is a complete numeric keyframe. Replace every existing
+            // numeric command at this exact point. If the Pose draft contains an
+            // RGB command, replace the RGB command at the same time as well;
+            // otherwise existing RGB/audio Play commands remain untouched.
+            foreach (var existing in _doc.Commands.Where(c =>
+                         ServoCommand.TimeKey(c.OffsetSeconds) == t &&
+                         (!c.IsTextServo ||
+                          (!string.IsNullOrWhiteSpace(poseRgb) &&
+                           c.Servo == ServoNames.RGBCommand))).ToList())
+                _doc.Commands.Remove(existing);
+
+            _doc.Commands.AddRange(commands);
+            ClearManualGridOverrides();
+            RefreshAfterEdit();
+            SetCursor(t);
+            ShowStatus($"Inserted URDF pose at {t:F3} s ({commands.Count} commands)");
+        }
+
+        private void SaveLibraryPose(RobotHeadView view)
+        {
+            if (view == null || !view.PoseEditorActive) return;
+
+            string folder = LibraryCommandsFolder();
+            try { Directory.CreateDirectory(folder); }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Could not create the Library\\Commands folder:\n" + ex.Message,
+                                "Create Library Pose", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            var prompt = new LibraryCommandSaveWindow { Owner = this };
+            if (prompt.ShowDialog() != true) return;
+
+            string path = Path.Combine(folder, prompt.FileNameText);
+            if (File.Exists(path))
+            {
+                var overwrite = MessageBox.Show(this,
+                    $"'{prompt.FileNameText}' already exists. Replace it?",
+                    "Create Library Pose", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (overwrite != MessageBoxResult.Yes) return;
+            }
+
+            try
+            {
+                string imageFile;
+                string oldImagePath = null;
+                if (File.Exists(path))
+                {
+                    try
+                    {
+                        var old = AnimationDocument.LoadLibraryItem(path);
+                        if (!string.IsNullOrWhiteSpace(old.ImageFile))
+                        {
+                            oldImagePath = Path.IsPathRooted(old.ImageFile)
+                                ? old.ImageFile
+                                : Path.Combine(Path.GetDirectoryName(path) ?? "", old.ImageFile);
+                        }
+                    }
+                    catch { }
+                }
+
+                string destination;
+                if (!string.IsNullOrWhiteSpace(prompt.ImageSourcePath))
+                {
+                    // A user-supplied image always wins. Automatic URDF capture is
+                    // intentionally skipped when Attach Image was used in the save dialog.
+                    string ext = Path.GetExtension(prompt.ImageSourcePath);
+                    if (string.IsNullOrWhiteSpace(ext)) ext = ".png";
+                    imageFile = Path.GetFileNameWithoutExtension(path) + "_image" + ext.ToLowerInvariant();
+                    destination = Path.Combine(Path.GetDirectoryName(path) ?? folder, imageFile);
+                    if (!Path.GetFullPath(prompt.ImageSourcePath).Equals(
+                            Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase))
+                        File.Copy(prompt.ImageSourcePath, destination, overwrite: true);
+                }
+                else
+                {
+                    // Library + automatically creates a clean visual reference of
+                    // the current Pose. The RobotHeadView temporarily centers its
+                    // camera, hides editor chrome, crops to the head/flaps/neck,
+                    // saves the PNG, and restores the user's live view.
+                    imageFile = Path.GetFileNameWithoutExtension(path) + "_image.png";
+                    destination = Path.Combine(Path.GetDirectoryName(path) ?? folder, imageFile);
+                    view.SaveCenteredLibraryPoseImage(destination);
+                }
+
+                if (!string.IsNullOrWhiteSpace(oldImagePath) &&
+                    !Path.GetFullPath(oldImagePath).Equals(
+                        Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase) &&
+                    File.Exists(oldImagePath))
+                {
+                    try { File.Delete(oldImagePath); } catch { }
+                }
+
+                var commands = BuildCommandsFromPose(view.CapturePose(), 0.0);
+                AnimationDocument.SaveLibraryCommand(path, commands, prompt.DescriptionText, imageFile);
+                ShowStatus($"Library Pose saved: {Path.GetFileName(path)}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Could not save the Library Pose:\n" + ex.Message,
+                                "Create Library Pose", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void LoadLibraryPose(RobotHeadView view)
+        {
+            if (view == null) return;
+            var win = new LibraryItemSelectionWindow(
+                LibraryCommandsFolder(), manageMode: false,
+                itemLabel: "Library Pose", showAudioFiles: false,
+                selectActionText: "Load Selected Pose")
+            {
+                Owner = this,
+            };
+            if (win.ShowDialog() != true || win.SelectedLibraryItem == null) return;
+
+            try
+            {
+                var commands = AnimationDocument.LoadCommandsOnly(win.SelectedLibraryItem.FullPath);
+                if (commands.Count == 0)
+                {
+                    MessageBox.Show(this, "The selected Library Pose contains no commands.",
+                                    "Load Library Pose", MessageBoxButton.OK,
+                                    MessageBoxImage.Information);
+                    return;
+                }
+
+                RobotPoseSnapshot pose = PoseFromLibraryCommands(commands);
+                ForEachHeadView(v => v.LoadPoseSnapshot(pose));
+                if (!string.IsNullOrWhiteSpace(pose.RgbCommand))
+                    HeadView_PoseRgbCommandChanged(pose.RgbCommand);
+                ShowStatus($"Loaded Library Pose '{Path.GetFileName(win.SelectedLibraryItem.FullPath)}'");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Could not load the Library Pose:\n" + ex.Message,
+                                "Load Library Pose", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private static RobotPoseSnapshot PoseFromLibraryCommands(IEnumerable<ServoCommand> commands)
+        {
+            var pose = new RobotPoseSnapshot { LRJoined = true };
+            bool split = false;
+
+            foreach (var c in commands)
+            {
+                if (c.Disable) continue;
+                double v = c.NumericValue;
+                switch (c.Servo)
+                {
+                    case ServoNames.EyesHorizontalRight:
+                        if (c.Control == null) pose.LeftEyeHorizontal = pose.RightEyeHorizontal = v;
+                        else if (c.Control == RobotControls.LeftLensHorizontal) { pose.LeftEyeHorizontal = v; split = true; }
+                        else if (c.Control == RobotControls.RightLensHorizontal) { pose.RightEyeHorizontal = v; split = true; }
+                        break;
+                    case ServoNames.EyesVerticalUp:
+                        if (c.Control == null) pose.LeftEyeVertical = pose.RightEyeVertical = v;
+                        else if (c.Control == RobotControls.LeftLensVertical) { pose.LeftEyeVertical = v; split = true; }
+                        else if (c.Control == RobotControls.RightLensVertical) { pose.RightEyeVertical = v; split = true; }
+                        break;
+                    case ServoNames.IrisClose:
+                        if (c.Control == null) pose.LeftIris = pose.RightIris = v;
+                        else if (c.Control == RobotControls.LeftIris) { pose.LeftIris = v; split = true; }
+                        else if (c.Control == RobotControls.RightIris) { pose.RightIris = v; split = true; }
+                        break;
+                    case ServoNames.FlapsOpen:
+                        if (c.Control == null)
+                            pose.LeftTopFlapOpen = pose.RightTopFlapOpen =
+                                pose.LeftBottomFlapOpen = pose.RightBottomFlapOpen = v;
+                        else
+                        {
+                            split = true;
+                            if (c.Control == RobotControls.BrowLeftTopOpen) pose.LeftTopFlapOpen = v;
+                            else if (c.Control == RobotControls.BrowRightTopOpen) pose.RightTopFlapOpen = v;
+                            else if (c.Control == RobotControls.BrowLeftBottomOpen) pose.LeftBottomFlapOpen = v;
+                            else if (c.Control == RobotControls.BrowRightBottomOpen) pose.RightBottomFlapOpen = v;
+                        }
+                        break;
+                    case ServoNames.FlapTiltUp:
+                        if (c.Control == null) pose.LeftTopFlapTilt = pose.RightTopFlapTilt = v;
+                        else if (c.Control == RobotControls.BrowLeftTopTilt) { pose.LeftTopFlapTilt = v; split = true; }
+                        else if (c.Control == RobotControls.BrowRightTopTilt) { pose.RightTopFlapTilt = v; split = true; }
+                        break;
+                    case ServoNames.VentsOpen:
+                        if (c.Control == null) pose.LeftVent = pose.RightVent = v;
+                        else if (c.Control == RobotControls.LeftEyeVent) { pose.LeftVent = v; split = true; }
+                        else if (c.Control == RobotControls.RightEyeVent) { pose.RightVent = v; split = true; }
+                        break;
+                    case ServoNames.NeckTurn: pose.NeckTurn = v; break;
+                    case ServoNames.NeckNodUp: pose.NeckOwner = ServoNames.NeckNodUp; pose.NeckNod = v; break;
+                    case ServoNames.NeckTiltRight: pose.NeckOwner = ServoNames.NeckTiltRight; pose.NeckTilt = v; break;
+                    case ServoNames.NoseBody: pose.NoseBody = v; break;
+                    case ServoNames.NoseBasket: pose.NoseBasket = v; break;
+                    case ServoNames.BothEyePop: pose.LeftEyePop = pose.RightEyePop = v; break;
+                    case ServoNames.LeftEyePop: pose.LeftEyePop = v; split = true; break;
+                    case ServoNames.RightEyePop: pose.RightEyePop = v; split = true; break;
+                    case ServoNames.Whip_Antenna_RaiseLower: pose.WhipRaiseLower = v; break;
+                    case ServoNames.Whip_Antenna_Rotate: pose.WhipRotate = v; break;
+                    case ServoNames.MFR_UpDown: pose.MfrUpDown = v; break;
+                    case ServoNames.MFR_Rotate: pose.MfrRotate = v; break;
+                    case ServoNames.Microphone_RaiseLower: pose.MicrophoneRaiseLower = v; break;
+                    case ServoNames.RGBCommand: pose.RgbCommand = c.TextValue ?? string.Empty; break;
+                }
+            }
+
+            pose.LRJoined = !split;
+            return pose;
+        }
+
         /// <summary>Create one command per servo at the cursor, capturing the
         /// grid's current Speed and Value (numeric or text) for each servo
         /// (a "keyframe all").</summary>
@@ -2669,9 +3089,24 @@ namespace ServoAnimator
         #region 6b. Spline system
         // ================================================================
 
-        /// <summary>A spline-checked servo toggled: rebuild legend + curves.</summary>
+        private static bool IsSharedNeckServo(ServoNames servo) =>
+            servo is ServoNames.NeckNodUp or ServoNames.NeckTiltRight;
+
+        /// <summary>A spline-checked servo toggled: rebuild legend + curves.
+        /// NeckNodUp and NeckTiltRight share one physical pair and therefore
+        /// one spline; enabling/disabling either keeps the pair synchronized.</summary>
         private void SplineCheck_Click(object sender, RoutedEventArgs e)
         {
+            if ((sender as FrameworkElement)?.DataContext is ServoStateRow row &&
+                IsSharedNeckServo(row.Servo))
+            {
+                bool enabled = row.SplineEnabled;
+                var other = _rows.First(r => r.Servo ==
+                    (row.Servo == ServoNames.NeckNodUp
+                        ? ServoNames.NeckTiltRight : ServoNames.NeckNodUp));
+                other.SplineEnabled = enabled;
+            }
+
             RebuildSplineData();
             UpdateDocumentStatusIndicators();
         }
@@ -2733,10 +3168,16 @@ namespace ServoAnimator
         /// </summary>
         private void Spline_PointAdded(ServoNames servo, double timeKey, int value)
         {
-            // Never duplicate an existing point of this servo.
-            if (_doc.Commands.Any(c => c.Servo == servo &&
-                    ServoCommand.TimeKey(c.OffsetSeconds) == timeKey))
-                return;
+            // Ordinary servos cannot duplicate their own point. The neck pair
+            // is a single shared spline, so neither logical neck owner may
+            // already have a control point at this time.
+            bool exists = IsSharedNeckServo(servo)
+                ? _doc.Commands.Any(c => IsSharedNeckServo(c.Servo) &&
+                    !c.Control.HasValue && !c.Disable &&
+                    ServoCommand.TimeKey(c.OffsetSeconds) == timeKey)
+                : _doc.Commands.Any(c => c.Servo == servo &&
+                    ServoCommand.TimeKey(c.OffsetSeconds) == timeKey);
+            if (exists) return;
 
             PushUndo();
 
@@ -2748,6 +3189,36 @@ namespace ServoAnimator
                 Speed = ServoSpeed.NoChange,
                 Reason = "spline point",
             });
+            RefreshAfterEdit();
+        }
+
+        /// <summary>Middle-clicking an already-selected point on the shared
+        /// neck spline changes only which logical neck axis owns that point.
+        /// Time, value, speed and reason remain unchanged.</summary>
+        private void Spline_PointServoToggled(ServoNames servo, double timeKey)
+        {
+            if (!IsSharedNeckServo(servo)) return;
+
+            ServoNames target = servo == ServoNames.NeckNodUp
+                ? ServoNames.NeckTiltRight : ServoNames.NeckNodUp;
+            var source = _doc.Commands.Where(c => c.Servo == servo &&
+                !c.Control.HasValue && !c.Disable &&
+                ServoCommand.TimeKey(c.OffsetSeconds) == timeKey).ToList();
+            if (source.Count == 0) return;
+
+            PushUndo();
+
+            // A shared spline has one owner per time key. Remove any stale
+            // command of the destination owner at the same key before moving
+            // the selected command(s) across.
+            foreach (var duplicate in _doc.Commands.Where(c => c.Servo == target &&
+                         !c.Control.HasValue && !c.Disable &&
+                         ServoCommand.TimeKey(c.OffsetSeconds) == timeKey).ToList())
+                _doc.Commands.Remove(duplicate);
+
+            foreach (var c in source)
+                c.Servo = target;
+
             RefreshAfterEdit();
         }
 
@@ -2783,6 +3254,55 @@ namespace ServoAnimator
                 .Select(g => (T: g.Key, V: (double)g.Last().NumericValue))
                 .ToArray();
             return (pts.Select(p => p.T).ToArray(), pts.Select(p => p.V).ToArray());
+        }
+
+        /// <summary>NeckNodUp and NeckTiltRight are two logical modes of the
+        /// same physical servo pair. Their ganged commands therefore form one
+        /// time-ordered spline. If legacy data contains both at the exact same
+        /// time, NeckTiltRight wins, matching the established timeline rule.</summary>
+        private (double[] T, double[] V, ServoNames[] Owners) SharedNeckSplinePoints()
+        {
+            var pts = _doc.Commands
+                .Where(c => IsSharedNeckServo(c.Servo) &&
+                            !c.Control.HasValue && !c.Disable)
+                .GroupBy(c => ServoCommand.TimeKey(c.OffsetSeconds))
+                .OrderBy(g => g.Key)
+                .Select(g =>
+                {
+                    var chosen = g.LastOrDefault(c => c.Servo == ServoNames.NeckTiltRight)
+                                 ?? g.Last();
+                    return (T: g.Key, V: (double)chosen.NumericValue, Owner: chosen.Servo);
+                })
+                .ToArray();
+
+            return (pts.Select(p => p.T).ToArray(),
+                    pts.Select(p => p.V).ToArray(),
+                    pts.Select(p => p.Owner).ToArray());
+        }
+
+        /// <summary>Evaluate the shared neck stream at an arbitrary timeline
+        /// time. Ownership is the most recent neck command at/before the time;
+        /// when spline mode is enabled the value comes from the one common
+        /// Hermite curve rather than from separate Nod/Tilt curves.</summary>
+        private (ServoNames? Owner, double Value) SharedNeckStateAt(double time)
+        {
+            var (t, v, owners) = SharedNeckSplinePoints();
+            if (t.Length == 0) return (null, 0);
+
+            int ownerIndex = -1;
+            for (int i = 0; i < t.Length && t[i] <= time + 1e-9; i++)
+                ownerIndex = i;
+            if (ownerIndex < 0) return (null, 0);
+
+            double value = v[ownerIndex];
+            bool splineEnabled = _rows.First(r => r.Servo == ServoNames.NeckNodUp).SplineEnabled ||
+                                 _rows.First(r => r.Servo == ServoNames.NeckTiltRight).SplineEnabled;
+            if (splineEnabled && t.Length >= 2)
+            {
+                var m = SplineUtil.Tangents(t, v);
+                value = Math.Clamp(SplineUtil.Eval(t, v, m, time), -100, 100);
+            }
+            return (owners[ownerIndex], value);
         }
 
         private System.Windows.Media.Brush BrushFor(ServoNames s) =>
@@ -2834,9 +3354,40 @@ namespace ServoAnimator
             // Curves for the renderer. A spline-checked servo with NO
             // commands yet is not graphed at all (no line, no dots) until
             // its first command exists; its legend entry still shows so the
-            // checked state is visible.
+            // checked state is visible. NeckNodUp/NeckTiltRight are the one
+            // exception: they are rendered as ONE shared curve whose segment
+            // color identifies the current logical owner.
             var curves = new List<SplineCurve>();
-            foreach (var s in enabled)
+
+            bool neckEnabled = enabled.Any(IsSharedNeckServo);
+            if (neckEnabled)
+            {
+                var (t, v, owners) = SharedNeckSplinePoints();
+                if (t.Length > 0)
+                {
+                    var (mn, mx) = ServoCommand.RangeFor(ServoNames.NeckNodUp);
+                    bool nodVisible = !_lineVisible.TryGetValue(ServoNames.NeckNodUp, out bool nv) || nv;
+                    bool tiltVisible = !_lineVisible.TryGetValue(ServoNames.NeckTiltRight, out bool tv) || tv;
+                    curves.Add(new SplineCurve
+                    {
+                        Servo = ServoNames.NeckNodUp,
+                        Color = SkColorFor(ServoNames.NeckNodUp),
+                        T = t,
+                        V = v,
+                        M = SplineUtil.Tangents(t, v),
+                        Min = mn,
+                        Max = mx,
+                        Visible = nodVisible || tiltVisible,
+                        IsSharedNeck = true,
+                        Owners = owners,
+                        PointColors = owners.Select(SkColorFor).ToArray(),
+                        PointVisible = owners.Select(o => o == ServoNames.NeckNodUp
+                            ? nodVisible : tiltVisible).ToArray(),
+                    });
+                }
+            }
+
+            foreach (var s in enabled.Where(s => !IsSharedNeckServo(s)))
             {
                 var (t, v) = SplinePoints(s);
                 if (t.Length == 0) continue;   // nothing to graph yet
@@ -2928,6 +3479,50 @@ namespace ServoAnimator
             }
         }
 
+        /// <summary>Save-time sampler for the one shared NeckNodUp /
+        /// NeckTiltRight spline. Every generated sample is emitted under the
+        /// logical owner that was most recently selected by a control point,
+        /// so exported playback observes the exact same hand-off rule as the
+        /// editor and URDF preview.</summary>
+        private IEnumerable<ServoCommand> GenerateSharedNeckSplineSamples()
+        {
+            var (t, v, owners) = SharedNeckSplinePoints();
+            if (t.Length < 2) yield break;
+
+            var m = SplineUtil.Tangents(t, v);
+            var controlKeys = new HashSet<double>(t.Select(ServoCommand.TimeKey));
+            double dt = 1.0 / _splineHz;
+            int nextControl = 1;
+            int lastValue = (int)Math.Round(v[0]);
+
+            for (double x = t[0] + dt; x < t[^1] - 1e-9; x += dt)
+            {
+                while (nextControl < t.Length && t[nextControl] <= x + 1e-9)
+                {
+                    lastValue = (int)Math.Round(v[nextControl]);
+                    nextControl++;
+                }
+
+                double key = ServoCommand.TimeKey(x);
+                if (controlKeys.Contains(key)) continue;
+
+                int value = (int)Math.Round(Math.Clamp(
+                    SplineUtil.Eval(t, v, m, x), -100, 100));
+                if (value == lastValue) continue;
+
+                int ownerIndex = Math.Clamp(nextControl - 1, 0, owners.Length - 1);
+                lastValue = value;
+                yield return new ServoCommand
+                {
+                    OffsetSeconds = key,
+                    Servo = owners[ownerIndex],
+                    NumericValue = value,
+                    Speed = ServoSpeed.NoChange,
+                    Reason = $"shared neck spline {_splineHz}Hz",
+                };
+            }
+        }
+
         #endregion
 
         // ================================================================
@@ -2983,6 +3578,15 @@ namespace ServoAnimator
                 foreach (var row in _rows)
                     row.SplineEnabled = !row.IsTextRow &&
                         (_doc.SplineServos?.Contains(row.Servo.ToString()) ?? false);
+
+                // Backward compatibility: an older project may have enabled
+                // only one of the two neck splines. They are one shared curve
+                // now, so loading either name enables both rows.
+                var nodSpline = _rows.First(r => r.Servo == ServoNames.NeckNodUp);
+                var tiltSpline = _rows.First(r => r.Servo == ServoNames.NeckTiltRight);
+                if (nodSpline.SplineEnabled || tiltSpline.SplineEnabled)
+                    nodSpline.SplineEnabled = tiltSpline.SplineEnabled = true;
+
                 _splineHz = Array.IndexOf(SplineHzOptions, _doc.SplineSampleHz) >= 0
                     ? _doc.SplineSampleHz : 50;
 
@@ -3213,8 +3817,20 @@ namespace ServoAnimator
                 };
                 export.AudioFiles = BuildAudioFilesHeader();
 
+                bool sharedNeckSampled = false;
                 foreach (var servo in SplineServosEnabled())
+                {
+                    if (IsSharedNeckServo(servo))
+                    {
+                        if (!sharedNeckSampled)
+                        {
+                            export.Commands.AddRange(GenerateSharedNeckSplineSamples());
+                            sharedNeckSampled = true;
+                        }
+                        continue;
+                    }
                     export.Commands.AddRange(GenerateSplineSamples(servo));
+                }
 
                 // Audio start command: tells the playback hardware which file
                 // to start and when. Field values mirror the project file:
@@ -3788,6 +4404,10 @@ namespace ServoAnimator
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
             };
             _head.HeadView.CollisionWarningEnabledChanged += HeadView_CollisionWarningEnabledChanged;
+            _head.HeadView.PoseModeChanged += HeadView_PoseModeChanged;
+            _head.HeadView.PoseRgbCommandChanged += HeadView_PoseRgbCommandChanged;
+            _head.HeadView.LibraryPoseSaveRequested += HeadView_LibraryPoseSaveRequested;
+            _head.HeadView.LibraryPoseLoadRequested += HeadView_LibraryPoseLoadRequested;
             _head.DockRequested += () => SetUrdfUndocked(false);
 
             if (EmbeddedHeadView != null)
@@ -3867,13 +4487,15 @@ namespace ServoAnimator
                 {
                     window.HeadView.SetUrdfDriveEnabled(EmbeddedHeadView.UrdfDriveEnabled);
                     window.HeadView.CopyCameraFrom(EmbeddedHeadView, makeOpeningView: true);
+                    window.HeadView.CopyPoseEditorFrom(EmbeddedHeadView);
                 }
                 window.HeadView.SetDetachedHostState();
                 if (!window.IsVisible)
                     window.Show();
                 window.WindowState = _savedUrdfWindowState;
                 window.Activate();
-                PushHeadPose();
+                if (!window.HeadView.PoseEditorActive)
+                    PushHeadPose();
             }
             else if (_head != null)
             {
@@ -3883,11 +4505,13 @@ namespace ServoAnimator
                 {
                     EmbeddedHeadView.SetUrdfDriveEnabled(_head.HeadView.UrdfDriveEnabled);
                     EmbeddedHeadView.CopyCameraFrom(_head.HeadView);
+                    EmbeddedHeadView.CopyPoseEditorFrom(_head.HeadView);
                 }
                 _head.Hide();
                 EmbeddedHeadView?.SetUrdfConfiguration(_urdfConfig);
                 EmbeddedHeadView?.SetServoConfiguration(_servoConfig);
-                PushHeadPose();
+                if (EmbeddedHeadView?.PoseEditorActive != true)
+                    PushHeadPose();
             }
         }
 
@@ -3932,7 +4556,7 @@ namespace ServoAnimator
 
         private void About_Click(object sender, RoutedEventArgs e) =>
             MessageBox.Show(this,
-                $"{AppDisplayName}\nVersion {AppVersion}   Date 2026-08-20\nDesigned by Mark Kovalcson\n\n" +
+                $"{AppDisplayName}\nVersion {AppVersion}   Date 2026-08-23\nDesigned by Mark Kovalcson\n\n" +
                 "Edits servo animation timelines against an audio waveform.\n" +
                 "Cubic Hermite spline interpolation, live drive, an animation\n" +
                 "library, and a movie timeline for ordered sequence projects.\n\n" +
@@ -4803,13 +5427,13 @@ namespace ServoAnimator
             }.ShowDialog();
         }
 
-        /// <summary>Manage single-time-point Library Commands, including
+        /// <summary>Manage single-time-point Library Poses, including
         /// descriptions, image previews and file deletion.</summary>
         private void LibraryCommandsManage_Click(object sender, RoutedEventArgs e)
         {
             EndArrowPrompt();
             new LibraryItemSelectionWindow(LibraryCommandsFolder(), manageMode: true,
-                                           itemLabel: "Library Command",
+                                           itemLabel: "Library Pose",
                                            showAudioFiles: false)
             {
                 Owner = this,
@@ -5003,7 +5627,7 @@ namespace ServoAnimator
             return dir;
         }
 
-        /// <summary>Single-time-point Library Commands live in
+        /// <summary>Single-time-point Library Poses live in
         /// Library\Commands inside the configuration folder.</summary>
         private string LibraryCommandsFolder()
         {

@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Shared browser for selecting/managing Library Sequences and Library Commands.
+// Shared browser for selecting/managing Library Sequences and Library Poses.
 // ---------------------------------------------------------------------------
 
 using System.Collections.ObjectModel;
@@ -26,21 +26,24 @@ namespace ServoAnimator
 
         public LibraryItemSelectionWindow(string libraryFolder, bool manageMode,
                                           string itemLabel = "Library Sequence",
-                                          bool showAudioFiles = true)
+                                          bool showAudioFiles = true,
+                                          string selectActionText = null)
         {
             InitializeComponent();
             HelpSystem.EnableContextHelp(this, "animation-library");
             _manageMode = manageMode;
             _itemLabel = itemLabel;
-            _isCommandMode = itemLabel.EndsWith("Command", StringComparison.OrdinalIgnoreCase);
+            _isCommandMode = itemLabel.EndsWith("Command", StringComparison.OrdinalIgnoreCase) ||
+                             itemLabel.EndsWith("Pose", StringComparison.OrdinalIgnoreCase);
             _items = new ObservableCollection<LibraryItemInfo>(LibraryItemInfo.Scan(libraryFolder));
             _view = CollectionViewSource.GetDefaultView(_items);
             _view.Filter = LibraryFilter;
             ItemsGrid.ItemsSource = _view;
 
-            string plural = _isCommandMode ? "Library Commands" : "Library Sequences";
+            string plural = _isCommandMode ? "Library Poses" : "Library Sequences";
             Title = manageMode ? $"Manage {plural}" : $"Select {itemLabel}";
-            string selectAction = _isCommandMode ? "Insert Selected Command" : "Insert Selected Sequence";
+            string selectAction = selectActionText ??
+                (_isCommandMode ? "Insert Selected Pose" : "Insert Selected Sequence");
             ModeText.Text = manageMode
                 ? $"Select a {itemLabel.ToLowerInvariant()}. Edit its description or delete the selected file. " +
                   "Folder and filename are shown separately; child folders are scanned recursively."
@@ -59,7 +62,7 @@ namespace ServoAnimator
             ImageButton.Visibility = manageMode && _isCommandMode ? Visibility.Visible : Visibility.Collapsed;
             SelectButton.Visibility = manageMode ? Visibility.Collapsed : Visibility.Visible;
 
-            // Only Library Commands support attached images. Keep the Library
+            // Only Library Poses support attached images. Keep the Library
             // Sequence description editor at full width.
             if (!_isCommandMode)
             {
@@ -76,7 +79,7 @@ namespace ServoAnimator
             else
             {
                 SetEmptyState(_isCommandMode
-                    ? "No JSON Library Commands were found."
+                    ? "No JSON Library Poses were found."
                     : "No JSON Library Sequences were found.");
             }
         }
@@ -166,7 +169,7 @@ namespace ServoAnimator
 
             var dlg = new OpenFileDialog
             {
-                Title = item.ImageSource == null ? "Add Library Command Image" : "Change Library Command Image",
+                Title = item.ImageSource == null ? "Add Library Pose Image" : "Change Library Pose Image",
                 Filter = "Image files|*.png;*.jpg;*.jpeg;*.bmp;*.gif|All files|*.*",
                 CheckFileExists = true,
             };
@@ -216,11 +219,11 @@ namespace ServoAnimator
                 NoImageText.Visibility = item.ImageSource == null ? Visibility.Visible : Visibility.Collapsed;
                 ImageButton.Content = item.ImageSource == null ? "Add Image…" : "Change Image…";
                 ErrorText.Foreground = Brushes.LightGreen;
-                ErrorText.Text = "Library Command image saved.";
+                ErrorText.Text = "Library Pose image saved.";
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "Could not attach the Library Command image:\n" + ex.Message,
+                MessageBox.Show(this, "Could not attach the Library Pose image:\n" + ex.Message,
                                 "Library image error", MessageBoxButton.OK,
                                 MessageBoxImage.Error);
             }
@@ -269,7 +272,7 @@ namespace ServoAnimator
                 _view.Refresh();
                 if (_view.IsEmpty)
                     SetEmptyState(_isCommandMode
-                        ? "No JSON Library Commands were found."
+                        ? "No JSON Library Poses were found."
                         : "No JSON Library Sequences were found.");
                 else
                     ItemsGrid.SelectedIndex = 0;

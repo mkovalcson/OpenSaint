@@ -18,11 +18,13 @@
 //   * LEFT-drag a point        -> change its VALUE (vertical, clamped to the
 //                                 servo's range)
 //   * RIGHT-drag a point       -> move its TIME OFFSET (horizontal)
-//   * CTRL + LEFT-click a line -> create a NEW point on the curve at that
-//                                 time (a new command; a '+' appears on the
-//                                 waveform timeline)
+//   * CTRL + LEFT-click a line OR DOUBLE-LEFT-click a line -> create a NEW
+//                                 point on the curve at that time (a new
+//                                 command; a '+' appears on the waveform)
 //   * LEFT-click a point, then press DELETE -> delete that point (the
 //                                 selected point is drawn with a white ring)
+//   * MIDDLE-click an already-selected shared NeckNodUp/NeckTiltRight point
+//                                 -> toggle which neck mode owns that point
 // The view raises events; MainWindow mutates the underlying ServoCommand
 // objects and rebuilds the curves, so edits flow through the whole app.
 //
@@ -108,6 +110,15 @@ namespace ServoAnimator
         public double[] M = Array.Empty<double>();   // precomputed tangents
         public double Min, Max;                      // servo value range
         public bool Visible = true;                  // legend show/hide
+
+        // NeckNodUp and NeckTiltRight can share one physical spline.  For
+        // that special curve Owners/PointColors are parallel to T/V and say
+        // which logical neck control owns each control point (and therefore
+        // the segment that follows it).  Ordinary curves leave these empty.
+        public bool IsSharedNeck;
+        public ServoNames[] Owners = Array.Empty<ServoNames>();
+        public SKColor[] PointColors = Array.Empty<SKColor>();
+        public bool[] PointVisible = Array.Empty<bool>();
     }
 
     // ==================== the control ====================
@@ -141,8 +152,12 @@ namespace ServoAnimator
         public event Action<ServoNames, double, int> PointValueChanged;
         /// <summary>Right-drag: (servo, old time key, new time key).</summary>
         public event Action<ServoNames, double, double> PointTimeChanged;
-        /// <summary>Ctrl+left-click on a line: (servo, time key, value).</summary>
+        /// <summary>Ctrl+left-click or double-left-click on a line:
+        /// (servo, time key, value).</summary>
         public event Action<ServoNames, double, int> PointAdded;
+        /// <summary>Middle-click a selected shared-neck point: toggle it
+        /// between NeckNodUp and NeckTiltRight.</summary>
+        public event Action<ServoNames, double> PointServoToggled;
         /// <summary>A point drag finished (MainWindow does a full refresh).</summary>
         public event Action DragCompleted;
         /// <summary>Delete pressed with a point selected: (servo, time key).</summary>
@@ -271,24 +286,51 @@ namespace ServoAnimator
 
             if (c.T.Length >= 2)
             {
-                // Sample the spline at every pixel column inside the view AND
-                // inside the control-point time range.
-                double tFirst = c.T[0], tLast = c.T[^1];
-                var path = new SKPath();
-                bool started = false;
-
-                int x0 = Math.Max(0, (int)XAtTime(tFirst));
-                int x1 = Math.Min((int)w, (int)XAtTime(tLast) + 1);
-                for (int x = x0; x <= x1; x++)
+                if (c.IsSharedNeck && c.PointColors.Length == c.T.Length)
                 {
-                    double t = TimeAtX(x);
-                    if (t < tFirst || t > tLast) continue;
-                    float y = YOf(SplineUtil.Eval(c.T, c.V, c.M, t));
-                    if (!started) { path.MoveTo(x, y); started = true; }
-                    else path.LineTo(x, y);
+                    // The neck pair is ONE Hermite curve, but ownership changes
+                    // at its control points. Draw each interval in the color of
+                    // the point that owns that interval so the line visibly
+                    // changes color at NeckNodUp/NeckTiltRight hand-offs.
+                    for (int seg = 0; seg < c.T.Length - 1; seg++)
+                    {
+                        if (c.PointVisible.Length == c.T.Length && !c.PointVisible[seg])
+                            continue;
+                        line.Color = c.PointColors[seg];
+                        using var path = new SKPath();
+                        bool started = false;
+                        int x0 = Math.Max(0, (int)XAtTime(c.T[seg]));
+                        int x1 = Math.Min((int)w, (int)XAtTime(c.T[seg + 1]) + 1);
+                        for (int x = x0; x <= x1; x++)
+                        {
+                            double t = TimeAtX(x);
+                            if (t < c.T[seg] || t > c.T[seg + 1]) continue;
+                            float y = YOf(SplineUtil.Eval(c.T, c.V, c.M, t));
+                            if (!started) { path.MoveTo(x, y); started = true; }
+                            else path.LineTo(x, y);
+                        }
+                        if (started) canvas.DrawPath(path, line);
+                    }
                 }
-                if (started) canvas.DrawPath(path, line);
-                path.Dispose();
+                else
+                {
+                    // Ordinary servo: one color for the whole curve.
+                    double tFirst = c.T[0], tLast = c.T[^1];
+                    using var path = new SKPath();
+                    bool started = false;
+
+                    int x0 = Math.Max(0, (int)XAtTime(tFirst));
+                    int x1 = Math.Min((int)w, (int)XAtTime(tLast) + 1);
+                    for (int x = x0; x <= x1; x++)
+                    {
+                        double t = TimeAtX(x);
+                        if (t < tFirst || t > tLast) continue;
+                        float y = YOf(SplineUtil.Eval(c.T, c.V, c.M, t));
+                        if (!started) { path.MoveTo(x, y); started = true; }
+                        else path.LineTo(x, y);
+                    }
+                    if (started) canvas.DrawPath(path, line);
+                }
             }
 
             // Control-point dots (the actual commands on the timeline). The
@@ -299,14 +341,20 @@ namespace ServoAnimator
                 Color = SKColors.White, StrokeWidth = 2,
                 Style = SKPaintStyle.Stroke, IsAntialias = true,
             };
-            foreach (var (t, v) in c.T.Zip(c.V))
+            for (int i = 0; i < c.T.Length; i++)
             {
+                double t = c.T[i], v = c.V[i];
+                if (c.IsSharedNeck && c.PointVisible.Length == c.T.Length && !c.PointVisible[i])
+                    continue;
                 float x = XAtTime(t);
                 if (x < -4 || x > w + 4) continue;
                 float y = YOf(v);
+                ServoNames owner = OwnerAt(c, i);
+                dot.Color = c.IsSharedNeck && c.PointColors.Length == c.T.Length
+                    ? c.PointColors[i] : c.Color;
                 canvas.DrawCircle(x, y, 3.5f, dot);
 
-                if (_hasSelection && _selServo == c.Servo &&
+                if (_hasSelection && _selServo == owner &&
                     ServoCommand.TimeKey(t) == _selKey)
                     canvas.DrawCircle(x, y, 6.5f, sel);
             }
@@ -326,6 +374,8 @@ namespace ServoAnimator
             {
                 for (int i = 0; i < c.T.Length; i++)
                 {
+                    if (c.IsSharedNeck && c.PointVisible.Length == c.T.Length && !c.PointVisible[i])
+                        continue;
                     double dx = XAtTime(c.T[i]) - p.X;
                     double dy = YOf(c, c.V[i]) - p.Y;
                     double d = Math.Sqrt(dx * dx + dy * dy);
@@ -348,6 +398,14 @@ namespace ServoAnimator
             {
                 double tt = TimeAtX(p.X);
                 if (tt < c.T[0] || tt > c.T[^1]) continue;
+                if (c.IsSharedNeck && c.PointVisible.Length == c.T.Length)
+                {
+                    // Determine visibility from the actual latest point, not merely
+                    // the first occurrence of this owner.
+                    int latest = 0;
+                    for (int i = 1; i < c.T.Length && c.T[i] <= tt + 1e-9; i++) latest = i;
+                    if (!c.PointVisible[latest]) continue;
+                }
                 double vv = SplineUtil.Eval(c.T, c.V, c.M, tt);
                 double d = Math.Abs(YOf(c, vv) - p.Y);
                 if (d < bestD) { bestD = d; best = c; t = tt; v = vv; }
@@ -355,8 +413,34 @@ namespace ServoAnimator
             return best;
         }
 
+        private static bool IsSharedNeckServo(ServoNames servo) =>
+            servo is ServoNames.NeckNodUp or ServoNames.NeckTiltRight;
+
+        private static ServoNames OwnerAt(SplineCurve curve, int index)
+        {
+            if (curve.IsSharedNeck && curve.Owners.Length == curve.T.Length &&
+                index >= 0 && index < curve.Owners.Length)
+                return curve.Owners[index];
+            return curve.Servo;
+        }
+
+        private static ServoNames OwnerAtTime(SplineCurve curve, double time)
+        {
+            if (!curve.IsSharedNeck || curve.Owners.Length != curve.T.Length ||
+                curve.T.Length == 0)
+                return curve.Servo;
+
+            // Ownership changes exactly at a neck control point.  Between
+            // points the most recent point remains in control.
+            int index = 0;
+            for (int i = 1; i < curve.T.Length && curve.T[i] <= time + 1e-9; i++)
+                index = i;
+            return curve.Owners[index];
+        }
+
         private SplineCurve CurveOf(ServoNames servo) =>
-            Curves.FirstOrDefault(c => c.Servo == servo);
+            Curves.FirstOrDefault(c => c.Servo == servo ||
+                (c.IsSharedNeck && IsSharedNeckServo(servo)));
 
         // ==================== mouse interaction ====================
 
@@ -372,44 +456,60 @@ namespace ServoAnimator
             base.OnMouseLeftButtonDown(e);
             var p = e.GetPosition(this);
 
-            // CTRL + left click on a line: create a new control point ON the
-            // curve at that time (value = the curve's value there, so the
-            // shape is initially unchanged). MainWindow adds the command and
-            // the '+' marker appears on the waveform.
-            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            // A point takes precedence over the line underneath it. This keeps
+            // double-clicking an existing point from accidentally trying to add
+            // another point at the same time.
+            var pc = HitPoint(p, out int idx);
+
+            // CTRL + left click OR a double-left-click on a spline line creates
+            // a new control point on the curve.  On the shared neck curve the
+            // new point inherits the logical owner of the PREVIOUS point, so a
+            // user can extend a Nod or Tilt stretch without changing ownership.
+            bool addGesture = Keyboard.Modifiers.HasFlag(ModifierKeys.Control) ||
+                              e.ClickCount >= 2;
+            if (addGesture && pc == null)
             {
                 var lc = HitLine(p, out double lt, out double lv);
                 if (lc != null)
                 {
                     double key = ServoCommand.TimeKey(lt);
-                    PointAdded?.Invoke(lc.Servo, key, (int)Math.Round(lv));
+                    ServoNames owner = OwnerAtTime(lc, lt);
+                    PointAdded?.Invoke(owner, key, (int)Math.Round(lv));
+                    TimeClicked?.Invoke(key);
 
                     // The new point becomes the selection (Delete undoes it).
                     _hasSelection = true;
-                    _selServo = lc.Servo;
+                    _selServo = owner;
                     _selKey = key;
                     Focus();
-                    InfoChanged?.Invoke($"{lc.Servo}: {lv:0} @ {key:F3} s (selected)");
+                    InfoChanged?.Invoke($"{owner}: {lv:0} @ {key:F3} s (selected)");
                     InvalidateVisual();
+                    e.Handled = true;
                 }
                 return;
             }
 
             // Left press ON a control point: SELECT it (Delete now removes
             // it) and start a VALUE drag (vertical).
-            var pc = HitPoint(p, out int idx);
             if (pc != null)
             {
                 _drag = DragKind.Value;
-                _dragServo = pc.Servo;
+                _dragServo = OwnerAt(pc, idx);
                 _dragKey = ServoCommand.TimeKey(pc.T[idx]);
 
                 _hasSelection = true;
                 _selServo = _dragServo;
                 _selKey = _dragKey;
+
+                // Selecting a spline control point also selects that exact
+                // timeline location. MainWindow consequently refreshes the
+                // Commands-at-cursor list so every command sharing the point's
+                // millisecond time key is visible immediately.
+                TimeClicked?.Invoke(_dragKey);
+
                 Focus();               // receive the Delete key
                 CaptureMouse();
-                InfoChanged?.Invoke($"{pc.Servo}: {pc.V[idx]:0} @ {pc.T[idx]:F3} s (selected)");
+                InfoChanged?.Invoke($"{_dragServo}: {pc.V[idx]:0} @ {pc.T[idx]:F3} s (selected)");
                 InvalidateVisual();    // show the selection ring
                 return;
             }
@@ -431,7 +531,7 @@ namespace ServoAnimator
             if (pc != null)
             {
                 _drag = DragKind.Time;
-                _dragServo = pc.Servo;
+                _dragServo = OwnerAt(pc, idx);
                 _dragKey = ServoCommand.TimeKey(pc.T[idx]);
                 CaptureMouse();
                 e.Handled = true;
@@ -443,8 +543,32 @@ namespace ServoAnimator
             base.OnMouseDown(e);
             if (e.ChangedButton == MouseButton.Middle)
             {
+                var p = e.GetPosition(this);
+                var pc = HitPoint(p, out int idx);
+                if (pc != null)
+                {
+                    ServoNames owner = OwnerAt(pc, idx);
+                    double key = ServoCommand.TimeKey(pc.T[idx]);
+
+                    // A middle click on the ALREADY SELECTED shared-neck point
+                    // changes which logical ganged control owns that point.
+                    // Middle-drag everywhere else retains normal timeline pan.
+                    if (pc.IsSharedNeck && IsSharedNeckServo(owner) &&
+                        _hasSelection && _selServo == owner && _selKey == key)
+                    {
+                        ServoNames next = owner == ServoNames.NeckNodUp
+                            ? ServoNames.NeckTiltRight : ServoNames.NeckNodUp;
+                        PointServoToggled?.Invoke(owner, key);
+                        _selServo = next;
+                        InfoChanged?.Invoke($"{next}: {pc.V[idx]:0} @ {key:F3} s (selected)");
+                        InvalidateVisual();
+                        e.Handled = true;
+                        return;
+                    }
+                }
+
                 _panning = true;
-                _panStart = e.GetPosition(this);
+                _panStart = p;
                 _panStartView = ViewStart;
                 CaptureMouse();
             }
@@ -506,15 +630,16 @@ namespace ServoAnimator
             if (hp != null)
             {
                 Cursor = Cursors.Hand;
-                InfoChanged?.Invoke($"{hp.Servo}: {hp.V[hi]:0} @ {hp.T[hi]:F3} s" +
-                    (_hasSelection && _selServo == hp.Servo && _selKey == ServoCommand.TimeKey(hp.T[hi]) ? " (selected)" : ""));
+                ServoNames owner = OwnerAt(hp, hi);
+                InfoChanged?.Invoke($"{owner}: {hp.V[hi]:0} @ {hp.T[hi]:F3} s" +
+                    (_hasSelection && _selServo == owner && _selKey == ServoCommand.TimeKey(hp.T[hi]) ? " (selected)" : ""));
             }
             else
             {
                 var hl = HitLine(p, out double ht, out double hv);
                 Cursor = hl != null ? Cursors.Cross : Cursors.Arrow;
                 InfoChanged?.Invoke(hl != null
-                    ? $"{hl.Servo}: {hv:0.##} @ {ht:F3} s"
+                    ? $"{OwnerAtTime(hl, ht)}: {hv:0.##} @ {ht:F3} s"
                     : (_hasSelection ? $"{_selServo} @ {_selKey:F3} s (selected)" : "Hover a spline for exact time/value"));
             }
         }

@@ -11,6 +11,7 @@
 
 using System.Globalization;
 using System.IO;
+using Path = System.IO.Path;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -18,10 +19,50 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 using System.Xml.Linq;
 
 namespace ServoAnimator
 {
+    /// <summary>Logical values currently represented by the URDF pose editor.
+    /// Left/Right eye and flap values use the robot's physical left/right names,
+    /// matching RobotControls rather than screen-side mirroring.</summary>
+    public sealed class RobotPoseSnapshot
+    {
+        public bool LRJoined { get; set; } = true;
+        public double LeftEyeHorizontal { get; set; }
+        public double RightEyeHorizontal { get; set; }
+        public double LeftEyeVertical { get; set; }
+        public double RightEyeVertical { get; set; }
+        public double LeftIris { get; set; }
+        public double RightIris { get; set; }
+        public double LeftTopFlapOpen { get; set; }
+        public double RightTopFlapOpen { get; set; }
+        public double LeftBottomFlapOpen { get; set; }
+        public double RightBottomFlapOpen { get; set; }
+        public double LeftTopFlapTilt { get; set; }
+        public double RightTopFlapTilt { get; set; }
+        public double LeftVent { get; set; }
+        public double RightVent { get; set; }
+        public ServoNames? NeckOwner { get; set; }
+        public double NeckNod { get; set; }
+        public double NeckTilt { get; set; }
+        public double NeckTurn { get; set; }
+        public double NoseBody { get; set; }
+        public double NoseBasket { get; set; }
+        public double LeftEyePop { get; set; }
+        public double RightEyePop { get; set; }
+        public double WhipRaiseLower { get; set; }
+        public double WhipRotate { get; set; }
+        public double MfrUpDown { get; set; }
+        public double MfrRotate { get; set; }
+        public double MicrophoneRaiseLower { get; set; }
+        public string RgbCommand { get; set; } = "";
+
+        public RobotPoseSnapshot Clone() => (RobotPoseSnapshot)MemberwiseClone();
+    }
+
     public sealed class RobotHeadView : Grid
     {
         private const double Deg = Math.PI / 180.0;
@@ -72,6 +113,73 @@ namespace ServoAnimator
         private readonly Button _dockToggleButton = new();
         private readonly StackPanel _cameraRow = new();
         private readonly Thumb _verticalResizeHandle = new();
+
+        // Pose editor overlay.  Controls are ordinary 2-D WPF chrome projected
+        // onto meaningful URDF link locations, so they remain grab-able while
+        // the underlying model continues to render as native WPF 3-D.
+        private readonly Canvas _poseOverlay = new();
+        private readonly Button _poseButton = new();
+        private readonly Button _faceResetButton = new();
+        private readonly Button _libraryPoseSaveButton = new();
+        private readonly Button _libraryPoseLoadButton = new();
+        private readonly Button _lrModeButton = new();
+        private readonly TextBox _poseRgbCommandBox = new();
+        private readonly Button _poseRgbBuildButton = new();
+        private readonly Ellipse _leftEyeTargetCircle = new();
+        private readonly Ellipse _rightEyeTargetCircle = new();
+        private readonly Thumb _leftEyeGazeHandle = new();
+        private readonly Thumb _rightEyeGazeHandle = new();
+        private readonly Button _leftEyeGazeResetButton = new();
+        private readonly Button _rightEyeGazeResetButton = new();
+        private readonly Slider _joinedIrisSlider = new();
+        private readonly Slider _leftIrisSlider = new();
+        private readonly Slider _rightIrisSlider = new();
+        private readonly Slider _joinedFlapOpenSlider = new();
+        private readonly Slider _leftFlapOpenSlider = new();
+        private readonly Slider _rightFlapOpenSlider = new();
+        private readonly Slider _noseBodySlider = new();
+        private readonly Slider _noseBasketSlider = new();
+        private readonly Slider _neckNodSlider = new();
+        private readonly Slider _neckTiltSlider = new();
+        private readonly Slider _joinedEyePopSlider = new();
+        private readonly Slider _leftEyePopSlider = new();
+        private readonly Slider _rightEyePopSlider = new();
+        private readonly Slider _whipRaiseLowerSlider = new();
+        private readonly Slider _mfrUpDownSlider = new();
+        private readonly Slider _microphoneRaiseLowerSlider = new();
+        private readonly System.Windows.Shapes.Path _ventArcPath = new();
+        private readonly Thumb _ventArcHandle = new();
+        private Point _ventArcCenter;
+        private double _ventArcRadius = 1.0;
+        private readonly System.Windows.Shapes.Path _rightVentArcPath = new();
+        private readonly Thumb _rightVentArcHandle = new();
+        private Point _rightVentArcCenter;
+        private double _rightVentArcRadius = 1.0;
+        private readonly Canvas _neckTurnDial = new();
+        private readonly Line _neckTurnDialPointer = new();
+        private readonly Thumb _neckTurnDialHandle = new();
+        private readonly TextBox _neckTurnDialEditor = new();
+        private readonly Button _neckTurnDialResetButton = new();
+        private readonly Canvas _whipRotateDial = new();
+        private readonly Line _whipRotateDialPointer = new();
+        private readonly Thumb _whipRotateDialHandle = new();
+        private readonly TextBox _whipRotateDialEditor = new();
+        private readonly Button _whipRotateDialResetButton = new();
+        private readonly Canvas _mfrRotateDial = new();
+        private readonly Line _mfrRotateDialPointer = new();
+        private readonly Thumb _mfrRotateDialHandle = new();
+        private readonly TextBox _mfrRotateDialEditor = new();
+        private readonly Button _mfrRotateDialResetButton = new();
+        private readonly Dictionary<string, Thumb> _poseThumbs = new(StringComparer.Ordinal);
+        private readonly Dictionary<Slider, Button> _poseSliderResetButtons = new();
+        private readonly Button _ventResetButton = new();
+        private readonly Button _rightVentResetButton = new();
+        private readonly RobotPoseSnapshot _pose = new();
+        private bool _poseEditEnabled;
+        private bool _lrJoined = true;
+        private bool _poseInternalUpdate;
+        private bool _updatingPoseUi;
+
         private bool _hostIsDocked = true;
         private bool _urdfDriveEnabled = true;
         private bool _collisionWarningsEnabled = true;
@@ -99,10 +207,38 @@ namespace ServoAnimator
         private const double NeckBaseBottomAnchor = 35.0;
         private const double FallbackCameraTargetZ = 0.300;
 
-        private double _neckNodLeft;
-        private double _neckNodRight;
-        private double _neckTiltLeft;
-        private double _neckTiltRight;
+        // Library Pose thumbnails intentionally frame the head, expression
+        // mechanisms, and neck while excluding the tall accessory antennas and
+        // microphone.  The current pose of every included link is respected.
+        private static readonly string[] LibraryPoseThumbnailLinks =
+        {
+            "base_link", "neck_yaw_link", "neck_pitch_link", "head_offset_link", "head_link",
+            "left_eye_pop_link", "left_eye_v_link", "left_eye_h_link",
+            "left_pupil_link", "left_pupil_inner_link",
+            "right_eye_pop_link", "right_eye_v_link", "right_eye_h_link",
+            "right_pupil_link", "right_pupil_inner_link",
+            "left_fabco_body_link", "left_fabco_piston_link",
+            "left_bottom_ball_link", "left_top_ball_link",
+            "right_fabco_body_link", "right_fabco_piston_link",
+            "right_bottom_ball_link", "right_top_ball_link",
+            "nose_body_link", "nose_basket_link",
+            "left_top_tilt_link", "left_top_carrier_link", "left_top_flap_link",
+            "right_top_tilt_link", "right_top_carrier_link", "right_top_flap_link",
+            "left_bottom_flap_link", "right_bottom_flap_link",
+            "left_eye_vent_link", "right_eye_vent_link",
+            "left_eye_vent_fin1_link", "left_eye_vent_fin2_link",
+            "left_eye_vent_fin3_link", "left_eye_vent_fin4_link", "left_eye_vent_fin5_link",
+            "right_eye_vent_fin1_link", "right_eye_vent_fin2_link",
+            "right_eye_vent_fin3_link", "right_eye_vent_fin4_link", "right_eye_vent_fin5_link",
+        };
+
+        // NeckNodUp and NeckTiltRight are two logical modes that take turns
+        // owning the SAME physical NeckTiltLeft/NeckTiltRight actuator pair.
+        // Keep one shared pair of logical child values; _activeNeckMode tells
+        // ApplyNeckPose whether that pair currently represents Nod or Tilt.
+        private double _neckLeft;
+        private double _neckRight;
+        private ServoNames? _activeNeckMode;
         private double _leftEyePopLogical;
         private double _rightEyePopLogical;
 
@@ -125,6 +261,12 @@ namespace ServoAnimator
             _viewport.Camera = _camera;
             Children.Add(_viewport);
 
+            // The transparent Canvas itself does not consume clicks away from
+            // its children, so normal camera orbit/zoom continues to work when
+            // Pose mode is off or when the pointer is between pose controls.
+            Children.Add(_poseOverlay);
+            InitializePoseEditorOverlay();
+
             _status.Text = "URDF 3-D head\nDrag to orbit\nMouse wheel to zoom\nDouble-click to reset";
             _status.Foreground = new SolidColorBrush(Color.FromArgb(205, 225, 232, 242));
             _status.Background = new SolidColorBrush(Color.FromArgb(120, 10, 12, 16));
@@ -140,6 +282,22 @@ namespace ServoAnimator
             _bottomControls.HorizontalAlignment = HorizontalAlignment.Left;
             _bottomControls.VerticalAlignment = VerticalAlignment.Bottom;
             _bottomControls.Margin = new Thickness(10);
+
+            _libraryPoseSaveButton.Content = "Library +";
+            _libraryPoseSaveButton.Padding = new Thickness(5, 2, 5, 2);
+            _libraryPoseSaveButton.Margin = new Thickness(0, 0, 0, 3);
+            _libraryPoseSaveButton.ToolTip = "Save the current URDF Pose as a reusable Library Pose";
+            _libraryPoseSaveButton.Visibility = Visibility.Collapsed;
+            _libraryPoseSaveButton.Click += (_, _) => LibraryPoseSaveRequested?.Invoke(this);
+            _bottomControls.Children.Add(_libraryPoseSaveButton);
+
+            _libraryPoseLoadButton.Content = "Library Load";
+            _libraryPoseLoadButton.Padding = new Thickness(5, 2, 5, 2);
+            _libraryPoseLoadButton.Margin = new Thickness(0, 0, 0, 3);
+            _libraryPoseLoadButton.ToolTip = "Load a Library Pose into the URDF Pose editor";
+            _libraryPoseLoadButton.Visibility = Visibility.Collapsed;
+            _libraryPoseLoadButton.Click += (_, _) => LibraryPoseLoadRequested?.Invoke(this);
+            _bottomControls.Children.Add(_libraryPoseLoadButton);
 
             _collisionToggleButton.Padding = new Thickness(5, 2, 5, 2);
             _collisionToggleButton.Margin = new Thickness(0, 0, 0, 3);
@@ -225,16 +383,1985 @@ namespace ServoAnimator
 
             // Recalculate camera framing whenever the available viewport changes
             // so the neck base remains 35 pixels above its bottom edge.
-            SizeChanged += (_, _) => UpdateCamera();
+            SizeChanged += (_, _) => { UpdateCamera(); UpdatePoseOverlayLayout(); };
 
             ResetCamera();
             LoadUrdf();
             Loaded += (_, _) =>
             {
                 UpdateCamera();
+                UpdatePoseOverlayLayout();
                 CaptureOpeningCameraIfNeeded();
             };
         }
+
+        // ================================================================
+        #region Pose editor overlay
+
+        public bool PoseEditorActive => _poseEditEnabled;
+        public bool PoseLRJoined => _lrJoined;
+        public event Action<RobotPoseSnapshot> PoseEdited;
+        public event Action<bool> PoseModeChanged;
+        public event Action<string> PoseRgbCommandChanged;
+        public event Action<RobotHeadView> LibraryPoseSaveRequested;
+        public event Action<RobotHeadView> LibraryPoseLoadRequested;
+
+        public RobotPoseSnapshot CapturePose() 
+        {
+            if (_poseEditEnabled)
+                _pose.RgbCommand = (_poseRgbCommandBox.Text ?? string.Empty).Trim();
+            var copy = _pose.Clone();
+            copy.LRJoined = _lrJoined;
+            return copy;
+        }
+
+        public void SetPoseRgbCommand(string command)
+        {
+            _pose.RgbCommand = command ?? string.Empty;
+            if (!_poseRgbCommandBox.IsKeyboardFocusWithin)
+                _poseRgbCommandBox.Text = _pose.RgbCommand;
+        }
+
+        /// <summary>Load a complete reusable Library Pose into the Pose editor and URDF model.
+        /// The caller owns RGB hardware/preview synchronization.</summary>
+        public void LoadPoseSnapshot(RobotPoseSnapshot snapshot)
+        {
+            if (snapshot == null) return;
+            CopyPoseValues(snapshot, _pose);
+            _lrJoined = snapshot.LRJoined;
+            _pose.LRJoined = _lrJoined;
+            if (!_poseEditEnabled)
+                _poseEditEnabled = true;
+            UpdatePoseModeButtons();
+            _poseRgbCommandBox.Text = _pose.RgbCommand ?? string.Empty;
+            ApplyPoseEditorState(notify: false);
+            UpdatePoseOverlayLayout();
+            PoseModeChanged?.Invoke(true);
+        }
+
+        /// <summary>Used when docking/undocking so an in-progress pose draft
+        /// follows the visible URDF view instead of being replaced by timeline
+        /// playback during the host transition.</summary>
+        public void CopyPoseEditorFrom(RobotHeadView source)
+        {
+            if (source == null) return;
+            var p = source.CapturePose();
+            CopyPoseValues(p, _pose);
+            _lrJoined = p.LRJoined;
+            _poseEditEnabled = source.PoseEditorActive;
+            UpdatePoseModeButtons();
+            if (_poseEditEnabled)
+                ApplyPoseEditorState(notify: false);
+            UpdatePoseOverlayLayout();
+        }
+
+        private static void CopyPoseValues(RobotPoseSnapshot from, RobotPoseSnapshot to)
+        {
+            to.LRJoined = from.LRJoined;
+            to.LeftEyeHorizontal = from.LeftEyeHorizontal;
+            to.RightEyeHorizontal = from.RightEyeHorizontal;
+            to.LeftEyeVertical = from.LeftEyeVertical;
+            to.RightEyeVertical = from.RightEyeVertical;
+            to.LeftIris = from.LeftIris;
+            to.RightIris = from.RightIris;
+            to.LeftTopFlapOpen = from.LeftTopFlapOpen;
+            to.RightTopFlapOpen = from.RightTopFlapOpen;
+            to.LeftBottomFlapOpen = from.LeftBottomFlapOpen;
+            to.RightBottomFlapOpen = from.RightBottomFlapOpen;
+            to.LeftTopFlapTilt = from.LeftTopFlapTilt;
+            to.RightTopFlapTilt = from.RightTopFlapTilt;
+            to.LeftVent = from.LeftVent;
+            to.RightVent = from.RightVent;
+            to.NeckOwner = from.NeckOwner;
+            to.NeckNod = from.NeckNod;
+            to.NeckTilt = from.NeckTilt;
+            to.NeckTurn = from.NeckTurn;
+            to.NoseBody = from.NoseBody;
+            to.NoseBasket = from.NoseBasket;
+            to.LeftEyePop = from.LeftEyePop;
+            to.RightEyePop = from.RightEyePop;
+            to.WhipRaiseLower = from.WhipRaiseLower;
+            to.WhipRotate = from.WhipRotate;
+            to.MfrUpDown = from.MfrUpDown;
+            to.MfrRotate = from.MfrRotate;
+            to.MicrophoneRaiseLower = from.MicrophoneRaiseLower;
+            to.RgbCommand = from.RgbCommand ?? "";
+        }
+
+        private void InitializePoseEditorOverlay()
+        {
+            _poseOverlay.Background = null;
+            _poseOverlay.HorizontalAlignment = HorizontalAlignment.Stretch;
+            _poseOverlay.VerticalAlignment = VerticalAlignment.Stretch;
+
+            _poseButton.Content = "Pose";
+            _poseButton.Padding = new Thickness(7, 2, 7, 2);
+            _poseButton.ToolTip = "Show or hide direct-manipulation pose controls";
+            _poseButton.Click += (_, _) =>
+            {
+                _poseEditEnabled = !_poseEditEnabled;
+                UpdatePoseModeButtons();
+                UpdatePoseOverlayLayout();
+                PoseModeChanged?.Invoke(_poseEditEnabled);
+            };
+            _poseOverlay.Children.Add(_poseButton);
+
+            _faceResetButton.Content = "Face Reset";
+            _faceResetButton.Padding = new Thickness(7, 2, 7, 2);
+            _faceResetButton.ToolTip = "Reset the facial pose to neutral without changing the neck";
+            _faceResetButton.Visibility = Visibility.Collapsed;
+            _faceResetButton.Click += (_, _) => ResetFacePose();
+            _poseOverlay.Children.Add(_faceResetButton);
+
+            _lrModeButton.Content = "LR Joined";
+            _lrModeButton.Padding = new Thickness(7, 2, 7, 2);
+            _lrModeButton.ToolTip = "Joined: eye/flap pose controls move both sides together. Split: left/right controls are independent.";
+            _lrModeButton.Click += (_, _) => ToggleLrMode();
+            _poseOverlay.Children.Add(_lrModeButton);
+
+            _poseRgbCommandBox.Width = 250;
+            // 25% taller than the original 25 px field for easier RGB command editing.
+            _poseRgbCommandBox.Height = 31.25;
+            _poseRgbCommandBox.VerticalContentAlignment = VerticalAlignment.Center;
+            _poseRgbCommandBox.ToolTip = "RGB command included when this Pose is inserted";
+            _poseRgbCommandBox.KeyDown += (_, e) =>
+            {
+                if (e.Key != Key.Enter || !_poseEditEnabled) return;
+                CommitPoseRgbText(preview: true);
+                Keyboard.ClearFocus();
+                e.Handled = true;
+            };
+            _poseRgbCommandBox.LostKeyboardFocus += (_, _) =>
+            {
+                if (_poseEditEnabled) CommitPoseRgbText(preview: true);
+            };
+            _poseOverlay.Children.Add(_poseRgbCommandBox);
+
+            _poseRgbBuildButton.Content = "Build";
+            _poseRgbBuildButton.Padding = new Thickness(8, 2, 8, 2);
+            _poseRgbBuildButton.ToolTip = "Build RGB Command and preview it on the URDF";
+            _poseRgbBuildButton.Click += (_, _) => BuildPoseRgbCommand();
+            _poseOverlay.Children.Add(_poseRgbBuildButton);
+
+            ConfigureTargetCircle(_leftEyeTargetCircle);
+            ConfigureTargetCircle(_rightEyeTargetCircle);
+            _poseOverlay.Children.Add(_leftEyeTargetCircle);
+            _poseOverlay.Children.Add(_rightEyeTargetCircle);
+
+            ConfigureGazeHandle(_leftEyeGazeHandle, "Left eye gaze");
+            ConfigureGazeHandle(_rightEyeGazeHandle, "Right eye gaze");
+            _leftEyeGazeHandle.DragDelta += (_, e) => DragEyeGaze(isLeft: true, e.HorizontalChange, e.VerticalChange);
+            _rightEyeGazeHandle.DragDelta += (_, e) => DragEyeGaze(isLeft: false, e.HorizontalChange, e.VerticalChange);
+            _poseOverlay.Children.Add(_leftEyeGazeHandle);
+            _poseOverlay.Children.Add(_rightEyeGazeHandle);
+
+            ConfigureEyeGazeResetButton(_leftEyeGazeResetButton, "Reset left eye gimbal", () =>
+            {
+                _pose.LeftEyeHorizontal = 0;
+                _pose.LeftEyeVertical = 0;
+            });
+            ConfigureEyeGazeResetButton(_rightEyeGazeResetButton, "Reset eye gimbal", () =>
+            {
+                if (_lrJoined)
+                {
+                    _pose.LeftEyeHorizontal = _pose.RightEyeHorizontal = 0;
+                    _pose.LeftEyeVertical = _pose.RightEyeVertical = 0;
+                }
+                else
+                {
+                    _pose.RightEyeHorizontal = 0;
+                    _pose.RightEyeVertical = 0;
+                }
+            });
+
+            ConfigureIrisSlider(_joinedIrisSlider, "Both irises");
+            ConfigureIrisSlider(_leftIrisSlider, "Left iris");
+            ConfigureIrisSlider(_rightIrisSlider, "Right iris");
+            _joinedIrisSlider.ValueChanged += (_, e) =>
+            {
+                if (_updatingPoseUi || !_poseEditEnabled) return;
+                _pose.LeftIris = _pose.RightIris = e.NewValue;
+                ApplyPoseEditorState();
+            };
+            _leftIrisSlider.ValueChanged += (_, e) =>
+            {
+                if (_updatingPoseUi || !_poseEditEnabled) return;
+                _pose.LeftIris = e.NewValue;
+                ApplyPoseEditorState();
+            };
+            _rightIrisSlider.ValueChanged += (_, e) =>
+            {
+                if (_updatingPoseUi || !_poseEditEnabled) return;
+                _pose.RightIris = e.NewValue;
+                ApplyPoseEditorState();
+            };
+            _poseOverlay.Children.Add(_joinedIrisSlider);
+            _poseOverlay.Children.Add(_leftIrisSlider);
+            _poseOverlay.Children.Add(_rightIrisSlider);
+            AddPoseSliderResetButton(_joinedIrisSlider, "Reset both irises", () => _pose.LeftIris = _pose.RightIris = 0);
+            AddPoseSliderResetButton(_leftIrisSlider, "Reset left iris", () => _pose.LeftIris = 0);
+            AddPoseSliderResetButton(_rightIrisSlider, "Reset right iris", () => _pose.RightIris = 0);
+
+            // Flap Open/Close is represented by a vertical slider centered on
+            // the robot-head face: up opens and down closes. Joined mode moves all
+            // four flaps together; Split mode exposes one vertical slider per side.
+            ConfigurePoseSlider(_joinedFlapOpenSlider, "All flaps: Open up / Close down", -100, 100, Orientation.Vertical, 28, 132);
+            _joinedFlapOpenSlider.ValueChanged += (_, e) =>
+            {
+                if (_updatingPoseUi || !_poseEditEnabled) return;
+                double v = Clamp100(e.NewValue);
+                _pose.LeftTopFlapOpen = _pose.RightTopFlapOpen =
+                    _pose.LeftBottomFlapOpen = _pose.RightBottomFlapOpen = v;
+                ApplyPoseEditorState();
+            };
+            _poseOverlay.Children.Add(_joinedFlapOpenSlider);
+
+            ConfigurePoseSlider(_leftFlapOpenSlider, "Left flaps: Open up / Close down", -100, 100, Orientation.Vertical, 28, 132);
+            _leftFlapOpenSlider.ValueChanged += (_, e) =>
+            {
+                if (_updatingPoseUi || !_poseEditEnabled) return;
+                _pose.LeftTopFlapOpen = _pose.LeftBottomFlapOpen = Clamp100(e.NewValue);
+                ApplyPoseEditorState();
+            };
+            _poseOverlay.Children.Add(_leftFlapOpenSlider);
+
+            ConfigurePoseSlider(_rightFlapOpenSlider, "Right flaps: Open up / Close down", -100, 100, Orientation.Vertical, 28, 132);
+            _rightFlapOpenSlider.ValueChanged += (_, e) =>
+            {
+                if (_updatingPoseUi || !_poseEditEnabled) return;
+                _pose.RightTopFlapOpen = _pose.RightBottomFlapOpen = Clamp100(e.NewValue);
+                ApplyPoseEditorState();
+            };
+            _poseOverlay.Children.Add(_rightFlapOpenSlider);
+            AddPoseSliderResetButton(_joinedFlapOpenSlider, "Reset all flap open/close", () =>
+            {
+                _pose.LeftTopFlapOpen = _pose.RightTopFlapOpen = 0;
+                _pose.LeftBottomFlapOpen = _pose.RightBottomFlapOpen = 0;
+            });
+            AddPoseSliderResetButton(_leftFlapOpenSlider, "Reset left flap open/close", () =>
+                _pose.LeftTopFlapOpen = _pose.LeftBottomFlapOpen = 0);
+            AddPoseSliderResetButton(_rightFlapOpenSlider, "Reset right flap open/close", () =>
+                _pose.RightTopFlapOpen = _pose.RightBottomFlapOpen = 0);
+
+            // Top-flap tilt remains attached directly to the corresponding flap.
+            AddScalarPoseThumb("flapTiltLeft", "T", "Left upper-flap tilt", () => _pose.LeftTopFlapTilt,
+                v => { _pose.LeftTopFlapTilt = Clamp100(v); }, 2.0, vertical: true);
+            AddScalarPoseThumb("flapTiltRight", "T", "Right upper-flap tilt (joined: both upper flaps)", () => _pose.RightTopFlapTilt,
+                v =>
+                {
+                    v = Clamp100(v);
+                    if (_lrJoined) _pose.LeftTopFlapTilt = _pose.RightTopFlapTilt = v;
+                    else _pose.RightTopFlapTilt = v;
+                }, 2.0, vertical: true);
+
+            // Nose Body and Nose Basket use dedicated vertical sliders rather
+            // than floating grab thumbs. The Basket slider is intentionally half
+            // the height of the Body slider.
+            ConfigurePoseSlider(_noseBodySlider, "Nose body", -100, 100,
+                Orientation.Vertical, 28, 110);
+            _noseBodySlider.ValueChanged += (_, e) =>
+            {
+                if (_updatingPoseUi || !_poseEditEnabled) return;
+                _pose.NoseBody = Clamp100(e.NewValue);
+                ApplyPoseEditorState();
+            };
+            _poseOverlay.Children.Add(_noseBodySlider);
+
+            ConfigurePoseSlider(_noseBasketSlider, "Nose basket", 0, 100,
+                Orientation.Vertical, 28, 55);
+            _noseBasketSlider.ValueChanged += (_, e) =>
+            {
+                if (_updatingPoseUi || !_poseEditEnabled) return;
+                _pose.NoseBasket = Math.Clamp(e.NewValue, 0, 100);
+                ApplyPoseEditorState();
+            };
+            _poseOverlay.Children.Add(_noseBasketSlider);
+            AddPoseSliderResetButton(_noseBodySlider, "Reset Nose Body", () => _pose.NoseBody = 0);
+            AddPoseSliderResetButton(_noseBasketSlider, "Reset Nose Basket", () => _pose.NoseBasket = 0);
+
+            InitializeVentArcControl();
+
+            // NeckNodUp and NeckTiltRight take turns owning the same child
+            // actuators. Moving either slider explicitly transfers ownership.
+            ConfigurePoseSlider(_neckNodSlider, "Neck nod", -100, 100, Orientation.Vertical, 28, 132);
+            _neckNodSlider.ValueChanged += (_, e) =>
+            {
+                if (_updatingPoseUi || !_poseEditEnabled) return;
+                _pose.NeckOwner = ServoNames.NeckNodUp;
+                _pose.NeckNod = Clamp100(e.NewValue);
+                ApplyPoseEditorState();
+            };
+            _poseOverlay.Children.Add(_neckNodSlider);
+
+            ConfigurePoseSlider(_neckTiltSlider, "Neck tilt", -100, 100, Orientation.Horizontal, 112, 28);
+            _neckTiltSlider.ValueChanged += (_, e) =>
+            {
+                if (_updatingPoseUi || !_poseEditEnabled) return;
+                _pose.NeckOwner = ServoNames.NeckTiltRight;
+                _pose.NeckTilt = Clamp100(e.NewValue);
+                ApplyPoseEditorState();
+            };
+            _poseOverlay.Children.Add(_neckTiltSlider);
+            AddPoseSliderResetButton(_neckNodSlider, "Reset Neck Nod", () =>
+            {
+                _pose.NeckOwner = ServoNames.NeckNodUp;
+                _pose.NeckNod = 0;
+            });
+            AddPoseSliderResetButton(_neckTiltSlider, "Reset Neck Tilt", () =>
+            {
+                _pose.NeckOwner = ServoNames.NeckTiltRight;
+                _pose.NeckTilt = 0;
+            });
+
+            // Eye Pop is a vertical slider anchored at the bottom-front of the
+            // head. Joined mode uses one center slider; Split exposes both sides.
+            ConfigurePoseSlider(_joinedEyePopSlider, "Both eye pop", 0, 2000, Orientation.Vertical, 28, 108);
+            _joinedEyePopSlider.ValueChanged += (_, e) =>
+            {
+                if (_updatingPoseUi || !_poseEditEnabled) return;
+                _pose.LeftEyePop = _pose.RightEyePop = e.NewValue;
+                ApplyPoseEditorState();
+            };
+            _poseOverlay.Children.Add(_joinedEyePopSlider);
+
+            ConfigurePoseSlider(_leftEyePopSlider, "Left eye pop", 0, 2000, Orientation.Vertical, 28, 108);
+            _leftEyePopSlider.ValueChanged += (_, e) =>
+            {
+                if (_updatingPoseUi || !_poseEditEnabled) return;
+                _pose.LeftEyePop = e.NewValue;
+                ApplyPoseEditorState();
+            };
+            _poseOverlay.Children.Add(_leftEyePopSlider);
+
+            ConfigurePoseSlider(_rightEyePopSlider, "Right eye pop", 0, 2000, Orientation.Vertical, 28, 108);
+            _rightEyePopSlider.ValueChanged += (_, e) =>
+            {
+                if (_updatingPoseUi || !_poseEditEnabled) return;
+                _pose.RightEyePop = e.NewValue;
+                ApplyPoseEditorState();
+            };
+            _poseOverlay.Children.Add(_rightEyePopSlider);
+            AddPoseSliderResetButton(_joinedEyePopSlider, "Reset both Eye Pop values", () => _pose.LeftEyePop = _pose.RightEyePop = 0);
+            AddPoseSliderResetButton(_leftEyePopSlider, "Reset left Eye Pop", () => _pose.LeftEyePop = 0);
+            AddPoseSliderResetButton(_rightEyePopSlider, "Reset right Eye Pop", () => _pose.RightEyePop = 0);
+
+            // Top-of-screen accessory controls. Their horizontal positions follow
+            // the corresponding URDF hardware while their vertical positions stay
+            // pinned to the top of the display so extended antennas remain usable.
+            ConfigurePoseSlider(_whipRaiseLowerSlider, "Whip antenna up/down", 0, 100,
+                Orientation.Vertical, 28, 118);
+            _whipRaiseLowerSlider.ValueChanged += (_, e) =>
+            {
+                if (_updatingPoseUi || !_poseEditEnabled) return;
+                _pose.WhipRaiseLower = Math.Clamp(e.NewValue, 0, 100);
+                ApplyPoseEditorState();
+            };
+            _poseOverlay.Children.Add(_whipRaiseLowerSlider);
+            AddPoseSliderResetButton(_whipRaiseLowerSlider, "Reset whip antenna height", () => _pose.WhipRaiseLower = 0);
+
+            ConfigurePoseSlider(_mfrUpDownSlider, "MFRC antenna up/down", 0, 100,
+                Orientation.Vertical, 28, 118);
+            _mfrUpDownSlider.ValueChanged += (_, e) =>
+            {
+                if (_updatingPoseUi || !_poseEditEnabled) return;
+                _pose.MfrUpDown = Math.Clamp(e.NewValue, 0, 100);
+                ApplyPoseEditorState();
+            };
+            _poseOverlay.Children.Add(_mfrUpDownSlider);
+            AddPoseSliderResetButton(_mfrUpDownSlider, "Reset MFRC antenna height", () => _pose.MfrUpDown = 0);
+
+            ConfigurePoseSlider(_microphoneRaiseLowerSlider, "Microphone up/down", 0, 100,
+                Orientation.Vertical, 28, 100);
+            _microphoneRaiseLowerSlider.ValueChanged += (_, e) =>
+            {
+                if (_updatingPoseUi || !_poseEditEnabled) return;
+                _pose.MicrophoneRaiseLower = Math.Clamp(e.NewValue, 0, 100);
+                ApplyPoseEditorState();
+            };
+            _poseOverlay.Children.Add(_microphoneRaiseLowerSlider);
+            AddPoseSliderResetButton(_microphoneRaiseLowerSlider, "Reset microphone height", () => _pose.MicrophoneRaiseLower = 0);
+
+            InitializeWhipRotateDial();
+            InitializeMfrRotateDial();
+            InitializeNeckTurnDial();
+            ApplyPoseControlRangesFromUrdf();
+            UpdatePoseModeButtons();
+        }
+
+        private Button AddPoseSliderResetButton(Slider slider, string toolTip, Action resetAction)
+        {
+            var button = new Button
+            {
+                Content = "↺",
+                Width = 20,
+                Height = 20,
+                Padding = new Thickness(0),
+                ToolTip = toolTip,
+                Visibility = Visibility.Collapsed,
+                FontSize = 11
+            };
+            button.Click += (_, _) =>
+            {
+                if (!_poseEditEnabled) return;
+                resetAction();
+                ApplyPoseEditorState();
+            };
+            _poseSliderResetButtons[slider] = button;
+            _poseOverlay.Children.Add(button);
+            return button;
+        }
+
+        private void PlaceSliderResetButton(Slider slider)
+        {
+            if (!_poseSliderResetButtons.TryGetValue(slider, out var button)) return;
+            if (slider.Visibility != Visibility.Visible)
+            {
+                button.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            button.Visibility = Visibility.Visible;
+            double left = Canvas.GetLeft(slider);
+            double top = Canvas.GetTop(slider);
+            if (double.IsNaN(left) || double.IsNaN(top)) return;
+
+            // Reset controls always sit on the OUTSIDE of the model relative to
+            // their slider.  Use the slider's direction from the viewport center
+            // so the button never blocks the part of the robot the slider edits.
+            Point sliderCenter = new(left + slider.Width * .5, top + slider.Height * .5);
+            Point modelCenter = new(ActualWidth * .5, ActualHeight * .5);
+            Vector outward = sliderCenter - modelCenter;
+
+            // Side-by-side controls near the face center still need opposite-side
+            // reset buttons, so only fall back to vertical placement when the
+            // slider is essentially centered horizontally.
+            Point buttonCenter;
+            const double gap = 4.0;
+            if (Math.Abs(outward.X) > 8.0)
+            {
+                double sign = Math.Sign(outward.X);
+                buttonCenter = new Point(
+                    sliderCenter.X + sign * (slider.Width * .5 + button.Width * .5 + gap),
+                    sliderCenter.Y);
+            }
+            else
+            {
+                double sign = outward.Y < 0 ? -1.0 : 1.0;
+                buttonCenter = new Point(
+                    sliderCenter.X,
+                    sliderCenter.Y + sign * (slider.Height * .5 + button.Height * .5 + gap));
+            }
+
+            // Keep the button reachable at the display edges while preserving the
+            // outward-side intent.
+            buttonCenter.X = Math.Clamp(buttonCenter.X, button.Width * .5 + 2.0,
+                                        ActualWidth - button.Width * .5 - 2.0);
+            buttonCenter.Y = Math.Clamp(buttonCenter.Y, button.Height * .5 + 2.0,
+                                        ActualHeight - button.Height * .5 - 2.0);
+            SetCanvasCenter(button, buttonCenter);
+        }
+
+        private void ResetFacePose()
+        {
+            if (!_poseEditEnabled) return;
+            _pose.LeftEyeHorizontal = _pose.RightEyeHorizontal = 0;
+            _pose.LeftEyeVertical = _pose.RightEyeVertical = 0;
+            _pose.LeftIris = _pose.RightIris = 0;
+            _pose.LeftTopFlapOpen = _pose.RightTopFlapOpen = 0;
+            _pose.LeftBottomFlapOpen = _pose.RightBottomFlapOpen = 0;
+            _pose.LeftTopFlapTilt = _pose.RightTopFlapTilt = 0;
+            _pose.LeftVent = _pose.RightVent = 0;
+            _pose.NoseBody = 0;
+            _pose.NoseBasket = 0;
+            _pose.LeftEyePop = _pose.RightEyePop = 0;
+
+            // Face Reset also clears the Pose RGB draft.  Publish an empty RGB
+            // update so the host can apply Arduino ClearAll to the URDF preview
+            // (and Live Drive hardware) without storing "ClearAll" as the pose command.
+            _pose.RgbCommand = string.Empty;
+            _poseRgbCommandBox.Text = string.Empty;
+
+            ApplyPoseEditorState();
+            PoseRgbCommandChanged?.Invoke(string.Empty);
+        }
+
+        private void ConfigureTargetCircle(Ellipse e)
+        {
+            e.Stroke = new SolidColorBrush(Color.FromArgb(205, 20, 85, 115));
+            e.StrokeThickness = 1.5;
+            e.Fill = new SolidColorBrush(Color.FromArgb(18, 255, 255, 255));
+            e.IsHitTestVisible = false;
+        }
+
+        private static ControlTemplate PoseThumbTemplate(string label)
+        {
+            var template = new ControlTemplate(typeof(Thumb));
+            var border = new FrameworkElementFactory(typeof(Border));
+            border.SetValue(Border.BackgroundProperty, new SolidColorBrush(Color.FromArgb(225, 250, 250, 250)));
+            border.SetValue(Border.BorderBrushProperty, new SolidColorBrush(Color.FromRgb(20, 80, 110)));
+            border.SetValue(Border.BorderThicknessProperty, new Thickness(1.5));
+            border.SetValue(Border.CornerRadiusProperty, new CornerRadius(12));
+            var text = new FrameworkElementFactory(typeof(TextBlock));
+            text.SetValue(TextBlock.TextProperty, label);
+            text.SetValue(TextBlock.ForegroundProperty, Brushes.Black);
+            text.SetValue(TextBlock.FontWeightProperty, FontWeights.SemiBold);
+            text.SetValue(TextBlock.FontSizeProperty, label.Length > 1 ? 9.0 : 11.0);
+            text.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            text.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
+            border.AppendChild(text);
+            template.VisualTree = border;
+            return template;
+        }
+
+        private Thumb CreatePoseThumb(string label, string toolTip)
+        {
+            var thumb = new Thumb
+            {
+                Width = label.Length > 1 ? 27 : 22,
+                Height = 22,
+                Cursor = Cursors.Hand,
+                ToolTip = toolTip,
+                Template = PoseThumbTemplate(label),
+            };
+            return thumb;
+        }
+
+        private void ConfigureGazeHandle(Thumb thumb, string toolTip)
+        {
+            thumb.Width = thumb.Height = 19;
+            thumb.Cursor = Cursors.SizeAll;
+            thumb.ToolTip = toolTip + ": drag anywhere inside the eye target circle";
+            thumb.Template = PoseThumbTemplate("•");
+        }
+
+        private void ConfigureEyeGazeResetButton(Button button, string toolTip, Action resetAction)
+        {
+            button.Content = "↺";
+            button.Width = button.Height = 20;
+            button.Padding = new Thickness(0);
+            button.FontSize = 11;
+            button.ToolTip = toolTip;
+            button.Visibility = Visibility.Collapsed;
+            button.Click += (_, _) =>
+            {
+                if (!_poseEditEnabled) return;
+                resetAction();
+                ApplyPoseEditorState();
+            };
+            _poseOverlay.Children.Add(button);
+        }
+
+        private void ConfigureIrisSlider(Slider slider, string toolTip)
+        {
+            slider.Minimum = -100;
+            slider.Maximum = 100;
+            slider.Width = 86;
+            slider.Height = 20;
+            slider.IsMoveToPointEnabled = true;
+            slider.ToolTip = toolTip + " (-100 open, +100 closed)";
+        }
+
+        private static void ConfigurePoseSlider(Slider slider, string toolTip,
+            double minimum, double maximum, Orientation orientation, double width, double height)
+        {
+            slider.Minimum = minimum;
+            slider.Maximum = maximum;
+            slider.Orientation = orientation;
+            slider.Width = width;
+            slider.Height = height;
+            slider.IsMoveToPointEnabled = true;
+            slider.ToolTip = toolTip;
+        }
+
+        private void InitializeVentArcControl()
+        {
+            void ConfigureArc(System.Windows.Shapes.Path path, Thumb handle, string toolTip, bool robotLeft)
+            {
+                path.Stroke = new SolidColorBrush(Color.FromArgb(220, 25, 85, 115));
+                path.StrokeThickness = 3.0;
+                path.StrokeStartLineCap = PenLineCap.Round;
+                path.StrokeEndLineCap = PenLineCap.Round;
+                path.IsHitTestVisible = false;
+                _poseOverlay.Children.Add(path);
+
+                handle.Width = handle.Height = 21;
+                handle.Cursor = Cursors.Hand;
+                handle.ToolTip = toolTip;
+                handle.Template = PoseThumbTemplate("V");
+                handle.DragDelta += (_, e) => DragVentArc(robotLeft, e.HorizontalChange, e.VerticalChange);
+                _poseOverlay.Children.Add(handle);
+            }
+
+            ConfigureArc(_ventArcPath, _ventArcHandle,
+                "Left eye vent: drag along the outer eye-tube arc", robotLeft: true);
+            ConfigureArc(_rightVentArcPath, _rightVentArcHandle,
+                "Right eye vent: drag along the mirrored outer eye-tube arc", robotLeft: false);
+
+            void ConfigureReset(Button button, string toolTip, Action reset)
+            {
+                button.Content = "↺";
+                button.Width = button.Height = 20;
+                button.Padding = new Thickness(0);
+                button.FontSize = 11;
+                button.ToolTip = toolTip;
+                button.Visibility = Visibility.Collapsed;
+                button.Click += (_, _) =>
+                {
+                    if (!_poseEditEnabled) return;
+                    reset();
+                    ApplyPoseEditorState();
+                };
+                _poseOverlay.Children.Add(button);
+            }
+
+            ConfigureReset(_ventResetButton, "Reset left/both eye vents", () =>
+            {
+                if (_lrJoined) _pose.LeftVent = _pose.RightVent = 0;
+                else _pose.LeftVent = 0;
+            });
+            ConfigureReset(_rightVentResetButton, "Reset right eye vent", () => _pose.RightVent = 0);
+        }
+
+        private void DragVentArc(bool robotLeft, double dx, double dy)
+        {
+            if (!_poseEditEnabled) return;
+
+            double currentValue = _lrJoined
+                ? Average(_pose.LeftVent, _pose.RightVent)
+                : (robotLeft ? _pose.LeftVent : _pose.RightVent);
+            if (!TryProjectOuterEyeTubeArcPoint(robotLeft, currentValue, out Point current))
+                return;
+
+            Point candidate = new(current.X + dx, current.Y + dy);
+            double bestValue = currentValue;
+            double bestDistance2 = double.MaxValue;
+
+            // Find the closest point on the true projected 3-D outer eye-tube
+            // quarter-circle. This keeps drag behavior correct under camera orbit,
+            // head motion, perspective and LR mirroring.
+            for (int i = 0; i <= 100; i++)
+            {
+                if (!TryProjectOuterEyeTubeArcPoint(robotLeft, i, out Point p)) continue;
+                double ddx = p.X - candidate.X;
+                double ddy = p.Y - candidate.Y;
+                double d2 = ddx * ddx + ddy * ddy;
+                if (d2 < bestDistance2)
+                {
+                    bestDistance2 = d2;
+                    bestValue = i;
+                }
+            }
+
+            if (_lrJoined)
+                _pose.LeftVent = _pose.RightVent = bestValue;
+            else if (robotLeft)
+                _pose.LeftVent = bestValue;
+            else
+                _pose.RightVent = bestValue;
+
+            ApplyPoseEditorState();
+        }
+
+        /// <summary>Project one point on the physical outer edge of an eye tube.
+        /// Value 100 is the top of the tube and value 0 is its outward side.</summary>
+        private bool TryProjectOuterEyeTubeArcPoint(bool robotLeft, double value, out Point screen)
+        {
+            double yCenter = robotLeft ? 0.0998181 : -0.0998396;
+            const double xCenter = 0.1376250;
+            const double radius = 0.04445; // 88.9 mm OD / 2
+            double t = Math.Clamp(value, 0, 100) / 100.0;
+            double theta = t * Math.PI * 0.5; // side -> top
+            double outwardY = (robotLeft ? 1.0 : -1.0) * radius * Math.Cos(theta);
+            double z = radius * Math.Sin(theta);
+            return TryProjectLinkPoint("head_link",
+                new Point3D(xCenter, yCenter + outwardY, z), out screen);
+        }
+
+        private Point VentArcPoint(bool robotLeft, double value)
+        {
+            if (TryProjectOuterEyeTubeArcPoint(robotLeft, value, out Point p)) return p;
+            Point center = robotLeft ? _ventArcCenter : _rightVentArcCenter;
+            double radius = robotLeft ? _ventArcRadius : _rightVentArcRadius;
+            double v = Math.Clamp(value, 0, 100) / 100.0;
+            double angle = robotLeft ? -90.0 * v : -180.0 + 90.0 * v;
+            double r = angle * Deg;
+            return new Point(center.X + Math.Cos(r) * radius,
+                             center.Y + Math.Sin(r) * radius);
+        }
+
+        private void UpdateVentArc(bool robotLeft)
+        {
+            var path = robotLeft ? _ventArcPath : _rightVentArcPath;
+            var handle = robotLeft ? _ventArcHandle : _rightVentArcHandle;
+            var reset = robotLeft ? _ventResetButton : _rightVentResetButton;
+
+            bool visible = robotLeft || !_lrJoined;
+            path.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+            handle.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+            reset.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+            if (!visible) return;
+
+            // Draw the control directly on the projected physical outer edge of
+            // the CAD eye tube instead of approximating it with a screen-space circle.
+            var points = new List<Point>();
+            for (int value = 100; value >= 0; value -= 5)
+                if (TryProjectOuterEyeTubeArcPoint(robotLeft, value, out Point p))
+                    points.Add(p);
+
+            if (points.Count < 2)
+            {
+                path.Visibility = handle.Visibility = reset.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            var figure = new PathFigure { StartPoint = points[0], IsClosed = false, IsFilled = false };
+            for (int i = 1; i < points.Count; i++)
+                figure.Segments.Add(new LineSegment(points[i], true));
+            path.Width = ActualWidth;
+            path.Height = ActualHeight;
+            Canvas.SetLeft(path, 0);
+            Canvas.SetTop(path, 0);
+            path.Data = new PathGeometry(new[] { figure });
+
+            double valueNow = _lrJoined
+                ? Average(_pose.LeftVent, _pose.RightVent)
+                : (robotLeft ? _pose.LeftVent : _pose.RightVent);
+            Point handlePoint = VentArcPoint(robotLeft, valueNow);
+            SetCanvasCenter(handle, handlePoint);
+
+            Vector outward = handlePoint - new Point(ActualWidth * .5, ActualHeight * .5);
+            if (outward.Length < 1) outward = new Vector(robotLeft ? 1 : -1, -1);
+            outward.Normalize();
+            Point resetCenter = handlePoint + outward * 24.0;
+            resetCenter.X = Math.Clamp(resetCenter.X, 12.0, ActualWidth - 12.0);
+            resetCenter.Y = Math.Clamp(resetCenter.Y, 12.0, ActualHeight - 12.0);
+            SetCanvasCenter(reset, resetCenter);
+        }
+
+        /// <summary>
+        /// Project the actual CAD outer eye-tube circle. The SimplifiedHead2 tube
+        /// meshes are approximately 88.9 mm OD, so a 44.45 mm radius in the
+        /// head-link Y/Z plane follows the visible outer tube rather than the
+        /// smaller inner eye-motion target.
+        /// </summary>
+        private bool TryOuterEyeTubeTarget(bool robotLeft, out Point center, out double radius)
+        {
+            center = new Point();
+            radius = 0;
+
+            double y = robotLeft ? 0.0998181 : -0.0998396;
+            var localCenter = new Point3D(0.1376250, y, 0.0);
+            const double physicalRadius = 0.04445;
+
+            if (!TryProjectLinkPoint("head_link", localCenter, out center))
+                return false;
+
+            bool a = TryProjectLinkPoint("head_link",
+                new Point3D(localCenter.X, localCenter.Y + physicalRadius, localCenter.Z), out Point py);
+            bool b = TryProjectLinkPoint("head_link",
+                new Point3D(localCenter.X, localCenter.Y, localCenter.Z + physicalRadius), out Point pz);
+
+            double ry = a ? (py - center).Length : 0;
+            double rz = b ? (pz - center).Length : 0;
+            int count = (a ? 1 : 0) + (b ? 1 : 0);
+            if (count == 0) return false;
+
+            radius = Math.Clamp((ry + rz) / count, 24, 130);
+            return true;
+        }
+
+        private void InitializeNeckTurnDial()
+        {
+            // v1.13.0: 50% larger than the previous dial.  Zero remains at six
+            // o'clock so the pointer reads like the front of the head viewed from above.
+            _neckTurnDial.Width = 156;
+            _neckTurnDial.Height = 168;
+            _neckTurnDial.ToolTip = "NeckTurn: drag the dial handle or edit the calibrated angle in degrees";
+
+            var ring = new Ellipse
+            {
+                Width = 114,
+                Height = 114,
+                Stroke = new SolidColorBrush(Color.FromArgb(230, 25, 75, 100)),
+                StrokeThickness = 2.5,
+                Fill = new SolidColorBrush(Color.FromArgb(30, 255, 255, 255))
+            };
+            Canvas.SetLeft(ring, 21);
+            Canvas.SetTop(ring, 0);
+            _neckTurnDial.Children.Add(ring);
+
+            // Zero reference is deliberately at six o'clock (straight down).
+            var zeroTick = new Line
+            {
+                X1 = 78, Y1 = 100.5, X2 = 78, Y2 = 114,
+                Stroke = new SolidColorBrush(Color.FromRgb(25, 75, 100)),
+                StrokeThickness = 3.5
+            };
+            _neckTurnDial.Children.Add(zeroTick);
+
+            _neckTurnDialPointer.X1 = 78;
+            _neckTurnDialPointer.Y1 = 57;
+            _neckTurnDialPointer.Stroke = Brushes.DarkRed;
+            _neckTurnDialPointer.StrokeThickness = 3.5;
+            _neckTurnDialPointer.StrokeStartLineCap = PenLineCap.Round;
+            _neckTurnDialPointer.StrokeEndLineCap = PenLineCap.Round;
+            _neckTurnDial.Children.Add(_neckTurnDialPointer);
+
+            _neckTurnDialHandle.Width = _neckTurnDialHandle.Height = 22;
+            _neckTurnDialHandle.Cursor = Cursors.Hand;
+            _neckTurnDialHandle.ToolTip = "Drag to turn the neck";
+            _neckTurnDialHandle.Template = PoseThumbTemplate("•");
+            _neckTurnDialHandle.DragDelta += (_, e) =>
+            {
+                if (!_poseEditEnabled) return;
+                double hx = Canvas.GetLeft(_neckTurnDialHandle) + _neckTurnDialHandle.Width / 2.0 + e.HorizontalChange;
+                double hy = Canvas.GetTop(_neckTurnDialHandle) + _neckTurnDialHandle.Height / 2.0 + e.VerticalChange;
+                double angle = Math.Atan2(hx - 78.0, hy - 57.0) / Deg;
+                SetNeckTurnFromDegrees(angle);
+            };
+            _neckTurnDial.Children.Add(_neckTurnDialHandle);
+
+            // Reset lives in the center of the circle as requested. It resets only
+            // NeckTurn; Nod/Tilt remain untouched.
+            _neckTurnDialResetButton.Content = "↺";
+            _neckTurnDialResetButton.Width = 28;
+            _neckTurnDialResetButton.Height = 24;
+            _neckTurnDialResetButton.Padding = new Thickness(0);
+            _neckTurnDialResetButton.FontSize = 12;
+            _neckTurnDialResetButton.ToolTip = "Reset NeckTurn to 0°";
+            _neckTurnDialResetButton.Click += (_, _) =>
+            {
+                if (!_poseEditEnabled) return;
+                _pose.NeckTurn = LogicalNeckTurnFromDegrees(0);
+                ApplyPoseEditorState();
+            };
+            Canvas.SetLeft(_neckTurnDialResetButton, 78 - 14);
+            Canvas.SetTop(_neckTurnDialResetButton, 57 - 12);
+            _neckTurnDial.Children.Add(_neckTurnDialResetButton);
+
+            _neckTurnDialEditor.Width = 84;
+            _neckTurnDialEditor.Height = 32;
+            _neckTurnDialEditor.HorizontalContentAlignment = HorizontalAlignment.Right;
+            _neckTurnDialEditor.VerticalContentAlignment = VerticalAlignment.Center;
+            _neckTurnDialEditor.ToolTip = "Editable calibrated NeckTurn angle in degrees";
+            Canvas.SetLeft(_neckTurnDialEditor, 36);
+            Canvas.SetTop(_neckTurnDialEditor, 130);
+            _neckTurnDialEditor.KeyDown += (_, e) =>
+            {
+                if (e.Key != Key.Enter) return;
+                ApplyNeckTurnEditorValue();
+                Keyboard.ClearFocus();
+                e.Handled = true;
+            };
+            _neckTurnDialEditor.LostKeyboardFocus += (_, _) => ApplyNeckTurnEditorValue();
+            _neckTurnDial.Children.Add(_neckTurnDialEditor);
+            _poseOverlay.Children.Add(_neckTurnDial);
+        }
+
+        private void ApplyNeckTurnEditorValue()
+        {
+            if (!_poseEditEnabled) return;
+            string text = (_neckTurnDialEditor.Text ?? string.Empty).Replace("°", string.Empty).Trim();
+            if (double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out double degrees) ||
+                double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out degrees))
+            {
+                SetNeckTurnFromDegrees(degrees);
+            }
+            else
+            {
+                UpdateNeckTurnDial();
+            }
+        }
+
+        private void SetNeckTurnFromDegrees(double degrees)
+        {
+            _pose.NeckTurn = LogicalNeckTurnFromDegrees(degrees);
+            ApplyPoseEditorState();
+        }
+
+        private double NeckTurnVisualDegrees(double logicalValue) =>
+            -Motion(ServoNames.NeckTurn, RobotControls.NeckTurn, logicalValue);
+
+        private double LogicalNeckTurnFromDegrees(double degrees)
+        {
+            const double logicalMin = -100.0, logicalMax = 100.0;
+            double physicalMin = NeckTurnVisualDegrees(logicalMin);
+            double physicalMax = NeckTurnVisualDegrees(logicalMax);
+            double target = Math.Clamp(degrees,
+                Math.Min(physicalMin, physicalMax), Math.Max(physicalMin, physicalMax));
+            bool increasing = physicalMax >= physicalMin;
+            double lo = logicalMin, hi = logicalMax;
+            for (int i = 0; i < 56; i++)
+            {
+                double mid = (lo + hi) * 0.5;
+                double physical = NeckTurnVisualDegrees(mid);
+                if ((physical < target) == increasing) lo = mid;
+                else hi = mid;
+            }
+            return Clamp100((lo + hi) * 0.5);
+        }
+
+        private void UpdateNeckTurnDial()
+        {
+            double degrees = NeckTurnVisualDegrees(_pose.NeckTurn);
+            double radians = degrees * Deg;
+            const double cx = 78.0, cy = 57.0, length = 43.5;
+            double hx = cx + Math.Sin(radians) * length;
+            double hy = cy + Math.Cos(radians) * length;
+            _neckTurnDialPointer.X2 = hx;
+            _neckTurnDialPointer.Y2 = hy;
+            Canvas.SetLeft(_neckTurnDialHandle, hx - _neckTurnDialHandle.Width / 2.0);
+            Canvas.SetTop(_neckTurnDialHandle, hy - _neckTurnDialHandle.Height / 2.0);
+            if (!_neckTurnDialEditor.IsKeyboardFocusWithin)
+                _neckTurnDialEditor.Text = $"{degrees:0.#}°";
+        }
+
+        private void InitializeWhipRotateDial()
+        {
+            _whipRotateDial.Width = 104;
+            _whipRotateDial.Height = 112;
+            _whipRotateDial.ToolTip = "Whip antenna rotate: drag the dial handle or edit the calibrated angle";
+
+            var ring = new Ellipse
+            {
+                Width = 76,
+                Height = 76,
+                Stroke = new SolidColorBrush(Color.FromArgb(230, 25, 75, 100)),
+                StrokeThickness = 2.0,
+                Fill = new SolidColorBrush(Color.FromArgb(30, 255, 255, 255))
+            };
+            Canvas.SetLeft(ring, 14);
+            Canvas.SetTop(ring, 0);
+            _whipRotateDial.Children.Add(ring);
+
+            var zeroTick = new Line
+            {
+                X1 = 52, Y1 = 67, X2 = 52, Y2 = 76,
+                Stroke = new SolidColorBrush(Color.FromRgb(25, 75, 100)),
+                StrokeThickness = 3.0
+            };
+            _whipRotateDial.Children.Add(zeroTick);
+
+            _whipRotateDialPointer.X1 = 52;
+            _whipRotateDialPointer.Y1 = 38;
+            _whipRotateDialPointer.Stroke = Brushes.DarkRed;
+            _whipRotateDialPointer.StrokeThickness = 3.0;
+            _whipRotateDialPointer.StrokeStartLineCap = PenLineCap.Round;
+            _whipRotateDialPointer.StrokeEndLineCap = PenLineCap.Round;
+            _whipRotateDial.Children.Add(_whipRotateDialPointer);
+
+            _whipRotateDialHandle.Width = _whipRotateDialHandle.Height = 18;
+            _whipRotateDialHandle.Cursor = Cursors.Hand;
+            _whipRotateDialHandle.ToolTip = "Drag to rotate the whip antenna";
+            _whipRotateDialHandle.Template = PoseThumbTemplate("•");
+            _whipRotateDialHandle.DragDelta += (_, e) =>
+            {
+                if (!_poseEditEnabled) return;
+                double hx = Canvas.GetLeft(_whipRotateDialHandle) + _whipRotateDialHandle.Width / 2.0 + e.HorizontalChange;
+                double hy = Canvas.GetTop(_whipRotateDialHandle) + _whipRotateDialHandle.Height / 2.0 + e.VerticalChange;
+                double angle = Math.Atan2(hx - 52.0, hy - 38.0) / Deg;
+                SetWhipRotateFromDegrees(angle);
+            };
+            _whipRotateDial.Children.Add(_whipRotateDialHandle);
+
+            _whipRotateDialResetButton.Content = "↺";
+            _whipRotateDialResetButton.Width = 24;
+            _whipRotateDialResetButton.Height = 22;
+            _whipRotateDialResetButton.Padding = new Thickness(0);
+            _whipRotateDialResetButton.FontSize = 11;
+            _whipRotateDialResetButton.ToolTip = "Reset whip rotation to 0°";
+            _whipRotateDialResetButton.Click += (_, _) =>
+            {
+                if (!_poseEditEnabled) return;
+                _pose.WhipRotate = LogicalWhipRotateFromDegrees(0);
+                ApplyPoseEditorState();
+            };
+            Canvas.SetLeft(_whipRotateDialResetButton, 40);
+            Canvas.SetTop(_whipRotateDialResetButton, 27);
+            _whipRotateDial.Children.Add(_whipRotateDialResetButton);
+
+            _whipRotateDialEditor.Width = 66;
+            _whipRotateDialEditor.Height = 29;
+            _whipRotateDialEditor.HorizontalContentAlignment = HorizontalAlignment.Right;
+            _whipRotateDialEditor.VerticalContentAlignment = VerticalAlignment.Center;
+            _whipRotateDialEditor.ToolTip = "Editable calibrated whip antenna angle in degrees";
+            Canvas.SetLeft(_whipRotateDialEditor, 19);
+            Canvas.SetTop(_whipRotateDialEditor, 81);
+            _whipRotateDialEditor.KeyDown += (_, e) =>
+            {
+                if (e.Key != Key.Enter) return;
+                ApplyWhipRotateEditorValue();
+                Keyboard.ClearFocus();
+                e.Handled = true;
+            };
+            _whipRotateDialEditor.LostKeyboardFocus += (_, _) => ApplyWhipRotateEditorValue();
+            _whipRotateDial.Children.Add(_whipRotateDialEditor);
+            _poseOverlay.Children.Add(_whipRotateDial);
+        }
+
+        private void ApplyWhipRotateEditorValue()
+        {
+            if (!_poseEditEnabled) return;
+            string text = (_whipRotateDialEditor.Text ?? string.Empty).Replace("°", string.Empty).Trim();
+            if (double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out double degrees) ||
+                double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out degrees))
+            {
+                SetWhipRotateFromDegrees(degrees);
+            }
+            else
+            {
+                UpdateWhipRotateDial();
+            }
+        }
+
+        private void SetWhipRotateFromDegrees(double degrees)
+        {
+            _pose.WhipRotate = LogicalWhipRotateFromDegrees(degrees);
+            ApplyPoseEditorState();
+        }
+
+        private double WhipRotateVisualDegrees(double logicalValue) =>
+            -Motion(ServoNames.Whip_Antenna_Rotate, RobotControls.Whip_Antenna_Rotate, logicalValue);
+
+        private double LogicalWhipRotateFromDegrees(double degrees)
+        {
+            const double logicalMin = -100.0, logicalMax = 100.0;
+            double physicalMin = WhipRotateVisualDegrees(logicalMin);
+            double physicalMax = WhipRotateVisualDegrees(logicalMax);
+            double target = Math.Clamp(degrees,
+                Math.Min(physicalMin, physicalMax), Math.Max(physicalMin, physicalMax));
+            bool increasing = physicalMax >= physicalMin;
+            double lo = logicalMin, hi = logicalMax;
+            for (int i = 0; i < 56; i++)
+            {
+                double mid = (lo + hi) * 0.5;
+                double physical = WhipRotateVisualDegrees(mid);
+                if ((physical < target) == increasing) lo = mid;
+                else hi = mid;
+            }
+            return Clamp100((lo + hi) * 0.5);
+        }
+
+        private void UpdateWhipRotateDial()
+        {
+            double degrees = WhipRotateVisualDegrees(_pose.WhipRotate);
+            double radians = degrees * Deg;
+            const double cx = 52.0, cy = 38.0, length = 29.0;
+            double hx = cx + Math.Sin(radians) * length;
+            double hy = cy + Math.Cos(radians) * length;
+            _whipRotateDialPointer.X2 = hx;
+            _whipRotateDialPointer.Y2 = hy;
+            Canvas.SetLeft(_whipRotateDialHandle, hx - _whipRotateDialHandle.Width / 2.0);
+            Canvas.SetTop(_whipRotateDialHandle, hy - _whipRotateDialHandle.Height / 2.0);
+            if (!_whipRotateDialEditor.IsKeyboardFocusWithin)
+                _whipRotateDialEditor.Text = $"{degrees:0.#}°";
+        }
+
+        private void InitializeMfrRotateDial()
+        {
+            _mfrRotateDial.Width = 104;
+            _mfrRotateDial.Height = 112;
+            _mfrRotateDial.ToolTip = "MFRC antenna rotate: drag the dial handle or edit the calibrated angle";
+
+            var ring = new Ellipse
+            {
+                Width = 76,
+                Height = 76,
+                Stroke = new SolidColorBrush(Color.FromArgb(230, 25, 75, 100)),
+                StrokeThickness = 2.0,
+                Fill = new SolidColorBrush(Color.FromArgb(30, 255, 255, 255))
+            };
+            Canvas.SetLeft(ring, 14);
+            Canvas.SetTop(ring, 0);
+            _mfrRotateDial.Children.Add(ring);
+
+            var zeroTick = new Line
+            {
+                X1 = 52, Y1 = 67, X2 = 52, Y2 = 76,
+                Stroke = new SolidColorBrush(Color.FromRgb(25, 75, 100)),
+                StrokeThickness = 3.0
+            };
+            _mfrRotateDial.Children.Add(zeroTick);
+
+            _mfrRotateDialPointer.X1 = 52;
+            _mfrRotateDialPointer.Y1 = 38;
+            _mfrRotateDialPointer.Stroke = Brushes.DarkRed;
+            _mfrRotateDialPointer.StrokeThickness = 3.0;
+            _mfrRotateDialPointer.StrokeStartLineCap = PenLineCap.Round;
+            _mfrRotateDialPointer.StrokeEndLineCap = PenLineCap.Round;
+            _mfrRotateDial.Children.Add(_mfrRotateDialPointer);
+
+            _mfrRotateDialHandle.Width = _mfrRotateDialHandle.Height = 18;
+            _mfrRotateDialHandle.Cursor = Cursors.Hand;
+            _mfrRotateDialHandle.ToolTip = "Drag to rotate the MFRC antenna";
+            _mfrRotateDialHandle.Template = PoseThumbTemplate("•");
+            _mfrRotateDialHandle.DragDelta += (_, e) =>
+            {
+                if (!_poseEditEnabled) return;
+                double hx = Canvas.GetLeft(_mfrRotateDialHandle) + _mfrRotateDialHandle.Width / 2.0 + e.HorizontalChange;
+                double hy = Canvas.GetTop(_mfrRotateDialHandle) + _mfrRotateDialHandle.Height / 2.0 + e.VerticalChange;
+                double angle = Math.Atan2(hx - 52.0, hy - 38.0) / Deg;
+                SetMfrRotateFromDegrees(angle);
+            };
+            _mfrRotateDial.Children.Add(_mfrRotateDialHandle);
+
+            _mfrRotateDialResetButton.Content = "↺";
+            _mfrRotateDialResetButton.Width = 24;
+            _mfrRotateDialResetButton.Height = 22;
+            _mfrRotateDialResetButton.Padding = new Thickness(0);
+            _mfrRotateDialResetButton.FontSize = 11;
+            _mfrRotateDialResetButton.ToolTip = "Reset MFRC rotation to 0°";
+            _mfrRotateDialResetButton.Click += (_, _) =>
+            {
+                if (!_poseEditEnabled) return;
+                _pose.MfrRotate = LogicalMfrRotateFromDegrees(0);
+                ApplyPoseEditorState();
+            };
+            Canvas.SetLeft(_mfrRotateDialResetButton, 40);
+            Canvas.SetTop(_mfrRotateDialResetButton, 27);
+            _mfrRotateDial.Children.Add(_mfrRotateDialResetButton);
+
+            _mfrRotateDialEditor.Width = 66;
+            _mfrRotateDialEditor.Height = 29;
+            _mfrRotateDialEditor.HorizontalContentAlignment = HorizontalAlignment.Right;
+            _mfrRotateDialEditor.VerticalContentAlignment = VerticalAlignment.Center;
+            _mfrRotateDialEditor.ToolTip = "Editable calibrated MFRC antenna angle in degrees";
+            Canvas.SetLeft(_mfrRotateDialEditor, 19);
+            Canvas.SetTop(_mfrRotateDialEditor, 81);
+            _mfrRotateDialEditor.KeyDown += (_, e) =>
+            {
+                if (e.Key != Key.Enter) return;
+                ApplyMfrRotateEditorValue();
+                Keyboard.ClearFocus();
+                e.Handled = true;
+            };
+            _mfrRotateDialEditor.LostKeyboardFocus += (_, _) => ApplyMfrRotateEditorValue();
+            _mfrRotateDial.Children.Add(_mfrRotateDialEditor);
+            _poseOverlay.Children.Add(_mfrRotateDial);
+        }
+
+        private void ApplyMfrRotateEditorValue()
+        {
+            if (!_poseEditEnabled) return;
+            string text = (_mfrRotateDialEditor.Text ?? string.Empty).Replace("°", string.Empty).Trim();
+            if (double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out double degrees) ||
+                double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out degrees))
+                SetMfrRotateFromDegrees(degrees);
+            else
+                UpdateMfrRotateDial();
+        }
+
+        private void SetMfrRotateFromDegrees(double degrees)
+        {
+            _pose.MfrRotate = LogicalMfrRotateFromDegrees(degrees);
+            ApplyPoseEditorState();
+        }
+
+        private double MfrRotateVisualDegrees(double logicalValue) =>
+            -Motion(ServoNames.MFR_Rotate, RobotControls.MFR_Rotate, logicalValue);
+
+        private double LogicalMfrRotateFromDegrees(double degrees)
+        {
+            const double logicalMin = -100.0, logicalMax = 100.0;
+            double physicalMin = MfrRotateVisualDegrees(logicalMin);
+            double physicalMax = MfrRotateVisualDegrees(logicalMax);
+            double target = Math.Clamp(degrees,
+                Math.Min(physicalMin, physicalMax), Math.Max(physicalMin, physicalMax));
+            bool increasing = physicalMax >= physicalMin;
+            double lo = logicalMin, hi = logicalMax;
+            for (int i = 0; i < 56; i++)
+            {
+                double mid = (lo + hi) * 0.5;
+                double physical = MfrRotateVisualDegrees(mid);
+                if ((physical < target) == increasing) lo = mid;
+                else hi = mid;
+            }
+            return Clamp100((lo + hi) * 0.5);
+        }
+
+        private void UpdateMfrRotateDial()
+        {
+            double degrees = MfrRotateVisualDegrees(_pose.MfrRotate);
+            double radians = degrees * Deg;
+            const double cx = 52.0, cy = 38.0, length = 29.0;
+            double hx = cx + Math.Sin(radians) * length;
+            double hy = cy + Math.Cos(radians) * length;
+            _mfrRotateDialPointer.X2 = hx;
+            _mfrRotateDialPointer.Y2 = hy;
+            Canvas.SetLeft(_mfrRotateDialHandle, hx - _mfrRotateDialHandle.Width / 2.0);
+            Canvas.SetTop(_mfrRotateDialHandle, hy - _mfrRotateDialHandle.Height / 2.0);
+            if (!_mfrRotateDialEditor.IsKeyboardFocusWithin)
+                _mfrRotateDialEditor.Text = $"{degrees:0.#}°";
+        }
+
+        private void AddScalarPoseThumb(string key, string label, string toolTip,
+            Func<double> getter, Action<double> setter, double unitsPerPixel, bool vertical)
+        {
+            var thumb = CreatePoseThumb(label, toolTip);
+            thumb.DragDelta += (_, e) =>
+            {
+                if (!_poseEditEnabled) return;
+                double delta = vertical ? -e.VerticalChange : e.HorizontalChange;
+                setter(getter() + delta * unitsPerPixel);
+                ApplyPoseEditorState();
+            };
+            _poseThumbs[key] = thumb;
+            _poseOverlay.Children.Add(thumb);
+        }
+
+        private void ToggleLrMode()
+        {
+            if (!_poseEditEnabled) return;
+            if (_lrJoined)
+            {
+                _lrJoined = false; // retain the current matching values, then diverge freely
+            }
+            else
+            {
+                _lrJoined = true;
+                double h = Average(_pose.LeftEyeHorizontal, _pose.RightEyeHorizontal);
+                double v = Average(_pose.LeftEyeVertical, _pose.RightEyeVertical);
+                double iris = Average(_pose.LeftIris, _pose.RightIris);
+                double open = Average(_pose.LeftTopFlapOpen, _pose.RightTopFlapOpen,
+                                      _pose.LeftBottomFlapOpen, _pose.RightBottomFlapOpen);
+                double tilt = Average(_pose.LeftTopFlapTilt, _pose.RightTopFlapTilt);
+                _pose.LeftEyeHorizontal = _pose.RightEyeHorizontal = h;
+                _pose.LeftEyeVertical = _pose.RightEyeVertical = v;
+                _pose.LeftIris = _pose.RightIris = iris;
+                _pose.LeftTopFlapOpen = _pose.RightTopFlapOpen = open;
+                _pose.LeftBottomFlapOpen = _pose.RightBottomFlapOpen = open;
+                _pose.LeftTopFlapTilt = _pose.RightTopFlapTilt = tilt;
+                ApplyPoseEditorState();
+            }
+            _pose.LRJoined = _lrJoined;
+            UpdatePoseModeButtons();
+            UpdatePoseOverlayLayout();
+        }
+
+        private void CommitPoseRgbText(bool preview)
+        {
+            _pose.RgbCommand = (_poseRgbCommandBox.Text ?? string.Empty).Trim();
+            if (preview && !string.IsNullOrWhiteSpace(_pose.RgbCommand))
+                PoseRgbCommandChanged?.Invoke(_pose.RgbCommand);
+        }
+
+        private void BuildPoseRgbCommand()
+        {
+            if (!_poseEditEnabled) return;
+            CommitPoseRgbText(preview: false);
+            var builder = new RgbBuilderWindow(_pose.RgbCommand)
+            {
+                Owner = Window.GetWindow(this)
+            };
+            if (builder.ShowDialog() != true) return;
+            _pose.RgbCommand = builder.ResultText ?? string.Empty;
+            _poseRgbCommandBox.Text = _pose.RgbCommand;
+            if (!string.IsNullOrWhiteSpace(_pose.RgbCommand))
+                PoseRgbCommandChanged?.Invoke(_pose.RgbCommand);
+        }
+
+        /// <summary>
+        /// Pose controls use the same normalized authoring ranges that feed the
+        /// calibrated URDF mapping.  Changing URDF Min/Max/Zero therefore changes
+        /// the physical endpoints reached by these controls without allowing the
+        /// Pose editor to exceed those calibrated endpoints.
+        /// </summary>
+        private void ApplyPoseControlRangesFromUrdf()
+        {
+            void Range(Slider slider, ServoNames servo)
+            {
+                var r = UrdfConfiguration.TestInputRange(servo);
+                slider.Minimum = r.Min;
+                slider.Maximum = r.Max;
+            }
+
+            Range(_joinedFlapOpenSlider, ServoNames.FlapsOpen);
+            Range(_leftFlapOpenSlider, ServoNames.FlapsOpen);
+            Range(_rightFlapOpenSlider, ServoNames.FlapsOpen);
+            Range(_noseBodySlider, ServoNames.NoseBody);
+            Range(_noseBasketSlider, ServoNames.NoseBasket);
+            Range(_neckNodSlider, ServoNames.NeckNodUp);
+            Range(_neckTiltSlider, ServoNames.NeckTiltRight);
+            Range(_whipRaiseLowerSlider, ServoNames.Whip_Antenna_RaiseLower);
+            Range(_mfrUpDownSlider, ServoNames.MFR_UpDown);
+            Range(_microphoneRaiseLowerSlider, ServoNames.Microphone_RaiseLower);
+
+            // EyePop's timeline authoring convention is 0..2000 while the URDF
+            // calibration maps that entire interval onto its configured mm endpoints.
+            _joinedEyePopSlider.Minimum = _leftEyePopSlider.Minimum = _rightEyePopSlider.Minimum = 0;
+            _joinedEyePopSlider.Maximum = _leftEyePopSlider.Maximum = _rightEyePopSlider.Maximum = 2000;
+        }
+
+        private void UpdatePoseModeButtons()
+        {
+            _poseButton.Content = _poseEditEnabled ? "Pose: On" : "Pose";
+            _poseButton.Background = new SolidColorBrush(_poseEditEnabled
+                ? Color.FromRgb(0xC9, 0xED, 0xC5)
+                : Color.FromRgb(0xDD, 0xDD, 0xDD));
+            _poseButton.Foreground = Brushes.Black;
+            _lrModeButton.Content = _lrJoined ? "LR Joined" : "LR Split";
+            _lrModeButton.Visibility = _poseEditEnabled ? Visibility.Visible : Visibility.Collapsed;
+            _poseRgbCommandBox.Visibility = _poseEditEnabled ? Visibility.Visible : Visibility.Collapsed;
+            _poseRgbBuildButton.Visibility = _poseEditEnabled ? Visibility.Visible : Visibility.Collapsed;
+            _faceResetButton.Visibility = _poseEditEnabled ? Visibility.Visible : Visibility.Collapsed;
+            _libraryPoseSaveButton.Visibility = _poseEditEnabled ? Visibility.Visible : Visibility.Collapsed;
+            _libraryPoseLoadButton.Visibility = _poseEditEnabled ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private static double Clamp100(double v) => Math.Clamp(v, -100, 100);
+        private static double Average(params double[] values) => values.Length == 0 ? 0 : values.Average();
+
+        private void DragEyeGaze(bool isLeft, double dx, double dy)
+        {
+            if (!_poseEditEnabled) return;
+            double radius = EyeTargetRadius(isLeft);
+            if (radius < 4) radius = 35;
+
+            double h = isLeft ? _pose.LeftEyeHorizontal : _pose.RightEyeHorizontal;
+            double v = isLeft ? _pose.LeftEyeVertical : _pose.RightEyeVertical;
+            // Horizontal grab direction is intentionally reversed relative
+            // to the logical EyesHorizontalRight sign used by the command grid.
+            double x = -h / 100.0 * radius + dx;
+            double y = -v / 100.0 * radius + dy;
+            double len = Math.Sqrt(x * x + y * y);
+            if (len > radius)
+            {
+                x *= radius / len;
+                y *= radius / len;
+            }
+            h = Clamp100(-x / radius * 100.0);
+            v = Clamp100(-y / radius * 100.0);
+
+            if (_lrJoined)
+            {
+                _pose.LeftEyeHorizontal = _pose.RightEyeHorizontal = h;
+                _pose.LeftEyeVertical = _pose.RightEyeVertical = v;
+            }
+            else if (isLeft)
+            {
+                _pose.LeftEyeHorizontal = h;
+                _pose.LeftEyeVertical = v;
+            }
+            else
+            {
+                _pose.RightEyeHorizontal = h;
+                _pose.RightEyeVertical = v;
+            }
+            ApplyPoseEditorState();
+        }
+
+        private void ApplyPoseEditorState(bool notify = true)
+        {
+            if (_scene == null) return;
+            _poseInternalUpdate = true;
+            _suppressCollisionRefresh = true;
+            try
+            {
+                SetControl(ServoNames.EyesHorizontalRight, RobotControls.LeftLensHorizontal, _pose.LeftEyeHorizontal);
+                SetControl(ServoNames.EyesHorizontalRight, RobotControls.RightLensHorizontal, _pose.RightEyeHorizontal);
+                SetControl(ServoNames.EyesVerticalUp, RobotControls.LeftLensVertical, _pose.LeftEyeVertical);
+                SetControl(ServoNames.EyesVerticalUp, RobotControls.RightLensVertical, _pose.RightEyeVertical);
+                SetControl(ServoNames.IrisClose, RobotControls.LeftIris, _pose.LeftIris);
+                SetControl(ServoNames.IrisClose, RobotControls.RightIris, _pose.RightIris);
+                SetControl(ServoNames.FlapsOpen, RobotControls.BrowLeftTopOpen, _pose.LeftTopFlapOpen);
+                SetControl(ServoNames.FlapsOpen, RobotControls.BrowRightTopOpen, _pose.RightTopFlapOpen);
+                SetControl(ServoNames.FlapsOpen, RobotControls.BrowLeftBottomOpen, _pose.LeftBottomFlapOpen);
+                SetControl(ServoNames.FlapsOpen, RobotControls.BrowRightBottomOpen, _pose.RightBottomFlapOpen);
+                SetControl(ServoNames.FlapTiltUp, RobotControls.BrowLeftTopTilt, _pose.LeftTopFlapTilt);
+                SetControl(ServoNames.FlapTiltUp, RobotControls.BrowRightTopTilt, _pose.RightTopFlapTilt);
+                SetControl(ServoNames.VentsOpen, RobotControls.LeftEyeVent, _pose.LeftVent);
+                SetControl(ServoNames.VentsOpen, RobotControls.RightEyeVent, _pose.RightVent);
+
+                SetSharedNeckState(_pose.NeckOwner, _pose.NeckNod, _pose.NeckTilt);
+                ApplyNeckPose(_pose.NeckTurn);
+
+                SetServo(ServoNames.NoseBody, _pose.NoseBody);
+                SetServo(ServoNames.NoseBasket, _pose.NoseBasket);
+                SetServo(ServoNames.LeftEyePop, _pose.LeftEyePop);
+                SetServo(ServoNames.RightEyePop, _pose.RightEyePop);
+                SetServo(ServoNames.Whip_Antenna_RaiseLower, _pose.WhipRaiseLower);
+                SetServo(ServoNames.Whip_Antenna_Rotate, _pose.WhipRotate);
+                SetServo(ServoNames.MFR_UpDown, _pose.MfrUpDown);
+                SetServo(ServoNames.MFR_Rotate, _pose.MfrRotate);
+                SetServo(ServoNames.Microphone_RaiseLower, _pose.MicrophoneRaiseLower);
+            }
+            finally
+            {
+                _poseInternalUpdate = false;
+                _suppressCollisionRefresh = false;
+            }
+            RefreshCollisionState();
+            UpdatePoseOverlayLayout();
+            if (notify) PoseEdited?.Invoke(CapturePose());
+        }
+
+        /// <summary>Capture the ordinary timeline/grid pose that is currently
+        /// being pushed into this view.  Pose mode freezes that snapshot as the
+        /// starting point for direct manipulation.</summary>
+        private void CaptureIncomingPose(double eyeHLeftScreen, double eyeHRightScreen,
+                            double eyeVLeftScreen, double eyeVRightScreen,
+                            double irisLeftScreen, double irisRightScreen,
+                            double topFlapLeftScreen, double topFlapRightScreen,
+                            double bottomFlapLeftScreen, double bottomFlapRightScreen,
+                            double tiltLeftScreen, double tiltRightScreen,
+                            double ventsLeftScreen, double ventsRightScreen,
+                            double neckTilt, double neckNod, ServoNames? neckOwner, double neckTurn,
+                            double whip, double mic, double mfr, double noseBody, double noseBasket,
+                            double leftEyePop, double rightEyePop, double whipRotate, double mfrRotate)
+        {
+            // SetPose arguments use SCREEN sides. Convert back to physical
+            // RobotControls Left/Right for the pose snapshot.
+            _pose.LeftEyeHorizontal = eyeHRightScreen;
+            _pose.RightEyeHorizontal = eyeHLeftScreen;
+            _pose.LeftEyeVertical = eyeVRightScreen;
+            _pose.RightEyeVertical = eyeVLeftScreen;
+            _pose.LeftIris = irisRightScreen;
+            _pose.RightIris = irisLeftScreen;
+            _pose.LeftTopFlapOpen = topFlapRightScreen;
+            _pose.RightTopFlapOpen = topFlapLeftScreen;
+            _pose.LeftBottomFlapOpen = bottomFlapRightScreen;
+            _pose.RightBottomFlapOpen = bottomFlapLeftScreen;
+            _pose.LeftTopFlapTilt = tiltRightScreen;
+            _pose.RightTopFlapTilt = tiltLeftScreen;
+            _pose.LeftVent = ventsRightScreen;
+            _pose.RightVent = ventsLeftScreen;
+            _pose.NeckTilt = neckTilt;
+            _pose.NeckNod = neckNod;
+            _pose.NeckOwner = neckOwner;
+            _pose.NeckTurn = neckTurn;
+            _pose.WhipRaiseLower = whip;
+            _pose.MicrophoneRaiseLower = mic;
+            _pose.MfrUpDown = mfr;
+            _pose.NoseBody = noseBody;
+            _pose.NoseBasket = noseBasket;
+            _pose.LeftEyePop = leftEyePop;
+            _pose.RightEyePop = rightEyePop;
+            _pose.WhipRotate = whipRotate;
+            _pose.MfrRotate = mfrRotate;
+            _pose.LRJoined = _lrJoined;
+        }
+
+        private void UpdatePoseStateForServo(ServoNames servo, double value)
+        {
+            switch (servo)
+            {
+                case ServoNames.EyesHorizontalRight: _pose.LeftEyeHorizontal = _pose.RightEyeHorizontal = value; break;
+                case ServoNames.EyesVerticalUp: _pose.LeftEyeVertical = _pose.RightEyeVertical = value; break;
+                case ServoNames.IrisClose: _pose.LeftIris = _pose.RightIris = value; break;
+                case ServoNames.FlapsOpen:
+                    _pose.LeftTopFlapOpen = _pose.RightTopFlapOpen = _pose.LeftBottomFlapOpen = _pose.RightBottomFlapOpen = value; break;
+                case ServoNames.FlapTiltUp: _pose.LeftTopFlapTilt = _pose.RightTopFlapTilt = value; break;
+                case ServoNames.VentsOpen: _pose.LeftVent = _pose.RightVent = value; break;
+                case ServoNames.NeckTurn: _pose.NeckTurn = value; break;
+                case ServoNames.NeckNodUp: _pose.NeckOwner = servo; _pose.NeckNod = value; break;
+                case ServoNames.NeckTiltRight: _pose.NeckOwner = servo; _pose.NeckTilt = value; break;
+                case ServoNames.NoseBody: _pose.NoseBody = value; break;
+                case ServoNames.NoseBasket: _pose.NoseBasket = value; break;
+                case ServoNames.LeftEyePop: _pose.LeftEyePop = value; break;
+                case ServoNames.RightEyePop: _pose.RightEyePop = value; break;
+                case ServoNames.BothEyePop: _pose.LeftEyePop = _pose.RightEyePop = value; break;
+                case ServoNames.Whip_Antenna_RaiseLower: _pose.WhipRaiseLower = value; break;
+                case ServoNames.Whip_Antenna_Rotate: _pose.WhipRotate = value; break;
+                case ServoNames.MFR_UpDown: _pose.MfrUpDown = value; break;
+                case ServoNames.MFR_Rotate: _pose.MfrRotate = value; break;
+                case ServoNames.Microphone_RaiseLower: _pose.MicrophoneRaiseLower = value; break;
+            }
+        }
+
+        private void UpdatePoseStateForChild(ServoNames parent, RobotControls control, double value)
+        {
+            switch (control)
+            {
+                case RobotControls.LeftLensHorizontal: _pose.LeftEyeHorizontal = value; break;
+                case RobotControls.RightLensHorizontal: _pose.RightEyeHorizontal = value; break;
+                case RobotControls.LeftLensVertical: _pose.LeftEyeVertical = value; break;
+                case RobotControls.RightLensVertical: _pose.RightEyeVertical = value; break;
+                case RobotControls.LeftIris: _pose.LeftIris = value; break;
+                case RobotControls.RightIris: _pose.RightIris = value; break;
+                case RobotControls.BrowLeftTopOpen: _pose.LeftTopFlapOpen = value; break;
+                case RobotControls.BrowRightTopOpen: _pose.RightTopFlapOpen = value; break;
+                case RobotControls.BrowLeftBottomOpen: _pose.LeftBottomFlapOpen = value; break;
+                case RobotControls.BrowRightBottomOpen: _pose.RightBottomFlapOpen = value; break;
+                case RobotControls.BrowLeftTopTilt: _pose.LeftTopFlapTilt = value; break;
+                case RobotControls.BrowRightTopTilt: _pose.RightTopFlapTilt = value; break;
+                case RobotControls.LeftEyeVent: _pose.LeftVent = value; break;
+                case RobotControls.RightEyeVent: _pose.RightVent = value; break;
+            }
+            if (parent is ServoNames.NeckNodUp or ServoNames.NeckTiltRight)
+            {
+                _pose.NeckOwner = parent;
+                if (parent == ServoNames.NeckNodUp) _pose.NeckNod = value;
+                else _pose.NeckTilt = value;
+            }
+        }
+
+        private void UpdatePoseOverlayLayout()
+        {
+            if (ActualWidth < 2 || ActualHeight < 2) return;
+
+            // Pose button: true geometric midpoint between the camera's right
+            // arrow and the bottom-center resize-handle location. This remains
+            // meaningful in the detached view, where the handle itself is hidden.
+            Point arrowCenter;
+            try
+            {
+                arrowCenter = _cameraPlus90Button.TranslatePoint(
+                    new Point(Math.Max(0, _cameraPlus90Button.ActualWidth / 2),
+                              Math.Max(0, _cameraPlus90Button.ActualHeight / 2)), this);
+            }
+            catch { arrowCenter = new Point(150, ActualHeight - 22); }
+            var bottomHandleCenter = new Point(ActualWidth / 2.0, ActualHeight - 6.0);
+            Point poseButtonCenter =
+                new((arrowCenter.X + bottomHandleCenter.X) / 2.0,
+                    (arrowCenter.Y + bottomHandleCenter.Y) / 2.0);
+            SetCanvasCenter(_poseButton, poseButtonCenter);
+            double poseWidth = Math.Max(52.0, _poseButton.ActualWidth);
+            double faceWidth = Math.Max(72.0, _faceResetButton.ActualWidth);
+            SetCanvasCenter(_faceResetButton,
+                new Point(poseButtonCenter.X + poseWidth * .5 + faceWidth * .5 + 6.0,
+                          poseButtonCenter.Y));
+
+            if (!_poseEditEnabled)
+            {
+                foreach (UIElement child in _poseOverlay.Children)
+                    if (!ReferenceEquals(child, _poseButton)) child.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            _lrModeButton.Visibility = Visibility.Visible;
+            SetCanvasCenter(_lrModeButton, new Point(ActualWidth / 2.0, 52));
+
+            _poseRgbCommandBox.Visibility = Visibility.Visible;
+            _poseRgbBuildButton.Visibility = Visibility.Visible;
+            if (!_poseRgbCommandBox.IsKeyboardFocusWithin)
+                _poseRgbCommandBox.Text = _pose.RgbCommand ?? string.Empty;
+            double rgbRowWidth = _poseRgbCommandBox.Width + Math.Max(54.0, _poseRgbBuildButton.ActualWidth) + 6.0;
+            double rgbLeft = Math.Max(6.0, (ActualWidth - rgbRowWidth) / 2.0);
+            Canvas.SetLeft(_poseRgbCommandBox, rgbLeft);
+            Canvas.SetTop(_poseRgbCommandBox, 8.0);
+            Canvas.SetLeft(_poseRgbBuildButton, rgbLeft + _poseRgbCommandBox.Width + 6.0);
+            Canvas.SetTop(_poseRgbBuildButton, 8.0);
+
+            bool leftOk = TryEyeTarget(robotLeft: true, out Point leftEye, out double leftRadius);
+            bool rightOk = TryEyeTarget(robotLeft: false, out Point rightEye, out double rightRadius);
+            if (!leftOk) { leftEye = new Point(ActualWidth * .60, ActualHeight * .35); leftRadius = 36; }
+            if (!rightOk) { rightEye = new Point(ActualWidth * .40, ActualHeight * .35); rightRadius = 36; }
+
+            // Joined operation intentionally uses the robot RIGHT eye target.
+            // Split operation exposes both independent eye targets.
+            PlaceEyeTarget(_leftEyeTargetCircle, _leftEyeGazeHandle, leftEye, leftRadius,
+                _pose.LeftEyeHorizontal, _pose.LeftEyeVertical, visible: !_lrJoined);
+            PlaceEyeTarget(_rightEyeTargetCircle, _rightEyeGazeHandle, rightEye, rightRadius,
+                _pose.RightEyeHorizontal, _pose.RightEyeVertical, visible: true);
+
+            // Gimbal reset buttons sit just outside each visible gaze circle on the
+            // circle edge nearest the inside/center of the robot head.
+            Point eyeInside = new((leftEye.X + rightEye.X) * .5, (leftEye.Y + rightEye.Y) * .5);
+            PlaceEyeGazeResetButton(_leftEyeGazeResetButton, leftEye, leftRadius, eyeInside, !_lrJoined);
+            PlaceEyeGazeResetButton(_rightEyeGazeResetButton, rightEye, rightRadius, eyeInside, true);
+
+            _updatingPoseUi = true;
+            try
+            {
+                _joinedIrisSlider.Value = Average(_pose.LeftIris, _pose.RightIris);
+                _leftIrisSlider.Value = _pose.LeftIris;
+                _rightIrisSlider.Value = _pose.RightIris;
+                _joinedFlapOpenSlider.Value = Average(_pose.LeftTopFlapOpen, _pose.RightTopFlapOpen,
+                                                       _pose.LeftBottomFlapOpen, _pose.RightBottomFlapOpen);
+                _leftFlapOpenSlider.Value = Average(_pose.LeftTopFlapOpen, _pose.LeftBottomFlapOpen);
+                _rightFlapOpenSlider.Value = Average(_pose.RightTopFlapOpen, _pose.RightBottomFlapOpen);
+                _noseBodySlider.Value = _pose.NoseBody;
+                _noseBasketSlider.Value = _pose.NoseBasket;
+                _neckNodSlider.Value = _pose.NeckNod;
+                _neckTiltSlider.Value = _pose.NeckTilt;
+                _joinedEyePopSlider.Value = Average(_pose.LeftEyePop, _pose.RightEyePop);
+                _leftEyePopSlider.Value = _pose.LeftEyePop;
+                _rightEyePopSlider.Value = _pose.RightEyePop;
+                _whipRaiseLowerSlider.Value = _pose.WhipRaiseLower;
+                _mfrUpDownSlider.Value = _pose.MfrUpDown;
+                _microphoneRaiseLowerSlider.Value = _pose.MicrophoneRaiseLower;
+            }
+            finally { _updatingPoseUi = false; }
+
+            // Joined iris placement is the opposite eye from the joined gaze
+            // handle: under the robot LEFT eye. Split mode has one per eye.
+            _joinedIrisSlider.Visibility = _lrJoined ? Visibility.Visible : Visibility.Collapsed;
+            SetCanvasCenter(_joinedIrisSlider, new Point(leftEye.X, leftEye.Y + leftRadius + 12));
+            _leftIrisSlider.Visibility = !_lrJoined ? Visibility.Visible : Visibility.Collapsed;
+            _rightIrisSlider.Visibility = !_lrJoined ? Visibility.Visible : Visibility.Collapsed;
+            SetCanvasCenter(_leftIrisSlider, new Point(leftEye.X, leftEye.Y + leftRadius + 12));
+            SetCanvasCenter(_rightIrisSlider, new Point(rightEye.X, rightEye.Y + rightRadius + 12));
+            PlaceSliderResetButton(_joinedIrisSlider);
+            PlaceSliderResetButton(_leftIrisSlider);
+            PlaceSliderResetButton(_rightIrisSlider);
+
+            // Top-flap tilt remains attached to the actual flap panels.
+            Point leftTop = ProjectLinkOr("left_top_flap_link", new Point(ActualWidth * .62, ActualHeight * .29));
+            Point rightTop = ProjectLinkOr("right_top_flap_link", new Point(ActualWidth * .38, ActualHeight * .29));
+            PlaceThumb("flapTiltRight", Offset(rightTop, -12, 14), true);
+            PlaceThumb("flapTiltLeft", Offset(leftTop, 12, 14), !_lrJoined);
+
+            // NoseBody, NoseBasket and Flap Open/Close are anchored directly to
+            // the HEAD frame, not to the moving NoseBody. Their centers use the
+            // midpoint of the imported head-link visual bounds, so they stay
+            // vertically centered on the complete robot head. Their lateral spacing
+            // matches the neutral NoseBody opening without following nose motion.
+            const double faceControlX = 0.1771615; // NoseBody origin + neutral basket-opening X
+            const double faceControlZ = -0.01755391; // midpoint of head-link visual Z bounds
+            const double faceControlHalfWidth = 0.024;
+            Point noseOpening = TryProjectLinkPoint("head_link",
+                new Point3D(faceControlX, 0, faceControlZ), out Point headFaceCenter)
+                ? headFaceCenter : new Point(ActualWidth * .50, (leftEye.Y + rightEye.Y) * .5);
+            Point noseOpeningRobotLeft = TryProjectLinkPoint("head_link",
+                new Point3D(faceControlX, +faceControlHalfWidth, faceControlZ), out Point headFaceLeft)
+                ? headFaceLeft : new Point(noseOpening.X + 30.0, noseOpening.Y);
+            Point noseOpeningRobotRight = TryProjectLinkPoint("head_link",
+                new Point3D(faceControlX, -faceControlHalfWidth, faceControlZ), out Point headFaceRight)
+                ? headFaceRight : new Point(noseOpening.X - 30.0, noseOpening.Y);
+
+            // Nose Body and Basket remain unchanged when LR Split is active.
+            _noseBodySlider.Visibility = Visibility.Visible;
+            _noseBasketSlider.Visibility = Visibility.Visible;
+            SetCanvasCenter(_noseBodySlider, noseOpeningRobotRight);
+            SetCanvasCenter(_noseBasketSlider, noseOpeningRobotLeft);
+
+            _joinedFlapOpenSlider.Visibility = _lrJoined ? Visibility.Visible : Visibility.Collapsed;
+            _leftFlapOpenSlider.Visibility = !_lrJoined ? Visibility.Visible : Visibility.Collapsed;
+            _rightFlapOpenSlider.Visibility = !_lrJoined ? Visibility.Visible : Visibility.Collapsed;
+            SetCanvasCenter(_joinedFlapOpenSlider, noseOpening);
+
+            // In Split mode the left/right Open/Close sliders are side-by-side at
+            // the face center rather than following the Nose Body/Basket controls.
+            Vector faceLeftRight = noseOpeningRobotLeft - noseOpeningRobotRight;
+            if (faceLeftRight.Length < 1) faceLeftRight = new Vector(1, 0);
+            faceLeftRight.Normalize();
+            SetCanvasCenter(_leftFlapOpenSlider, noseOpening + faceLeftRight * 18.0);
+            SetCanvasCenter(_rightFlapOpenSlider, noseOpening - faceLeftRight * 18.0);
+            PlaceSliderResetButton(_noseBodySlider);
+            PlaceSliderResetButton(_noseBasketSlider);
+            PlaceSliderResetButton(_joinedFlapOpenSlider);
+            PlaceSliderResetButton(_leftFlapOpenSlider);
+            PlaceSliderResetButton(_rightFlapOpenSlider);
+
+            // Joined mode uses the robot-left Vent arc for both vents. LR Split
+            // adds the mirrored quarter-arc on the opposite outer eye tube so
+            // left and right vents can be posed independently.
+            UpdateVentArc(robotLeft: true);
+            UpdateVentArc(robotLeft: false);
+
+            // Eye Pop controls sit 15 mm outside the physical head sides (5 mm
+            // farther out than v1.13.1). Their BOTTOM edge is screen-aligned to
+            // the projected top-center of the physical mouth, so they stay in the
+            // requested vertical relationship as the head/camera moves.
+            const double headFrontX = 0.18525;
+            const double headSideY = 0.144747;
+            const double eyePopOutsideMm = 0.015;
+            const double mouthTopFrontX = 0.103474;
+            const double mouthTopZ = -0.050475;
+
+            Point mouthTop = TryProjectLinkPoint("head_link",
+                new Point3D(mouthTopFrontX, 0, mouthTopZ), out Point projectedMouthTop)
+                ? projectedMouthTop : new Point(ActualWidth * .50, ActualHeight * .60);
+
+            Point eyePopRobotLeft = TryProjectLinkPoint("head_link",
+                new Point3D(headFrontX, +(headSideY + eyePopOutsideMm), mouthTopZ), out Point projectedEyePopLeft)
+                ? projectedEyePopLeft : new Point(ActualWidth * .80, mouthTop.Y);
+            Point eyePopRobotRight = TryProjectLinkPoint("head_link",
+                new Point3D(headFrontX, -(headSideY + eyePopOutsideMm), mouthTopZ), out Point projectedEyePopRight)
+                ? projectedEyePopRight : new Point(ActualWidth * .20, mouthTop.Y);
+
+            // Use the physical side points only for X. The common Y is derived
+            // from the mouth-top screen coordinate minus half the slider height,
+            // which aligns each vertical slider's bottom with the mouth top.
+            double eyePopCenterY = mouthTop.Y - _joinedEyePopSlider.Height * .5;
+            eyePopRobotLeft.Y = eyePopCenterY;
+            eyePopRobotRight.Y = eyePopCenterY;
+
+            _joinedEyePopSlider.Visibility = _lrJoined ? Visibility.Visible : Visibility.Collapsed;
+            _leftEyePopSlider.Visibility = !_lrJoined ? Visibility.Visible : Visibility.Collapsed;
+            _rightEyePopSlider.Visibility = !_lrJoined ? Visibility.Visible : Visibility.Collapsed;
+            SetCanvasCenter(_joinedEyePopSlider, eyePopRobotRight);
+            SetCanvasCenter(_leftEyePopSlider, eyePopRobotLeft);
+            SetCanvasCenter(_rightEyePopSlider, eyePopRobotRight);
+            PlaceSliderResetButton(_joinedEyePopSlider);
+            PlaceSliderResetButton(_leftEyePopSlider);
+            PlaceSliderResetButton(_rightEyePopSlider);
+
+            // Whip/MFRC/Microphone vertical controls stay at the top of the URDF
+            // display while their X positions follow the projected hardware.
+            const double headTopZ = 0.059182;
+            Point whipOutside = TryProjectLinkPoint("head_link",
+                new Point3D(0.070442, -0.134747 - 0.030, headTopZ), out Point projectedWhipOutside)
+                ? projectedWhipOutside : new Point(ActualWidth * .78, 0);
+            Point mfrOutside = TryProjectLinkPoint("head_link",
+                new Point3D(0.023325, 0.061341 + 0.050, headTopZ), out Point projectedMfrOutside)
+                ? projectedMfrOutside : new Point(ActualWidth * .22, 0);
+            Point microphoneTop = TryProjectLinkPoint("microphone_link",
+                new Point3D(0.0002, 0, 0.007112), out Point projectedMicrophoneTop)
+                ? projectedMicrophoneTop : new Point(ActualWidth * .68, 0);
+
+            double whipX = Math.Clamp(whipOutside.X, 18.0, ActualWidth - 18.0);
+            double mfrX = Math.Clamp(mfrOutside.X, 18.0, ActualWidth - 18.0);
+            double micX = Math.Clamp(microphoneTop.X, 18.0, ActualWidth - 18.0);
+            _whipRaiseLowerSlider.Visibility = Visibility.Visible;
+            _mfrUpDownSlider.Visibility = Visibility.Visible;
+            _microphoneRaiseLowerSlider.Visibility = Visibility.Visible;
+            SetCanvasCenter(_whipRaiseLowerSlider,
+                new Point(whipX, 8.0 + _whipRaiseLowerSlider.Height * .5));
+            SetCanvasCenter(_mfrUpDownSlider,
+                new Point(mfrX, 8.0 + _mfrUpDownSlider.Height * .5));
+            SetCanvasCenter(_microphoneRaiseLowerSlider,
+                new Point(micX, 8.0 + _microphoneRaiseLowerSlider.Height * .5));
+            PlaceSliderResetButton(_whipRaiseLowerSlider);
+            PlaceSliderResetButton(_mfrUpDownSlider);
+            PlaceSliderResetButton(_microphoneRaiseLowerSlider);
+
+            // MFRC rotation dial is always immediately to the RIGHT of the MFRC
+            // vertical Up/Down slider, as requested.
+            Point mfrDialCenter = new(
+                mfrX + _mfrUpDownSlider.Width * .5 + _mfrRotateDial.Width * .5 + 8.0,
+                6.0 + _mfrRotateDial.Height * .5);
+            mfrDialCenter.X = Math.Clamp(mfrDialCenter.X, _mfrRotateDial.Width * .5 + 4.0,
+                                         ActualWidth - _mfrRotateDial.Width * .5 - 4.0);
+            _mfrRotateDial.Visibility = Visibility.Visible;
+            UpdateMfrRotateDial();
+            SetCanvasCenter(_mfrRotateDial, mfrDialCenter);
+
+            // Keep the MFRC height reset outside the combined slider+dial group.
+            if (_poseSliderResetButtons.TryGetValue(_mfrUpDownSlider, out Button mfrHeightReset))
+            {
+                Point mfrResetCenter = new(
+                    mfrDialCenter.X + _mfrRotateDial.Width * .5 + mfrHeightReset.Width * .5 + 4.0,
+                    8.0 + _mfrUpDownSlider.Height * .5);
+                mfrResetCenter.X = Math.Clamp(mfrResetCenter.X, mfrHeightReset.Width * .5 + 2.0,
+                                               ActualWidth - mfrHeightReset.Width * .5 - 2.0);
+                SetCanvasCenter(mfrHeightReset, mfrResetCenter);
+            }
+
+            // Whip rotation dial sits just farther outside the head than the whip
+            // height slider and follows that slider horizontally.
+            double whipOutwardSign = whipX < ActualWidth * .5 ? -1.0 : 1.0;
+            Point whipDialCenter = new(
+                whipX + whipOutwardSign * (_whipRaiseLowerSlider.Width * .5 + _whipRotateDial.Width * .5 + 8.0),
+                6.0 + _whipRotateDial.Height * .5);
+            whipDialCenter.X = Math.Clamp(whipDialCenter.X, _whipRotateDial.Width * .5 + 4.0,
+                                          ActualWidth - _whipRotateDial.Width * .5 - 4.0);
+            _whipRotateDial.Visibility = Visibility.Visible;
+            UpdateWhipRotateDial();
+            SetCanvasCenter(_whipRotateDial, whipDialCenter);
+            // Keep the Whip height reset outside BOTH the slider and its adjacent
+            // rotation dial so the three controls do not overlap.
+            if (_poseSliderResetButtons.TryGetValue(_whipRaiseLowerSlider, out Button whipHeightReset))
+            {
+                Point resetCenter = new(
+                    whipDialCenter.X + whipOutwardSign * (_whipRotateDial.Width * .5 + whipHeightReset.Width * .5 + 4.0),
+                    8.0 + _whipRaiseLowerSlider.Height * .5);
+                resetCenter.X = Math.Clamp(resetCenter.X, whipHeightReset.Width * .5 + 2.0,
+                                            ActualWidth - whipHeightReset.Width * .5 - 2.0);
+                SetCanvasCenter(whipHeightReset, resetCenter);
+            }
+
+            // Neck controls are anchored to the physical Fabco neck assembly.
+            // Tilt follows the centerline of the robot-left cylinder. Nod sits at
+            // the front-middle of the assembly, midway between the two cylinders.
+            Point leftCylinder = TryProjectFabcoCylinderMidpoint(left: true, out Point leftFabco)
+                ? leftFabco : new Point(ActualWidth * .47, ActualHeight * .68);
+            Point rightCylinder = TryProjectFabcoCylinderMidpoint(left: false, out Point rightFabco)
+                ? rightFabco : new Point(ActualWidth * .53, ActualHeight * .68);
+            Point neckFrontMiddle = new((leftCylinder.X + rightCylinder.X) * .5,
+                                        (leftCylinder.Y + rightCylinder.Y) * .5);
+            _neckNodSlider.Visibility = Visibility.Visible;
+            _neckTiltSlider.Visibility = Visibility.Visible;
+            SetCanvasCenter(_neckNodSlider, neckFrontMiddle);
+            SetCanvasCenter(_neckTiltSlider, leftCylinder);
+            PlaceSliderResetButton(_neckNodSlider);
+            PlaceSliderResetButton(_neckTiltSlider);
+
+            // Editable NeckTurn dial: 75% of the way from the bottom-center
+            // resize-handle reference toward the lower-right URDF legend. In an
+            // undocked window the geometric resize-handle location remains the
+            // center reference even though the embedded handle itself is hidden.
+            Point resizeCenter = new(ActualWidth / 2.0, ActualHeight - 6.0);
+            Point legendCenter;
+            try
+            {
+                double sw = Math.Max(1.0, _status.ActualWidth);
+                double sh = Math.Max(1.0, _status.ActualHeight);
+                legendCenter = _status.TranslatePoint(new Point(sw / 2.0, sh / 2.0), this);
+                if (double.IsNaN(legendCenter.X) || double.IsNaN(legendCenter.Y))
+                    throw new InvalidOperationException();
+            }
+            catch
+            {
+                legendCenter = new Point(ActualWidth - 90, ActualHeight - 45);
+            }
+            const double dialTowardLegend = 0.75;
+            Point dialCenter = new(
+                resizeCenter.X + (legendCenter.X - resizeCenter.X) * dialTowardLegend,
+                resizeCenter.Y + (legendCenter.Y - resizeCenter.Y) * dialTowardLegend);
+            dialCenter.X = Math.Clamp(dialCenter.X, _neckTurnDial.Width * .5 + 4,
+                                      ActualWidth - _neckTurnDial.Width * .5 - 4);
+            dialCenter.Y = Math.Clamp(dialCenter.Y, _neckTurnDial.Height * .5 + 4,
+                                      ActualHeight - _neckTurnDial.Height * .5 - 4);
+            _neckTurnDial.Visibility = Visibility.Visible;
+            UpdateNeckTurnDial();
+            SetCanvasCenter(_neckTurnDial, dialCenter);
+        }
+
+        /// <summary>
+        /// Projects the center and physical robot-left/right lips of the NoseBody
+        /// opening. The NoseBasket joint origin is the opening center in
+        /// nose_body_link. Robot-left is +Y and robot-right is -Y in this URDF,
+        /// matching the eye/neck naming used elsewhere in the model.
+        /// </summary>
+        private bool TryNoseOpeningGeometry(out Point center, out Point robotLeft, out Point robotRight)
+        {
+            center = robotLeft = robotRight = new Point();
+            var openingCenter = new Point3D(0.0452575, 0.0, 0.0240635);
+            const double openingHalfWidth = 0.024;
+            if (!TryProjectLinkPoint("nose_body_link", openingCenter, out center))
+                return false;
+
+            bool leftOk = TryProjectLinkPoint("nose_body_link",
+                new Point3D(openingCenter.X, +openingHalfWidth, openingCenter.Z), out robotLeft);
+            bool rightOk = TryProjectLinkPoint("nose_body_link",
+                new Point3D(openingCenter.X, -openingHalfWidth, openingCenter.Z), out robotRight);
+            return leftOk && rightOk;
+        }
+
+        /// <summary>
+        /// Projects the physical midpoint of a Fabco cylinder using the CAD ball
+        /// centers. The cylinder-body link receives the live Fabco swivel transform,
+        /// so this point follows the actual cylinder during neck nod/tilt and yaw.
+        /// </summary>
+        private bool TryProjectFabcoCylinderMidpoint(bool left, out Point screen)
+        {
+            Point3D lower = left ? LeftLowerBall : RightLowerBall;
+            Point3D upper = left ? LeftUpperBallNeutral : RightUpperBallNeutral;
+            var midpoint = new Point3D((lower.X + upper.X) * .5,
+                                       (lower.Y + upper.Y) * .5,
+                                       (lower.Z + upper.Z) * .5);
+            return TryProjectLinkPoint(left ? "left_fabco_body_link" : "right_fabco_body_link",
+                                       midpoint, out screen);
+        }
+
+        private double EyeTargetRadius(bool robotLeft)
+        {
+            if (TryEyeTarget(robotLeft, out _, out double radius)) return radius;
+            return 36;
+        }
+
+        private bool TryEyeTarget(bool robotLeft, out Point center, out double radius)
+        {
+            center = new Point(); radius = 0;
+            string link = robotLeft ? "left_eye_pop_link" : "right_eye_pop_link";
+            const double eyeCenterX = 0.0354142;
+            if (!TryProjectLinkPoint(link, new Point3D(eyeCenterX, 0, 0), out center)) return false;
+            double physicalRadius = 0.027; // inner eye-tube working circle
+            bool a = TryProjectLinkPoint(link, new Point3D(eyeCenterX, physicalRadius, 0), out Point py);
+            bool b = TryProjectLinkPoint(link, new Point3D(eyeCenterX, 0, physicalRadius), out Point pz);
+            double ry = a ? (py - center).Length : 0;
+            double rz = b ? (pz - center).Length : 0;
+            radius = Math.Clamp((ry + rz) / Math.Max(1, (a ? 1 : 0) + (b ? 1 : 0)), 18, 80);
+            return true;
+        }
+
+        private void PlaceEyeGazeResetButton(Button button, Point circleCenter, double radius,
+                                                  Point insideCenter, bool visible)
+        {
+            button.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+            if (!visible) return;
+            Vector inward = insideCenter - circleCenter;
+            if (inward.Length < 1) inward = new Vector(circleCenter.X < ActualWidth * .5 ? 1 : -1, 0);
+            inward.Normalize();
+            // Button center is just beyond the circle outline toward the inside of the head.
+            Point p = circleCenter + inward * (radius + button.Width * .5 + 3.0);
+            p.X = Math.Clamp(p.X, button.Width * .5 + 2.0, ActualWidth - button.Width * .5 - 2.0);
+            p.Y = Math.Clamp(p.Y, button.Height * .5 + 2.0, ActualHeight - button.Height * .5 - 2.0);
+            SetCanvasCenter(button, p);
+        }
+
+        private void PlaceEyeTarget(Ellipse circle, Thumb handle, Point center, double radius,
+                                    double h, double v, bool visible)
+        {
+            var vis = visible ? Visibility.Visible : Visibility.Collapsed;
+            circle.Visibility = vis;
+            handle.Visibility = vis;
+            if (!visible) return;
+            circle.Width = circle.Height = radius * 2;
+            Canvas.SetLeft(circle, center.X - radius);
+            Canvas.SetTop(circle, center.Y - radius);
+            double x = center.X - Clamp100(h) / 100.0 * radius;
+            double y = center.Y - Clamp100(v) / 100.0 * radius;
+            // Existing timeline data can contain H/V values whose vector exceeds
+            // the circular UI envelope. Display those at the nearest edge.
+            Vector vector = new(x - center.X, y - center.Y);
+            if (vector.Length > radius && vector.Length > .001)
+            {
+                vector.Normalize(); vector *= radius;
+                x = center.X + vector.X; y = center.Y + vector.Y;
+            }
+            SetCanvasCenter(handle, new Point(x, y));
+        }
+
+        private Point ProjectLinkOr(string linkName, Point fallback) =>
+            TryProjectLinkPoint(linkName, new Point3D(), out Point p) ? p : fallback;
+
+        private bool TryProjectLinkPoint(string linkName, Point3D localPoint, out Point screen)
+        {
+            screen = new Point();
+            if (_scene == null || !_scene.TryTransformLinkPoint(linkName, localPoint, out Point3D world)) return false;
+            return TryProjectWorldPoint(world, out screen);
+        }
+
+        private bool TryProjectWorldPoint(Point3D world, out Point screen)
+        {
+            screen = new Point();
+            double width = ActualWidth, height = ActualHeight;
+            if (width <= 1 || height <= 1) return false;
+
+            Vector3D forward = _camera.LookDirection;
+            if (forward.LengthSquared < 1e-12) return false;
+            forward.Normalize();
+            Vector3D up = _camera.UpDirection;
+            if (up.LengthSquared < 1e-12) up = new Vector3D(0, 0, 1);
+            up.Normalize();
+            Vector3D right = Vector3D.CrossProduct(forward, up);
+            if (right.LengthSquared < 1e-12) return false;
+            right.Normalize();
+            up = Vector3D.CrossProduct(right, forward);
+            up.Normalize();
+
+            Vector3D q = world - _camera.Position;
+            double depth = Vector3D.DotProduct(q, forward);
+            if (depth <= .001) return false;
+            double tanH = Math.Tan(_camera.FieldOfView * Deg * .5);
+            double tanV = tanH * height / width;
+            if (tanH <= 1e-9 || tanV <= 1e-9) return false;
+            double nx = Vector3D.DotProduct(q, right) / (depth * tanH);
+            double ny = Vector3D.DotProduct(q, up) / (depth * tanV);
+            screen = new Point((nx + 1) * width * .5, (1 - ny) * height * .5);
+            return double.IsFinite(screen.X) && double.IsFinite(screen.Y);
+        }
+
+        private void PlaceThumb(string key, Point center, bool visible)
+        {
+            if (!_poseThumbs.TryGetValue(key, out var thumb)) return;
+            thumb.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+            if (visible) SetCanvasCenter(thumb, center);
+        }
+
+        private static Point Offset(Point p, double x, double y) => new(p.X + x, p.Y + y);
+
+        private static void SetCanvasCenter(FrameworkElement element, Point center)
+        {
+            double w = element.ActualWidth > 0 ? element.ActualWidth : (double.IsNaN(element.Width) ? 0 : element.Width);
+            double h = element.ActualHeight > 0 ? element.ActualHeight : (double.IsNaN(element.Height) ? 0 : element.Height);
+            Canvas.SetLeft(element, center.X - w / 2.0);
+            Canvas.SetTop(element, center.Y - h / 2.0);
+        }
+
+        #endregion
 
         private void LoadUrdf()
         {
@@ -284,6 +2411,7 @@ namespace ServoAnimator
                 SetServo(ServoNames.NoseBasket, 0);
                 SetServo(ServoNames.IrisClose, 0);
                 SetMouth(0);
+                UpdatePoseOverlayLayout();
             }
             catch (Exception ex)
             {
@@ -300,14 +2428,23 @@ namespace ServoAnimator
                             double tiltLeft, double tiltRight,
                             double ventsLeft, double ventsRight,
                             double neckTilt,
-                            double neckNod = 0, double neckTurn = 0,
+                            double neckNod = 0, ServoNames? neckOwner = null, double neckTurn = 0,
                             double whip = 0, double mic = 0, double mfr = 0,
                             double noseBody = 0,
                             double noseBasket = 0,
                             double leftEyePop = 0, double rightEyePop = 0,
                             double whipRotate = 0, double mfrRotate = 0)
         {
-            if (_scene == null || !_urdfDriveEnabled) return;
+            if (_scene == null || (!_urdfDriveEnabled && !_poseInternalUpdate)) return;
+            if (_poseEditEnabled && !_poseInternalUpdate) return;
+
+            if (!_poseInternalUpdate)
+                CaptureIncomingPose(eyeHLeft, eyeHRight, eyeVLeft, eyeVRight,
+                    irisLeft, irisRight, topFlapLeft, topFlapRight,
+                    bottomFlapLeft, bottomFlapRight, tiltLeft, tiltRight,
+                    ventsLeft, ventsRight, neckTilt, neckNod, neckOwner, neckTurn,
+                    whip, mic, mfr, noseBody, noseBasket, leftEyePop, rightEyePop,
+                    whipRotate, mfrRotate);
 
             _suppressCollisionRefresh = true;
             try
@@ -329,8 +2466,7 @@ namespace ServoAnimator
             SetControl(ServoNames.VentsOpen, RobotControls.RightEyeVent, ventsLeft);
             SetControl(ServoNames.VentsOpen, RobotControls.LeftEyeVent, ventsRight);
 
-            _neckNodLeft = _neckNodRight = neckNod;
-            _neckTiltLeft = _neckTiltRight = neckTilt;
+            SetSharedNeckState(neckOwner, neckNod, neckTilt);
             ApplyNeckPose(neckTurn);
 
             SetServo(ServoNames.Whip_Antenna_RaiseLower, whip);
@@ -348,31 +2484,32 @@ namespace ServoAnimator
                 _suppressCollisionRefresh = false;
             }
             RefreshCollisionState();
+            UpdatePoseOverlayLayout();
         }
 
         public void SetChildServo(ServoNames parentServo, RobotControls control, double value)
         {
-            if (_scene == null || !_urdfDriveEnabled) return;
+            if (_scene == null || (!_urdfDriveEnabled && !_poseInternalUpdate)) return;
+            if (_poseEditEnabled && !_poseInternalUpdate) return;
+            if (!_poseInternalUpdate) UpdatePoseStateForChild(parentServo, control, value);
 
-            // The two neck inputs share the same physical servo pair but create
-            // different head axes. Preserve independent child values so URDF
-            // Configuration can calibrate/test each physical servo separately.
-            if (parentServo == ServoNames.NeckNodUp &&
-                control is RobotControls.NeckTiltLeft or RobotControls.NeckTiltRight)
+            // NeckNodUp and NeckTiltRight take turns driving the SAME two
+            // child actuators. Switching logical modes transfers ownership of
+            // that shared pair; it does not switch to a second set of URDF
+            // child controls. A child-calibration jog starts the newly selected
+            // mode from neutral so an old value from the other mode cannot leak
+            // into the test.
+            if ((parentServo is ServoNames.NeckNodUp or ServoNames.NeckTiltRight) &&
+                (control is RobotControls.NeckTiltLeft or RobotControls.NeckTiltRight))
             {
-                _neckTiltLeft = _neckTiltRight = 0;
-                if (control == RobotControls.NeckTiltLeft) _neckNodLeft = value;
-                else _neckNodRight = value;
-                ApplyNeckPose(null);
-                RefreshCollisionState();
-                return;
-            }
-            if (parentServo == ServoNames.NeckTiltRight &&
-                control is RobotControls.NeckTiltLeft or RobotControls.NeckTiltRight)
-            {
-                _neckNodLeft = _neckNodRight = 0;
-                if (control == RobotControls.NeckTiltLeft) _neckTiltLeft = value;
-                else _neckTiltRight = value;
+                if (_activeNeckMode != parentServo)
+                {
+                    _activeNeckMode = parentServo;
+                    _neckLeft = _neckRight = 0;
+                }
+
+                if (control == RobotControls.NeckTiltLeft) _neckLeft = value;
+                else _neckRight = value;
                 ApplyNeckPose(null);
                 RefreshCollisionState();
                 return;
@@ -388,6 +2525,8 @@ namespace ServoAnimator
         public void SetUrdfConfiguration(UrdfConfiguration configuration)
         {
             _urdfConfiguration = configuration ?? UrdfConfiguration.CreateDefault();
+            ApplyPoseControlRangesFromUrdf();
+            if (_poseEditEnabled) UpdatePoseOverlayLayout();
         }
 
         public void SetServoConfiguration(ServoConfiguration configuration)
@@ -503,8 +2642,8 @@ namespace ServoAnimator
             if (_scene == null) return;
 
             var snapshot = _scene.CaptureMotionState();
-            double oldNodLeft = _neckNodLeft, oldNodRight = _neckNodRight;
-            double oldTiltLeft = _neckTiltLeft, oldTiltRight = _neckTiltRight;
+            double oldNeckLeft = _neckLeft, oldNeckRight = _neckRight;
+            ServoNames? oldNeckMode = _activeNeckMode;
             double oldNeckTurn = _lastNeckTurn;
             double oldLeftEyePop = _leftEyePopLogical;
             double oldRightEyePop = _rightEyePopLogical;
@@ -515,8 +2654,8 @@ namespace ServoAnimator
             _suppressCollisionRefresh = true;
             try
             {
-                _neckNodLeft = _neckNodRight = 0;
-                _neckTiltLeft = _neckTiltRight = 0;
+                _neckLeft = _neckRight = 0;
+                _activeNeckMode = null;
                 _lastNeckTurn = 0;
                 ApplyNeckPose(0);
 
@@ -543,10 +2682,9 @@ namespace ServoAnimator
             finally
             {
                 _scene.RestoreMotionState(snapshot);
-                _neckNodLeft = oldNodLeft;
-                _neckNodRight = oldNodRight;
-                _neckTiltLeft = oldTiltLeft;
-                _neckTiltRight = oldTiltRight;
+                _neckLeft = oldNeckLeft;
+                _neckRight = oldNeckRight;
+                _activeNeckMode = oldNeckMode;
                 _lastNeckTurn = oldNeckTurn;
                 _leftEyePopLogical = oldLeftEyePop;
                 _rightEyePopLogical = oldRightEyePop;
@@ -628,7 +2766,9 @@ namespace ServoAnimator
 
         public void SetServo(ServoNames servo, double value)
         {
-            if (_scene == null || !_urdfDriveEnabled) return;
+            if (_scene == null || (!_urdfDriveEnabled && !_poseInternalUpdate)) return;
+            if (_poseEditEnabled && !_poseInternalUpdate) return;
+            if (!_poseInternalUpdate) UpdatePoseStateForServo(servo, value);
 
             switch (servo)
             {
@@ -636,16 +2776,13 @@ namespace ServoAnimator
                     ApplyNeckPose(value);
                     break;
 
-                // These logical controls share the physical neck pair. As in
-                // the old view, a live move of one clears the other.
+                // These are alternate logical owners of one shared physical
+                // neck pair. Whichever command arrives last takes control of
+                // the same NeckTiltLeft/NeckTiltRight child values.
                 case ServoNames.NeckNodUp:
-                    _neckNodLeft = _neckNodRight = value;
-                    _neckTiltLeft = _neckTiltRight = 0;
-                    ApplyNeckPose(null);
-                    break;
                 case ServoNames.NeckTiltRight:
-                    _neckTiltLeft = _neckTiltRight = value;
-                    _neckNodLeft = _neckNodRight = 0;
+                    _activeNeckMode = servo;
+                    _neckLeft = _neckRight = value;
                     ApplyNeckPose(null);
                     break;
 
@@ -700,11 +2837,29 @@ namespace ServoAnimator
             RefreshCollisionState();
         }
 
+        /// <summary>Apply a timeline/grid pose to the one shared neck actuator pair.
+        /// The explicit owner matters even at value 0, because a zero-valued Nod or
+        /// Tilt command still transfers ownership to that logical mode.</summary>
+        private void SetSharedNeckState(ServoNames? owner, double nodValue, double tiltValue)
+        {
+            if (owner is ServoNames.NeckNodUp or ServoNames.NeckTiltRight)
+            {
+                _activeNeckMode = owner;
+                double value = owner == ServoNames.NeckNodUp ? nodValue : tiltValue;
+                _neckLeft = _neckRight = value;
+            }
+            else
+            {
+                _activeNeckMode = null;
+                _neckLeft = _neckRight = 0;
+            }
+        }
+
         private double _lastNeckTurn;
 
         private void ApplyNeckPose(double? neckTurn)
         {
-            if (_scene == null || !_urdfDriveEnabled) return;
+            if (_scene == null || (!_urdfDriveEnabled && !_poseInternalUpdate)) return;
             if (neckTurn.HasValue) _lastNeckTurn = neckTurn.Value;
 
             // Visual travel comes from the calibration embedded in the URDF,
@@ -712,21 +2867,31 @@ namespace ServoAnimator
             // from the CAD/URDF. NeckTurn remains centered on the
             // CAD Disc, while nod/tilt remain centered on the Solid U-Joint
             // hinge intersection.
+            // The visual NeckTurn direction is intentionally reversed from the
+            // raw calibration mapping so positive/negative URDF turn matches the
+            // requested on-screen convention. The editable dial uses the same
+            // helper, so its degree readout and model motion stay synchronized.
             _scene.SetJoint("NeckTurn",
-                Motion(ServoNames.NeckTurn, RobotControls.NeckTurn, _lastNeckTurn) * Deg);
+                NeckTurnVisualDegrees(_lastNeckTurn) * Deg);
 
-            // The two Fabco/neck servos encode the two head axes differently:
-            // Nod is the differential component; Tilt is the common component.
-            // Per-child extents and Servo Configuration directions therefore
-            // combine into one mechanically meaningful head angle.
-            double nodLeft = Motion(ServoNames.NeckNodUp, RobotControls.NeckTiltLeft, _neckNodLeft);
-            double nodRight = Motion(ServoNames.NeckNodUp, RobotControls.NeckTiltRight, _neckNodRight);
-            double tiltLeft = Motion(ServoNames.NeckTiltRight, RobotControls.NeckTiltLeft, _neckTiltLeft);
-            double tiltRight = Motion(ServoNames.NeckTiltRight, RobotControls.NeckTiltRight, _neckTiltRight);
+            // NeckNodUp and NeckTiltRight do not have independent child
+            // actuators. They take turns interpreting the SAME left/right pair.
+            // The active logical owner supplies the gang-relative directions:
+            // Nod uses the differential component; Tilt uses the common component.
+            double pitch = 0.0;
+            double roll = 0.0;
+            if (_activeNeckMode is ServoNames.NeckNodUp or ServoNames.NeckTiltRight)
+            {
+                ServoNames owner = _activeNeckMode.Value;
+                double left = Motion(owner, RobotControls.NeckTiltLeft, _neckLeft);
+                double right = Motion(owner, RobotControls.NeckTiltRight, _neckRight);
 
-            // URDF Y pitch is opposite the application's NeckNodUp semantic.
-            double pitch = -((nodLeft - nodRight) * 0.5) * Deg;
-            double roll = ((tiltLeft + tiltRight) * 0.5) * Deg;
+                if (owner == ServoNames.NeckNodUp)
+                    pitch = -((left - right) * 0.5) * Deg;
+                else
+                    roll = ((left + right) * 0.5) * Deg;
+            }
+
             _scene.SetJoint("NeckNodUp", pitch);
             _scene.SetJoint("NeckTiltRight", roll);
             UpdateFabcoKinematics(pitch, roll);
@@ -798,7 +2963,7 @@ namespace ServoAnimator
 
         private void SetControl(ServoNames parentServo, RobotControls control, double value)
         {
-            if (_scene == null || !_urdfDriveEnabled) return;
+            if (_scene == null || (!_urdfDriveEnabled && !_poseInternalUpdate)) return;
 
             switch (control)
             {
@@ -1031,7 +3196,8 @@ namespace ServoAnimator
         {
             // Overlay controls contain ordinary WPF buttons. Do not start
             // camera orbiting when the user clicks either control stack.
-            if (_bottomControls.IsMouseOver || _status.IsMouseOver || _verticalResizeHandle.IsMouseOver) return;
+            if (_bottomControls.IsMouseOver || _status.IsMouseOver || _verticalResizeHandle.IsMouseOver ||
+                _poseButton.IsMouseOver || (_poseEditEnabled && _poseOverlay.IsMouseOver)) return;
 
             if (e.ClickCount >= 2)
             {
@@ -1081,6 +3247,148 @@ namespace ServoAnimator
         {
             _cameraYaw += degrees * Deg;
             UpdateCamera();
+        }
+
+        /// <summary>
+        /// Save a clean, centered PNG of the current URDF pose for a Library Pose.
+        /// Pose/editor chrome is excluded, the camera is temporarily placed in a
+        /// straight-on fitted view, and the resulting bitmap is cropped around the
+        /// head/flaps/neck.  The user's live camera and UI are restored before this
+        /// method returns.
+        /// </summary>
+        public void SaveCenteredLibraryPoseImage(string destinationPath)
+        {
+            if (_scene == null)
+                throw new InvalidOperationException("The URDF model is not loaded.");
+            if (string.IsNullOrWhiteSpace(destinationPath))
+                throw new ArgumentException("An image destination is required.", nameof(destinationPath));
+            if (ActualWidth <= 2.0 || ActualHeight <= 2.0)
+                throw new InvalidOperationException("The URDF display is not large enough to capture an image.");
+
+            IReadOnlyList<Point3D> framingPoints =
+                _scene.GetWorldVisualBoundsPoints(LibraryPoseThumbnailLinks);
+            if (framingPoints.Count == 0)
+                throw new InvalidOperationException("Could not determine the robot-head bounds for the Library Pose image.");
+
+            Visibility poseVisibility = _poseOverlay.Visibility;
+            Visibility controlsVisibility = _bottomControls.Visibility;
+            Visibility statusVisibility = _status.Visibility;
+            Visibility resizeVisibility = _verticalResizeHandle.Visibility;
+
+            try
+            {
+                // A Library Pose picture should look like the normal URDF model,
+                // not like the editor. Rendering this RobotHeadView (rather than
+                // only Viewport3D) retains its light-blue background.
+                _poseOverlay.Visibility = Visibility.Collapsed;
+                _bottomControls.Visibility = Visibility.Collapsed;
+                _status.Visibility = Visibility.Collapsed;
+                _verticalResizeHandle.Visibility = Visibility.Collapsed;
+
+                double minX = framingPoints.Min(p => p.X);
+                double maxX = framingPoints.Max(p => p.X);
+                double minY = framingPoints.Min(p => p.Y);
+                double maxY = framingPoints.Max(p => p.Y);
+                double minZ = framingPoints.Min(p => p.Z);
+                double maxZ = framingPoints.Max(p => p.Z);
+                var center = new Point3D((minX + maxX) * 0.5,
+                                         (minY + maxY) * 0.5,
+                                         (minZ + maxZ) * 0.5);
+
+                // Straight-on front view (+X looking toward the head), fitted by
+                // binary-searching camera distance against the actual perspective
+                // projection. This is independent of the user's current orbit/zoom.
+                double halfDepth = Math.Max(0.001, (maxX - minX) * 0.5);
+                double low = halfDepth + 0.015;
+                double high = Math.Max(0.55, low * 1.5);
+                const double fitFraction = 0.88;
+
+                bool Fits(double distance)
+                {
+                    _camera.Position = new Point3D(center.X + distance, center.Y, center.Z);
+                    _camera.LookDirection = center - _camera.Position;
+                    _camera.UpDirection = new Vector3D(0, 0, 1);
+
+                    double left = double.PositiveInfinity, top = double.PositiveInfinity;
+                    double right = double.NegativeInfinity, bottom = double.NegativeInfinity;
+                    foreach (Point3D p in framingPoints)
+                    {
+                        if (!TryProjectWorldPoint(p, out Point sp)) return false;
+                        left = Math.Min(left, sp.X); right = Math.Max(right, sp.X);
+                        top = Math.Min(top, sp.Y); bottom = Math.Max(bottom, sp.Y);
+                    }
+                    double allowedWidth = ActualWidth * fitFraction;
+                    double allowedHeight = ActualHeight * fitFraction;
+                    return right - left <= allowedWidth && bottom - top <= allowedHeight;
+                }
+
+                int growthGuard = 0;
+                while (!Fits(high) && growthGuard++ < 24)
+                    high *= 1.35;
+                if (growthGuard >= 24)
+                    throw new InvalidOperationException("Could not fit the robot head into the Library Pose image.");
+
+                for (int i = 0; i < 36; i++)
+                {
+                    double mid = (low + high) * 0.5;
+                    if (Fits(mid)) high = mid;
+                    else low = mid;
+                }
+                Fits(high);
+
+                // Calculate the exact projected crop after fitting, with enough
+                // breathing room to keep the outer flaps and the complete neck.
+                double cropLeft = double.PositiveInfinity, cropTop = double.PositiveInfinity;
+                double cropRight = double.NegativeInfinity, cropBottom = double.NegativeInfinity;
+                foreach (Point3D p in framingPoints)
+                {
+                    if (!TryProjectWorldPoint(p, out Point sp)) continue;
+                    cropLeft = Math.Min(cropLeft, sp.X); cropRight = Math.Max(cropRight, sp.X);
+                    cropTop = Math.Min(cropTop, sp.Y); cropBottom = Math.Max(cropBottom, sp.Y);
+                }
+                if (!double.IsFinite(cropLeft) || !double.IsFinite(cropTop))
+                    throw new InvalidOperationException("Could not project the robot head for the Library Pose image.");
+
+                double objectWidth = Math.Max(1.0, cropRight - cropLeft);
+                double objectHeight = Math.Max(1.0, cropBottom - cropTop);
+                double padding = Math.Max(12.0, Math.Min(objectWidth, objectHeight) * 0.045);
+                cropLeft = Math.Max(0, cropLeft - padding);
+                cropTop = Math.Max(0, cropTop - padding);
+                cropRight = Math.Min(ActualWidth, cropRight + padding);
+                cropBottom = Math.Min(ActualHeight, cropBottom + padding);
+
+                UpdateLayout();
+                int pixelWidth = Math.Max(1, (int)Math.Ceiling(ActualWidth));
+                int pixelHeight = Math.Max(1, (int)Math.Ceiling(ActualHeight));
+                var rendered = new RenderTargetBitmap(pixelWidth, pixelHeight, 96, 96,
+                                                      PixelFormats.Pbgra32);
+                rendered.Render(this);
+
+                int x = Math.Clamp((int)Math.Floor(cropLeft), 0, pixelWidth - 1);
+                int y = Math.Clamp((int)Math.Floor(cropTop), 0, pixelHeight - 1);
+                int w = Math.Clamp((int)Math.Ceiling(cropRight) - x, 1, pixelWidth - x);
+                int h = Math.Clamp((int)Math.Ceiling(cropBottom) - y, 1, pixelHeight - y);
+                var cropped = new CroppedBitmap(rendered, new Int32Rect(x, y, w, h));
+
+                string fullPath = Path.GetFullPath(destinationPath);
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath) ?? AppContext.BaseDirectory);
+                using var stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(cropped));
+                encoder.Save(stream);
+            }
+            finally
+            {
+                _poseOverlay.Visibility = poseVisibility;
+                _bottomControls.Visibility = controlsVisibility;
+                _status.Visibility = statusVisibility;
+                _verticalResizeHandle.Visibility = resizeVisibility;
+
+                // Logical camera values were never changed. Reapply them now so
+                // the user returns to precisely the orbit/zoom they had before save.
+                UpdateCamera();
+                UpdatePoseOverlayLayout();
+            }
         }
 
         private void CaptureOpeningCameraIfNeeded()
@@ -1140,6 +3448,7 @@ namespace ServoAnimator
             _camera.UpDirection = new Vector3D(0, 0, 1);
             _camera.NearPlaneDistance = .01;
             _camera.FarPlaneDistance = 20;
+            UpdatePoseOverlayLayout();
         }
 
         /// <summary>
@@ -1249,6 +3558,70 @@ namespace ServoAnimator
         {
             if (_joints.TryGetValue(name, out var joint))
                 joint.SetPosition(position);
+        }
+
+        /// <summary>Transform a point expressed in one URDF link's local
+        /// coordinates into the root/world coordinates used by Viewport3D.
+        /// Pose-editor overlay controls use this to stay attached to moving
+        /// model parts while the camera or joints move.</summary>
+        public bool TryTransformLinkPoint(string linkName, Point3D localPoint, out Point3D worldPoint)
+        {
+            worldPoint = localPoint;
+            if (!_links.ContainsKey(linkName)) return false;
+
+            string current = linkName;
+            while (true)
+            {
+                if (_links.TryGetValue(current, out var link) && link.Transform != null)
+                    worldPoint = link.Transform.Transform(worldPoint);
+
+                if (!_parentJointByChild.TryGetValue(current, out var parentJoint))
+                    break;
+
+                if (parentJoint.Node.Transform != null)
+                    worldPoint = parentJoint.Node.Transform.Transform(worldPoint);
+                current = parentJoint.ParentLink;
+            }
+            return true;
+        }
+
+        /// <summary>Return world-space corner points for the current visual bounds
+        /// of the requested links. Used by Library Pose image framing so the crop
+        /// follows the actual current head/flap/neck pose without including
+        /// unrelated accessories.</summary>
+        public IReadOnlyList<Point3D> GetWorldVisualBoundsPoints(IEnumerable<string> linkNames)
+        {
+            var result = new List<Point3D>();
+            if (linkNames == null) return result;
+
+            foreach (string linkName in linkNames)
+            {
+                if (string.IsNullOrWhiteSpace(linkName) ||
+                    !_linkVisuals.TryGetValue(linkName, out var visuals))
+                    continue;
+
+                foreach (GeometryModel3D visual in visuals)
+                {
+                    MeshGeometry3D mesh = visual.Geometry as MeshGeometry3D;
+                    if (mesh == null || mesh.Bounds.IsEmpty) continue;
+                    Rect3D b = mesh.Bounds;
+                    double x0 = b.X, x1 = b.X + b.SizeX;
+                    double y0 = b.Y, y1 = b.Y + b.SizeY;
+                    double z0 = b.Z, z1 = b.Z + b.SizeZ;
+
+                    foreach (double x in new[] { x0, x1 })
+                    foreach (double y in new[] { y0, y1 })
+                    foreach (double z in new[] { z0, z1 })
+                    {
+                        Point3D local = new Point3D(x, y, z);
+                        if (visual.Transform != null)
+                            local = visual.Transform.Transform(local);
+                        if (TryTransformLinkPoint(linkName, local, out Point3D world))
+                            result.Add(world);
+                    }
+                }
+            }
+            return result;
         }
 
         public void SetLinkScale(string name, Vector3D scale)

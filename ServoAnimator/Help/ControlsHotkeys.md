@@ -23,7 +23,8 @@
 
 - Left-drag a point vertically: change value.
 - Right-drag a point horizontally: change time.
-- Ctrl+left-click a spline line: add a point.
+- Ctrl+left-click or double-left-click a spline line: add a point.
+- Middle-click an already-selected NeckNodUp/NeckTiltRight point: toggle its neck owner.
 - Delete: remove the selected point.
 
 ## Movie blocks

@@ -48,8 +48,8 @@
         <!-- Bottom buttons -->
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
                     HorizontalAlignment="Right" Margin="0,8,0,0">
-            <Button Content="Create Library Command" Padding="10,4" Margin="4,0"
-                    ToolTip="Save the commands currently shown here as one reusable single-time-point Library Command"
+            <Button Content="Create Library Pose" Padding="10,4" Margin="4,0"
+                    ToolTip="Save the commands currently shown here as one reusable single-time-point Library Pose"
                     Click="CreateLibraryCommand_Click"/>
             <Button Content="Add Command" Padding="10,4" Margin="4,0" Click="AddCommand_Click"/>
             <Button Content="Close"       Padding="10,4" Margin="4,0" Click="Close_Click" IsDefault="True"/>

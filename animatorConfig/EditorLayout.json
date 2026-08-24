@@ -1,6 +1,6 @@
 {
-  "WindowLeft": -1675,
-  "WindowTop": 140,
+  "WindowLeft": -1685,
+  "WindowTop": 163,
   "WindowWidth": 1250,
   "WindowHeight": 880,
   "WindowState": "Normal",
@@ -37,10 +37,10 @@
   "EmbeddedUrdfHeightStage": 0,
   "EmbeddedUrdfHeightPixels": 0,
   "UrdfUndocked": false,
-  "UrdfWindowLeft": 120,
-  "UrdfWindowTop": 120,
-  "UrdfWindowWidth": 900,
-  "UrdfWindowHeight": 650,
+  "UrdfWindowLeft": -1430,
+  "UrdfWindowTop": 278,
+  "UrdfWindowWidth": 1273,
+  "UrdfWindowHeight": 787,
   "UrdfWindowFullScreen": false,
   "UrdfWindowState": "Normal"
 }

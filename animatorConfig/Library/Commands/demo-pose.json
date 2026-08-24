@@ -1,0 +1,134 @@
+{
+  "description": "",
+  "image": "demo-pose_image.jpg",
+  "commands": [
+    {
+      "offsetSeconds": 0,
+      "servo": "BothEyePop",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "EyesHorizontalRight",
+      "value": -8,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "EyesVerticalUp",
+      "value": 13,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "FlapsOpen",
+      "value": -66,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "FlapTiltUp",
+      "value": -100,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "IrisClose",
+      "value": 2,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "MFR_Rotate",
+      "value": 58,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "MFR_UpDown",
+      "value": 100,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "Microphone_RaiseLower",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "NeckTiltRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "NeckTurn",
+      "value": 15,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "NoseBasket",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "NoseBody",
+      "value": 7,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "RGBCommand",
+      "value": "SetRGBColor,255,0,0,200,Both,LR",
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "VentsOpen",
+      "value": 100,
+      "speed": "N/C",
+      "reason": "pose",
+      "control": "LeftEyeVent"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "VentsOpen",
+      "value": 66,
+      "speed": "N/C",
+      "reason": "pose",
+      "control": "RightEyeVent"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "Whip_Antenna_RaiseLower",
+      "value": 100,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "Whip_Antenna_Rotate",
+      "value": 84,
+      "speed": "N/C",
+      "reason": "pose"
+    }
+  ]
+}

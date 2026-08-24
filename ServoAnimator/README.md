@@ -190,13 +190,25 @@ column; `RGBCommand` has none). Checking it:
 or down to change its value (clamped to the servo's range; the curve and the
 grid follow live). Right-drag a dot left or right to move its time offset —
 the '+' marker on the waveform follows, and moves that would collide with
-another point of the same servo are refused. **Ctrl + left-click on a line**
+another point of the same servo are refused. **Ctrl + left-click or double-left-click on a line**
 creates a new control point on the curve at that time (initially taking the
 curve's value there, so the shape doesn't jump) — a new command appears with
 a corresponding '+' on the waveform timeline. **Left-click a point and press
 Delete** to remove it — the selected point shows a white ring; the '+' leaves
 the waveform if no other command remains at that time. A spline-checked servo with no
 commands yet is not graphed until its first command exists.
+
+**NeckNodUp and NeckTiltRight share one spline.** Both controls operate the same
+physical servo pair, so their ganged commands are merged in time order into one
+curve. The most recent neck point owns the pair until the other neck type takes
+over. The curve changes between the NeckNodUp and NeckTiltRight colors at those
+hand-offs. A point added on this shared curve inherits the previous point's neck
+type; middle-click an already-selected neck point to toggle it between
+`NeckNodUp` and `NeckTiltRight`. The shared ownership is also used by the URDF
+preview and by generated spline samples during animation export. In the URDF,
+both logical modes now take turns driving one shared `NeckTiltLeft` /
+`NeckTiltRight` child-actuator state, matching the physical pair rather than
+maintaining separate Nod and Tilt child states.
 
 A **legend** (top-left of the spline area) shows each servo name in its line
 color with a colored square and a checkbox to show/hide that line. A
@@ -611,7 +623,7 @@ The old animated red mouth rectangle has been removed. Voice amplitude now drive
 - URDF Configuration now stores visual extents per `(ServoName, RobotControl)` rather than one range per logical gang. Ganged inputs therefore expose every physical child servo separately.
 - The Direction/Reverse indicator in URDF Configuration is read-only and inherited from Config > Servo Configuration. `URDFconfig.json` no longer owns a separate reverse flag.
 - Existing v1 URDFconfig files are migrated by copying each former gang range onto all of that gang's child rows.
-- The shared neck pair is combined mechanically in the preview: NeckNodUp uses the differential component of the two calibrated child mappings; NeckTiltRight uses their common component.
+- The shared neck pair is one URDF child-actuator state owned alternately by NeckNodUp or NeckTiltRight. NeckNodUp interprets the pair through the differential component; NeckTiltRight interprets the same pair through the common component.
 - The microphone neutral joint origin moved 30 mm viewer-left (`Y - 0.030 m`) to sit over the top slot.
 - Camera yaw now orbits the vertical line through the CAD NeckTurn joint center, while camera pitch/zoom behavior remains unchanged.
 
@@ -776,5 +788,5 @@ URDF Range Calibration Minimum/Maximum Extent values can now be typed directly i
 - Maestro hardware output now uses the configured port number; saving/loading Servo Configuration rebuilds the connected servo objects so port changes take effect through the existing reconfiguration path.
 - Moved Load, Save, Save As, and Close under a **File** menu at the top of Servo Configuration. The active configuration filename remains visible to the right of File, followed by the Left Tic serial number.
 
-### Library Commands
-Edit Commands now provides **Create Library Command**, which saves the commands in that dialog as a single-time-point JSON item under `Library\Commands` with a name and description. Audio Timeline right-click provides **Insert Library Command**, which browses those items and inserts every selected command at the current cursor time. The older **Insert commands from JSON file** remains a generic relative-time importer.
+### Library Poses
+Edit Commands now provides **Create Library Pose**, which saves the commands in that dialog as a single-time-point JSON item under `Library\Commands` with a name and description. Audio Timeline right-click provides **Insert Library Pose**, which browses those items and inserts every selected command at the current cursor time. The older **Insert commands from JSON file** remains a generic relative-time importer.

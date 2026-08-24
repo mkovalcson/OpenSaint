@@ -1,5 +1,5 @@
 {
-  "version": 9,
+  "version": 10,
   "audioLedGain": 1.2530120481927711,
   "eyeLightIntensity": 11.377510040160644,
   "ventLightIntensity": 20,
@@ -38,7 +38,7 @@
       "maxExtent": 12,
       "zeroExtent": 0,
       "unit": "deg",
-      "reverseOverride": false
+      "reverseOverride": null
     },
     {
       "servo": "NeckTiltRight",
@@ -197,7 +197,7 @@
       "servo": "MFR_UpDown",
       "control": "MFR_UpDown",
       "minExtent": 22.42990654205612,
-      "maxExtent": 132.71028037383175,
+      "maxExtent": 65.10538641686182,
       "zeroExtent": 22.42990654205612,
       "unit": "mm",
       "reverseOverride": false
@@ -215,7 +215,7 @@
       "servo": "Microphone_RaiseLower",
       "control": "Microphone_RaiseLower",
       "minExtent": 0,
-      "maxExtent": 11.214953271028037,
+      "maxExtent": 10,
       "zeroExtent": 0,
       "unit": "mm",
       "reverseOverride": false

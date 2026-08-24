@@ -2033,7 +2033,7 @@
   <joint name="Microphone_RaiseLower" type="prismatic">
     <parent link="head_link" />
     <child link="microphone_link" />
-    <origin xyz="0.011362 -0.083909 0.059267" rpy="0 0 0" />
+    <origin xyz="0.000362 -0.083909 0.056267" rpy="0 0 0" />
     <axis xyz="0 0 1" />
     <limit lower="0.000000" upper="0.011430" effort="5" velocity="0.15" />
   </joint>
@@ -2881,7 +2881,7 @@
     <motion servo="NeckTurn" control="NeckTurn" minExtent="-90" maxExtent="90" zeroExtent="0" unit="deg" reverseOverride="inherit" />
     <motion servo="NeckNodUp" control="NeckTiltLeft" minExtent="-15" maxExtent="15" zeroExtent="0" unit="deg" reverseOverride="inherit" />
     <motion servo="NeckNodUp" control="NeckTiltRight" minExtent="-15" maxExtent="15" zeroExtent="0" unit="deg" reverseOverride="inherit" />
-    <motion servo="NeckTiltRight" control="NeckTiltLeft" minExtent="-12" maxExtent="12" zeroExtent="0" unit="deg" reverseOverride="false" />
+    <motion servo="NeckTiltRight" control="NeckTiltLeft" minExtent="-12" maxExtent="12" zeroExtent="0" unit="deg" reverseOverride="inherit" />
     <motion servo="NeckTiltRight" control="NeckTiltRight" minExtent="-12" maxExtent="12" zeroExtent="0" unit="deg" reverseOverride="inherit" />
     <motion servo="FlapsOpen" control="BrowLeftTopOpen" minExtent="-42" maxExtent="90" zeroExtent="22.563139931740615" unit="deg" reverseOverride="true" />
     <motion servo="FlapsOpen" control="BrowRightTopOpen" minExtent="-90" maxExtent="42" zeroExtent="-22.563139931740615" unit="deg" reverseOverride="false" />

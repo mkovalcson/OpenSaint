@@ -27,3 +27,8 @@ Editing commands clears old red collision-marker state. Replay the modified sequ
 ## Manual grid staging
 
 Several Servo Grid values can be changed before commands are generated. The staged values are discarded when another timeline time is selected or playback begins, returning the grid to the authored values for that point.
+
+
+## Insert Pose
+
+When the URDF Pose editor is used to arrange the robot visually, right-click the sequence timeline and choose **Insert Pose**. The editor creates a complete mechanical keyframe at the current cursor from the URDF pose. Existing numeric commands at that exact time are replaced. If the Pose editor contains an RGB Command, that RGB command is inserted at the same time and replaces any RGB command already at that exact timestamp; otherwise existing non-numeric RGB/Play commands remain.

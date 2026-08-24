@@ -5,7 +5,7 @@ using Microsoft.Win32;
 namespace ServoAnimator
 {
     /// <summary>Prompts for the filename, description and optional image for a
-    /// single-time-point Library Command. The caller owns the JSON/image write.</summary>
+    /// single-time-point Library Pose. The caller owns the JSON/image write.</summary>
     public partial class LibraryCommandSaveWindow : Window
     {
         public string FileNameText { get; private set; } = "";
@@ -24,7 +24,7 @@ namespace ServoAnimator
         {
             var dlg = new OpenFileDialog
             {
-                Title = "Attach Library Command Image",
+                Title = "Attach Library Pose Image",
                 Filter = "Image files|*.png;*.jpg;*.jpeg;*.bmp;*.gif|All files|*.*",
                 CheckFileExists = true,
             };
@@ -39,8 +39,8 @@ namespace ServoAnimator
             string name = (FileNameBox.Text ?? "").Trim();
             if (name.Length == 0)
             {
-                MessageBox.Show(this, "Enter a file name for the Library Command.",
-                                "Create Library Command", MessageBoxButton.OK,
+                MessageBox.Show(this, "Enter a file name for the Library Pose.",
+                                "Create Library Pose", MessageBoxButton.OK,
                                 MessageBoxImage.Information);
                 return;
             }
@@ -53,7 +53,7 @@ namespace ServoAnimator
                 name.Contains(Path.AltDirectorySeparatorChar))
             {
                 MessageBox.Show(this, "The file name contains characters that are not valid in a Windows file name.",
-                                "Create Library Command", MessageBoxButton.OK,
+                                "Create Library Pose", MessageBoxButton.OK,
                                 MessageBoxImage.Warning);
                 return;
             }

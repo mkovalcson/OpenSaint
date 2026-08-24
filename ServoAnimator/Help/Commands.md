@@ -29,6 +29,6 @@ A command may target a child control inside a gang. It then affects only that ch
 
 RGBCommand uses text rather than a numeric servo value. The RGB Builder can create supported Arduino command strings such as `ClearAll`, `SetRGBColor`, fades, pulses, theater chase, Cylon and rainbow effects. The Edit Commands list no longer uses a separate color patch; the URDF viewer shows the actual four 16-LED eye/vent ring state.
 
-## Create Library Command
+## Create Library Pose
 
-The **Create Library Command** button in Edit Commands saves the command rows currently shown as a reusable single-time-point command group. You provide a JSON file name and description. The file is stored in `Library\Commands`. When inserted later with **Insert Library Command**, all saved commands are placed at the selected timeline time.
+The **Create Library Pose** button in Edit Commands saves the command rows currently shown as a reusable single-time-point command group. You provide a JSON file name and description. The file is stored in `Library\Commands`. When inserted later with **Insert Library Pose**, all saved commands are placed at the selected timeline time.

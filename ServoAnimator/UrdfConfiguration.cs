@@ -21,7 +21,7 @@ namespace ServoAnimator
 {
     public sealed class UrdfConfiguration
     {
-        public int Version { get; set; } = 9;
+        public int Version { get; set; } = 10;
 
         /// <summary>Multiplier applied to the normalized audio amplitude before
         /// it drives the URDF mouth LEDs. 1.0 preserves the raw audio level;
@@ -221,10 +221,24 @@ namespace ServoAnimator
                 }
             }
 
+            // v10 makes NeckNodUp and NeckTiltRight alternate owners of the
+            // same URDF child-actuator pair. v9's embedded baseline accidentally
+            // forced NeckTiltRight/NeckTiltLeft to non-reversed while the other
+            // Tilt child inherited its gang direction, which can cancel roll.
+            // Migrate only that exact legacy combination; intentional custom
+            // direction combinations remain untouched.
+            if (saved.Version < 10)
+            {
+                var tiltLeft = defaults.Get(ServoNames.NeckTiltRight, RobotControls.NeckTiltLeft);
+                var tiltRight = defaults.Get(ServoNames.NeckTiltRight, RobotControls.NeckTiltRight);
+                if (tiltLeft?.ReverseOverride == false && tiltRight?.ReverseOverride == null)
+                    tiltLeft.ReverseOverride = null;
+            }
+
             defaults.AudioLedGain = Math.Clamp(saved.AudioLedGain, 0.5, 2.0);
             defaults.EyeLightIntensity = Math.Clamp(saved.EyeLightIntensity, 1.0, 20.0);
             defaults.VentLightIntensity = Math.Clamp(saved.VentLightIntensity, 1.0, 20.0);
-            defaults.Version = 9;
+            defaults.Version = 10;
             defaults.Normalize();
             defaults.Reindex();
             return defaults;
@@ -232,7 +246,7 @@ namespace ServoAnimator
 
         public void Save(string path)
         {
-            Version = 9;
+            Version = 10;
             Normalize();
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
             File.WriteAllText(path, JsonSerializer.Serialize(this, JsonOptions()));
@@ -253,7 +267,7 @@ namespace ServoAnimator
                 target.ZeroExtent = source.ZeroExtent;
                 target.ReverseOverride = source.ReverseOverride;
             }
-            Version = 9;
+            Version = 10;
             Normalize();
             Reindex();
         }
@@ -319,7 +333,13 @@ namespace ServoAnimator
             bool reverse = s.ReverseOverride ??
                            InheritedReverse(servo, control, servoConfiguration);
 
-            double zero = Math.Clamp(s.ZeroExtent, s.MinExtent, s.MaxExtent);
+            // Linear millimetre travel has only two physical calibration endpoints.
+            // Its logical zero is derived from direction rather than being an
+            // independent third point: Minimum in normal direction, Maximum when
+            // Reversed. Degree/% controls retain their independently calibrated zero.
+            double zero = string.Equals(s.Unit, "mm", StringComparison.OrdinalIgnoreCase)
+                ? (reverse ? s.MaxExtent : s.MinExtent)
+                : Math.Clamp(s.ZeroExtent, s.MinExtent, s.MaxExtent);
 
             // IrisClose's semantic input is -100=open and +100=closed, so its
             // visual direction is inverted before applying the same Min/Zero/Max

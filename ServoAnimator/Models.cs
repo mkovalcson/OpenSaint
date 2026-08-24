@@ -537,7 +537,7 @@ namespace ServoAnimator
             File.WriteAllText(path, JsonSerializer.Serialize(wrapper, JsonOpts));
         }
 
-        /// <summary>Write a single-time-point Library Command using the
+        /// <summary>Write a single-time-point Library Pose using the
         /// same description + commands JSON shape as a Library Sequence. Command
         /// order is preserved because same-time command ordering can matter for
         /// ganged/child overrides.</summary>
@@ -614,7 +614,7 @@ namespace ServoAnimator
             SaveCommandsOnly(path, item.Commands, description);
         }
 
-        /// <summary>Update the optional image reference on a Library Command
+        /// <summary>Update the optional image reference on a Library Pose
         /// while preserving its description, commands, and any future fields.
         /// The image path is normally stored relative to the JSON file.</summary>
         public static void UpdateLibraryImage(string path, string imageFile)
