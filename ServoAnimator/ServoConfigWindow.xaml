@@ -32,7 +32,7 @@
 
             <Menu Grid.Column="0" VerticalAlignment="Center"
                   Background="Transparent" Foreground="{DynamicResource PrimaryText}">
-                <MenuItem Header="_File" Foreground="#F2F4F8">
+                <MenuItem Header="_File" Foreground="{DynamicResource PrimaryText}">
                     <MenuItem Header="_Load…" Click="Load_Click"/>
                     <MenuItem Header="_Save" Click="Save_Click"/>
                     <MenuItem Header="Save _As…" Click="SaveAs_Click"/>
@@ -46,7 +46,7 @@
                        VerticalAlignment="Center" Margin="12,0,18,0"
                        Text="(unsaved configuration)"/>
 
-            <TextBlock Grid.Column="2" Text="Left Tic SN:" Foreground="#C8CCD4"
+            <TextBlock Grid.Column="2" Text="Left Tic SN:" Foreground="{DynamicResource SecondaryText}"
                        VerticalAlignment="Center" Margin="0,0,4,0"
                        ToolTip="Serial number of the LEFT Tic T249 eye-pop controller (empty = first found is left)"/>
             <TextBox Grid.Column="3" x:Name="LeftTicBox" Width="110"

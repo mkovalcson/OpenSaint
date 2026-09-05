@@ -15,7 +15,7 @@
 
         <Grid Grid.Row="0" Margin="0,0,0,8">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="280"/></Grid.ColumnDefinitions>
-            <TextBlock x:Name="ModeText" Grid.Column="0" Foreground="#C8CCD4" TextWrapping="Wrap" VerticalAlignment="Center"/>
+            <TextBlock x:Name="ModeText" Grid.Column="0" Foreground="{DynamicResource SecondaryText}" TextWrapping="Wrap" VerticalAlignment="Center"/>
             <TextBlock Grid.Column="1" Text="Search:" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="12,0,6,0"/>
             <TextBox x:Name="SearchBox" Grid.Column="2" Height="34" VerticalAlignment="Center"
                      ToolTip="Filter by folder, filename, description, or audio filename"
@@ -28,7 +28,7 @@
                   CanUserAddRows="False" CanUserDeleteRows="False"
                   HeadersVisibility="Column" GridLinesVisibility="Horizontal"
                   Background="{DynamicResource PanelBackground}" Foreground="{DynamicResource PrimaryText}"
-                  RowBackground="{DynamicResource PanelBackground}" AlternatingRowBackground="#282C33"
+                  RowBackground="{DynamicResource PanelBackground}" AlternatingRowBackground="{DynamicResource ElevatedPanelBackground}"
                   BorderBrush="{DynamicResource DividerBrush}"
                   SelectionChanged="ItemsGrid_SelectionChanged"
                   MouseDoubleClick="ItemsGrid_MouseDoubleClick">

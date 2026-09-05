@@ -23,21 +23,21 @@
         </Grid.ColumnDefinitions>
 
         <TextBlock Grid.Row="0" Grid.Column="0" Text="Animate mode:"
-                   Foreground="#C8CCD4" VerticalAlignment="Center" Margin="0,0,8,8"/>
+                   Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="0,0,8,8"/>
         <ComboBox x:Name="ModeCombo" Grid.Row="0" Grid.Column="1"
                   Width="180" HorizontalAlignment="Left" Margin="0,0,0,8"/>
 
         <TextBlock Grid.Row="1" Grid.Column="0" Text="Spline sample rate:"
-                   Foreground="#C8CCD4" VerticalAlignment="Center" Margin="0,0,8,8"/>
+                   Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="0,0,8,8"/>
         <ComboBox x:Name="HzCombo" Grid.Row="1" Grid.Column="1"
                   Width="110" HorizontalAlignment="Left" Margin="0,0,0,8"/>
 
         <CheckBox x:Name="ScaleCheck" Grid.Row="2" Grid.Column="1"
                   Content="Scale ±1  (export numeric values as -1.000..1.000 / 0..1.000)"
-                  Foreground="#C8CCD4" Margin="0,0,0,10"/>
+                  Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,10"/>
 
         <TextBlock Grid.Row="3" Grid.Column="0" Text="Export to file:"
-                   Foreground="#C8CCD4" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                   Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="0,0,8,0"/>
         <TextBox x:Name="PathBox" Grid.Row="3" Grid.Column="1" Margin="0,0,6,0"
                  VerticalAlignment="Center"/>
         <Button Grid.Row="3" Grid.Column="2" Content="Browse…" Padding="10,3"

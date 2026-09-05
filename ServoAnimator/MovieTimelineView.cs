@@ -36,6 +36,7 @@ namespace ServoAnimator
         public event Action<int, int> ReorderRequested;
         public event Action<int> InsertRequested;
         public event Action<int> RemoveRequested;
+        public event Action<int> LoopToggleRequested;
         public event Action ViewChanged;
 
         public Func<MovieSequenceItem, string> BlockToolTipProvider { get; set; }
@@ -188,6 +189,8 @@ namespace ServoAnimator
             var selectedFill = ThemeManager.GetColor("MovieAccentSurface", Color.FromRgb(91, 72, 43));
             var evenFill = ThemeManager.GetColor("ElevatedPanelBackground", Color.FromRgb(55, 52, 43));
             var oddFill = ThemeManager.GetColor("ControlBackground", Color.FromRgb(62, 58, 47));
+            var primaryText = new SolidColorBrush(ThemeManager.GetColor("PrimaryText", Colors.WhiteSmoke));
+            var secondaryText = new SolidColorBrush(ThemeManager.GetColor("SecondaryText", Colors.LightGray));
             dc.DrawRectangle(new SolidColorBrush(movieBg),
                              new Pen(new SolidColorBrush(movieAccent), 1),
                              new Rect(0, 0, ActualWidth, ActualHeight));
@@ -195,7 +198,7 @@ namespace ServoAnimator
             if (_items.Count == 0)
             {
                 DrawText(dc, "Movie timeline is empty — right-click to insert a sequence.",
-                    new Point(8, Math.Max(4, (ActualHeight - 16) / 2)), Brushes.Gray, 12,
+                    new Point(8, Math.Max(4, (ActualHeight - 16) / 2)), secondaryText, 12,
                     Math.Max(0, ActualWidth - 16));
                 return;
             }
@@ -216,11 +219,21 @@ namespace ServoAnimator
                 dc.DrawRoundedRectangle(new SolidColorBrush(fillColor), new Pen(Brushes.DimGray, 1), rect, 3, 3);
 
                 string label = Path.GetFileNameWithoutExtension(_items[i].FilePath ?? "sequence");
-                DrawText(dc, label, new Point(rect.X + 6, rect.Y + 4), Brushes.WhiteSmoke,
-                         12, Math.Max(0, rect.Width - 18));
+                double loopReserve = _items[i].IsLooping ? 22 : 0;
+                DrawText(dc, label, new Point(rect.X + 6, rect.Y + 4), primaryText,
+                         12, Math.Max(0, rect.Width - 18 - loopReserve));
+                if (_items[i].IsLooping && rect.Width > 26)
+                    DrawText(dc, "∞", new Point(rect.Right - 32, rect.Y + 1),
+                             new SolidColorBrush(movieAccent), 16, 18);
+                double descriptionTop = rect.Y + 21;
+                double descriptionHeight = Math.Max(0, rect.Bottom - 20 - descriptionTop);
+                if (!string.IsNullOrWhiteSpace(_items[i].Description) && descriptionHeight >= 9)
+                    DrawWrappedText(dc, _items[i].Description,
+                                    new Point(rect.X + 6, descriptionTop), secondaryText,
+                                    9, Math.Max(0, rect.Width - 18), descriptionHeight);
                 if (rect.Width > 58)
                     DrawText(dc, dur.ToString("0.###", CultureInfo.InvariantCulture) + " s",
-                             new Point(rect.X + 6, rect.Bottom - 18), Brushes.LightGray,
+                             new Point(rect.X + 6, rect.Bottom - 18), secondaryText,
                              10, Math.Max(0, rect.Width - 18));
 
                 // Small grip tells the user that the block itself is draggable.
@@ -254,6 +267,20 @@ namespace ServoAnimator
                 MaxTextWidth = maxWidth,
                 MaxTextHeight = size * 1.4,
                 Trimming = TextTrimming.CharacterEllipsis,
+            };
+            dc.DrawText(ft, p);
+        }
+
+        private static void DrawWrappedText(DrawingContext dc, string text, Point p,
+            Brush brush, double size, double maxWidth, double maxHeight)
+        {
+            if (maxWidth <= 2 || maxHeight <= 2) return;
+            var ft = new FormattedText(text ?? "", CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight, new Typeface("Segoe UI"), size, brush, 1.0)
+            {
+                MaxTextWidth = maxWidth,
+                MaxTextHeight = maxHeight,
+                Trimming = TextTrimming.WordEllipsis,
             };
             dc.DrawText(ft, p);
         }
@@ -387,6 +414,15 @@ namespace ServoAnimator
 
             if (idx >= 0 && idx < _items.Count)
             {
+                var loop = new MenuItem
+                {
+                    Header = "Loop Sequence",
+                    IsCheckable = true,
+                    IsChecked = _items[idx].IsLooping,
+                };
+                loop.Click += (_, _) => LoopToggleRequested?.Invoke(idx);
+                menu.Items.Add(loop);
+
                 var remove = new MenuItem
                 {
                     Header = "Remove " + Path.GetFileNameWithoutExtension(_items[idx].FilePath ?? "sequence")

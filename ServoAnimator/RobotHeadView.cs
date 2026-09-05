@@ -188,6 +188,28 @@ namespace ServoAnimator
         private UrdfConfiguration _urdfConfiguration = UrdfConfiguration.CreateDefault();
         private ServoConfiguration _servoConfiguration = ServoConfiguration.CreateDefault();
 
+        // Playback pose cache: unchanged controls do not reassign WPF 3-D
+        // transforms, rebuild iris meshes, or trigger downstream collision work.
+        private readonly Dictionary<(ServoNames Servo, RobotControls Control), double>
+            _lastControlValues = new();
+        private long _poseRevision;
+        private long _lastCollisionRefreshMs;
+        private readonly System.Windows.Threading.DispatcherTimer _deferredCollisionTimer =
+            new(System.Windows.Threading.DispatcherPriority.Background)
+            {
+                Interval = TimeSpan.FromMilliseconds(67),
+            };
+        private readonly double[] _mouthLevels = new double[14];
+        private int _lastMouthStep = -1;
+        private int _lastRgbFrameHash;
+        private bool _hasRgbFrameHash;
+        private double _lastLeftIrisRadius = double.NaN;
+        private double _lastRightIrisRadius = double.NaN;
+        private ServoNames? _lastAppliedNeckMode;
+        private double _lastAppliedNeckLeft = double.NaN;
+        private double _lastAppliedNeckRight = double.NaN;
+        private double _lastAppliedNeckTurn = double.NaN;
+
         private Point _lastMouse;
         private bool _orbiting;
         private double _cameraYaw = 0;
@@ -254,6 +276,12 @@ namespace ServoAnimator
 
         public RobotHeadView()
         {
+            _deferredCollisionTimer.Tick += (_, _) =>
+            {
+                _deferredCollisionTimer.Stop();
+                RefreshCollisionState();
+            };
+
             // Light-blue neutral background requested for the URDF preview.
             Background = new SolidColorBrush(Color.FromRgb(0xC0, 0xED, 0xFC));
 
@@ -2372,6 +2400,7 @@ namespace ServoAnimator
                     path = Path.Combine(AppContext.BaseDirectory, "johnny5_head.urdf");
 
                 _scene = UrdfScene.Load(path);
+                InvalidatePoseCaches();
                 var root = new Model3DGroup();
                 root.Children.Add(new AmbientLight(Color.FromRgb(92, 96, 108)));
                 root.Children.Add(new DirectionalLight(Color.FromRgb(235, 240, 255), new Vector3D(-1.0, 0.4, -0.5)));
@@ -2446,6 +2475,7 @@ namespace ServoAnimator
                     whip, mic, mfr, noseBody, noseBasket, leftEyePop, rightEyePop,
                     whipRotate, mfrRotate);
 
+            long revisionBefore = _poseRevision;
             _suppressCollisionRefresh = true;
             try
             {
@@ -2483,8 +2513,10 @@ namespace ServoAnimator
             {
                 _suppressCollisionRefresh = false;
             }
-            RefreshCollisionState();
-            UpdatePoseOverlayLayout();
+            if (_poseRevision != revisionBefore)
+                RefreshCollisionState(allowThrottle: true);
+            if (_poseEditEnabled)
+                UpdatePoseOverlayLayout();
         }
 
         public void SetChildServo(ServoNames parentServo, RobotControls control, double value)
@@ -2515,8 +2547,10 @@ namespace ServoAnimator
                 return;
             }
 
+            long revisionBefore = _poseRevision;
             SetControl(parentServo, control, value);
-            RefreshCollisionState();
+            if (_poseRevision != revisionBefore)
+                RefreshCollisionState();
         }
 
         /// <summary>Replace the visual motion calibration used by this preview.
@@ -2525,6 +2559,7 @@ namespace ServoAnimator
         public void SetUrdfConfiguration(UrdfConfiguration configuration)
         {
             _urdfConfiguration = configuration ?? UrdfConfiguration.CreateDefault();
+            InvalidatePoseCaches();
             ApplyPoseControlRangesFromUrdf();
             if (_poseEditEnabled) UpdatePoseOverlayLayout();
         }
@@ -2532,6 +2567,7 @@ namespace ServoAnimator
         public void SetServoConfiguration(ServoConfiguration configuration)
         {
             _servoConfiguration = configuration ?? ServoConfiguration.CreateDefault();
+            InvalidatePoseCaches();
             RebuildCollisionBaseline();
         }
 
@@ -2605,9 +2641,25 @@ namespace ServoAnimator
             _status.Foreground = new SolidColorBrush(Color.FromArgb(205, 225, 232, 242));
         }
 
-        private void RefreshCollisionState()
+        public void RefreshCollisionNow() => RefreshCollisionState();
+
+        private void RefreshCollisionState(bool allowThrottle = false)
         {
             if (_scene == null || _suppressCollisionRefresh) return;
+
+            long now = Environment.TickCount64;
+            if (allowThrottle && _collisionWarningsEnabled &&
+                now - _lastCollisionRefreshMs < 67)
+            {
+                _deferredCollisionTimer.Stop();
+                _deferredCollisionTimer.Interval = TimeSpan.FromMilliseconds(
+                    Math.Max(1, 67 - (now - _lastCollisionRefreshMs)));
+                _deferredCollisionTimer.Start();
+                return;
+            }
+
+            _deferredCollisionTimer.Stop();
+            _lastCollisionRefreshMs = now;
 
             if (!_collisionWarningsEnabled)
             {
@@ -2690,6 +2742,7 @@ namespace ServoAnimator
                 _rightEyePopLogical = oldRightEyePop;
                 _urdfDriveEnabled = oldDrive;
                 _suppressCollisionRefresh = oldSuppress;
+                InvalidatePoseCaches();
             }
 
             RefreshCollisionState();
@@ -2697,6 +2750,17 @@ namespace ServoAnimator
 
         private double Motion(ServoNames servo, RobotControls control, double input) =>
             _urdfConfiguration.Map(servo, control, input, _servoConfiguration);
+
+        private void InvalidatePoseCaches()
+        {
+            _lastControlValues.Clear();
+            _lastAppliedNeckMode = null;
+            _lastAppliedNeckLeft = _lastAppliedNeckRight = double.NaN;
+            _lastAppliedNeckTurn = double.NaN;
+            _lastLeftIrisRadius = _lastRightIrisRadius = double.NaN;
+            _lastMouthStep = -1;
+            _hasRgbFrameHash = false;
+        }
 
         /// <summary>
         /// Voice-amplitude display on the 14 physical front LEDs of the CAD Lip
@@ -2715,11 +2779,14 @@ namespace ServoAnimator
             // half-scale input while 0.5x deliberately reduces sensitivity.
             double ledGain = Math.Clamp(_urdfConfiguration?.AudioLedGain ?? 1.0, 0.5, 2.0);
             double a = Math.Clamp(amplitude * ledGain, 0, 1);
+            int mouthStep = (int)Math.Round(a * 128.0);
+            if (mouthStep == _lastMouthStep) return;
+            _lastMouthStep = mouthStep;
+            a = mouthStep / 128.0;
             double scaledPairs = a * 7.0;
             Color off = Color.FromRgb(154, 82, 28);       // dull orange lens
             Color on = Color.FromRgb(255, 146, 32);       // bright orange lens
             Color emissive = Color.FromRgb(255, 104, 8);  // hot orange emission
-            var levels = new double[14];
 
             for (int i = 0; i < 14; i++)
             {
@@ -2731,14 +2798,14 @@ namespace ServoAnimator
                 // output track the audio level continuously.
                 double level = Math.Clamp(scaledPairs - pairFromCenter, 0.0, 1.0);
                 double glow = Math.Pow(level, 0.72);
-                levels[i] = glow;
+                _mouthLevels[i] = glow;
 
                 _scene.SetMaterialColor($"lip_led_{i:00}_dynamic", BlendColor(off, on, level));
                 _scene.SetMaterialEmissive($"lip_led_{i:00}_dynamic", ScaleColor(emissive, glow));
                 _scene.SetLipHaloIntensity(i, glow);
             }
 
-            _scene.UpdateLipPointLights(levels);
+            _scene.UpdateLipPointLights(_mouthLevels);
 
             // The red/green side-mouth LED rails are a second audio-level
             // display. They fill from the physical front of the mouth toward
@@ -2770,6 +2837,7 @@ namespace ServoAnimator
             if (_poseEditEnabled && !_poseInternalUpdate) return;
             if (!_poseInternalUpdate) UpdatePoseStateForServo(servo, value);
 
+            long revisionBefore = _poseRevision;
             switch (servo)
             {
                 case ServoNames.NeckTurn:
@@ -2834,7 +2902,8 @@ namespace ServoAnimator
                     break;
             }
 
-            RefreshCollisionState();
+            if (_poseRevision != revisionBefore)
+                RefreshCollisionState();
         }
 
         /// <summary>Apply a timeline/grid pose to the one shared neck actuator pair.
@@ -2861,6 +2930,17 @@ namespace ServoAnimator
         {
             if (_scene == null || (!_urdfDriveEnabled && !_poseInternalUpdate)) return;
             if (neckTurn.HasValue) _lastNeckTurn = neckTurn.Value;
+
+            if (_lastAppliedNeckMode == _activeNeckMode &&
+                Math.Abs(_lastAppliedNeckLeft - _neckLeft) < 1e-6 &&
+                Math.Abs(_lastAppliedNeckRight - _neckRight) < 1e-6 &&
+                Math.Abs(_lastAppliedNeckTurn - _lastNeckTurn) < 1e-6)
+                return;
+            _lastAppliedNeckMode = _activeNeckMode;
+            _lastAppliedNeckLeft = _neckLeft;
+            _lastAppliedNeckRight = _neckRight;
+            _lastAppliedNeckTurn = _lastNeckTurn;
+            _poseRevision++;
 
             // Visual travel comes from the calibration embedded in the URDF,
             // optionally overridden by URDFconfig.json. Joint origins still come
@@ -2964,6 +3044,13 @@ namespace ServoAnimator
         private void SetControl(ServoNames parentServo, RobotControls control, double value)
         {
             if (_scene == null || (!_urdfDriveEnabled && !_poseInternalUpdate)) return;
+
+            var cacheKey = (parentServo, control);
+            if (_lastControlValues.TryGetValue(cacheKey, out double previous) &&
+                Math.Abs(previous - value) < 1e-6)
+                return;
+            _lastControlValues[cacheKey] = value;
+            _poseRevision++;
 
             switch (control)
             {
@@ -3127,6 +3214,17 @@ namespace ServoAnimator
             // LeftIris/RightIris remain in the joint tree for compatibility.
             _scene.SetJoint(joint, clamped / 100.0);
 
+            ref double lastRadius = ref (side == "left"
+                ? ref _lastLeftIrisRadius
+                : ref _lastRightIrisRadius);
+            // Rebuilding a 72-segment mesh every display frame is far more
+            // expensive than moving a joint. A 0.1 mm aperture threshold is
+            // visually continuous while reducing mesh churn substantially.
+            if (!double.IsNaN(lastRadius) &&
+                Math.Abs(lastRadius - innerRadiusMetres) < 0.0001)
+                return;
+            lastRadius = innerRadiusMetres;
+
             // Replace the original solid blue cylinder with an annular cylinder
             // whose inner boundary is the visible iris opening. The fixed-size
             // The pupil backing remains behind it; RGB simulation switches
@@ -3147,7 +3245,24 @@ namespace ServoAnimator
             if (_scene == null || !_urdfDriveEnabled || frame == null) return;
             double eyeIntensity = Math.Clamp(_urdfConfiguration?.EyeLightIntensity ?? 1.0, 1.0, 20.0);
             double ventIntensity = Math.Clamp(_urdfConfiguration?.VentLightIntensity ?? 1.0, 1.0, 20.0);
+            int hash = HashRgbFrame(frame, eyeIntensity, ventIntensity);
+            if (_hasRgbFrameHash && hash == _lastRgbFrameHash) return;
+            _hasRgbFrameHash = true;
+            _lastRgbFrameHash = hash;
             _scene.SetNeoPixelFrame(frame, eyeIntensity, ventIntensity);
+        }
+
+        private static int HashRgbFrame(RgbRingFrame frame,
+                                        double eyeIntensity, double ventIntensity)
+        {
+            var hash = new HashCode();
+            hash.Add(eyeIntensity);
+            hash.Add(ventIntensity);
+            foreach (Color color in frame.LeftEye) hash.Add(color);
+            foreach (Color color in frame.LeftVent) hash.Add(color);
+            foreach (Color color in frame.RightEye) hash.Add(color);
+            foreach (Color color in frame.RightVent) hash.Add(color);
+            return hash.ToHashCode();
         }
 
         /// <summary>True when servo/timeline-driven updates are applied to the
@@ -3424,6 +3539,21 @@ namespace ServoAnimator
             _cameraYaw = source._cameraYaw;
             _cameraPitch = source._cameraPitch;
             _cameraDistance = source._cameraDistance;
+            UpdateCamera();
+            if (makeOpeningView)
+                CaptureCurrentCameraAsOpeningView();
+        }
+
+        public (double Yaw, double Pitch, double Distance) GetCameraState() =>
+            (_cameraYaw, _cameraPitch, _cameraDistance);
+
+        public void ApplyCameraState(double yaw, double pitch, double distance,
+                                     bool makeOpeningView = true)
+        {
+            if (double.IsFinite(yaw)) _cameraYaw = yaw;
+            if (double.IsFinite(pitch)) _cameraPitch = Math.Clamp(pitch, -75 * Deg, 75 * Deg);
+            if (double.IsFinite(distance) && distance > 0)
+                _cameraDistance = Math.Clamp(distance, .55, 2.5);
             UpdateCamera();
             if (makeOpeningView)
                 CaptureCurrentCameraAsOpeningView();

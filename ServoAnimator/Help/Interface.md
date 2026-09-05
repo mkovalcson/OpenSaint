@@ -21,3 +21,7 @@ A splitter changes the relative Audio/Spline height. Another splitter changes th
 ## Descriptions
 
 Sequence and Movie descriptions have compact editors. Movie Description expands upward from the Movie Timeline area so it does not reuse the Sequence Description overlay.
+
+Use **View > Color Theme** to choose a dark palette, the medium-tone **Slate Mid** or **Sandstone Mid** palettes, or the lighter **Mist Light** and **Warm Paper** palettes.
+
+When the application closes, `EditorLayout.json` remembers the main window position, size and maximized state; every editor splitter position; Commands and Movie Timeline visibility; the embedded URDF height; and the URDF camera orientation and zoom. The same arrangement is restored at the next launch when it remains visible on the current monitor layout.

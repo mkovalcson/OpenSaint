@@ -130,7 +130,7 @@
                         </ToggleButton>
                         <TextBlock Text="{Binding ServoName}" Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center"/>
                     </StackPanel>
-                    <TextBlock Grid.Column="2" Text="{Binding OffsetText}" Foreground="#B9BFCA" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="{Binding OffsetText}" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
                     <!-- Speed column: a picklist (Default, Fast, Slow,
                          Crawl) selectable in Live Drive - changing it pushes
                          the speed/accel pair (indexed by the enum) to every
@@ -254,7 +254,7 @@
                                     <ColumnDefinition Width="75"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="1" Text="{Binding Name}"
-                                           Foreground="#9FB3CF" VerticalAlignment="Center"/>
+                                           Foreground="{DynamicResource HeaderText}" VerticalAlignment="Center"/>
                                 <!-- Same range as the PARENT ganged servo
                                      (-100..100 or 0..100); Live Drive moves
                                      drive just this servo through
@@ -363,6 +363,7 @@
                 <MenuItem Header="Load _Movie…" Click="LoadMovie_Click"/>
                 <MenuItem Header="_Save Movie" Click="SaveMovie_Click"/>
                 <MenuItem Header="Save Movie _As…" Click="SaveMovieAs_Click"/>
+                <MenuItem Header="_Repair Missing Files…" Click="RepairMissingFiles_Click"/>
                 <Separator/>
                 <MenuItem Header="_Export Animation JSON…" Click="ExportAnimation_Click"/>
                 <Separator/>
@@ -400,6 +401,16 @@
                               Tag="Teal" Click="ThemeMenuItem_Click"/>
                     <MenuItem x:Name="ThemeVioletMenuItem" Header="Violet" IsCheckable="True"
                               Tag="Violet" Click="ThemeMenuItem_Click"/>
+                    <Separator/>
+                    <MenuItem x:Name="ThemeSlateMidMenuItem" Header="Slate Mid" IsCheckable="True"
+                              Tag="Slate Mid" Click="ThemeMenuItem_Click"/>
+                    <MenuItem x:Name="ThemeSandstoneMidMenuItem" Header="Sandstone Mid" IsCheckable="True"
+                              Tag="Sandstone Mid" Click="ThemeMenuItem_Click"/>
+                    <Separator/>
+                    <MenuItem x:Name="ThemeMistLightMenuItem" Header="Mist Light" IsCheckable="True"
+                              Tag="Mist Light" Click="ThemeMenuItem_Click"/>
+                    <MenuItem x:Name="ThemeWarmPaperMenuItem" Header="Warm Paper" IsCheckable="True"
+                              Tag="Warm Paper" Click="ThemeMenuItem_Click"/>
                 </MenuItem>
             </MenuItem>
             <MenuItem x:Name="HelpMenuItem" Header="_Help" Style="{StaticResource TopLevelMenuItem}">
@@ -419,7 +430,7 @@
                                   VerticalAlignment="Center" Checked="LiveDrive_Changed" Unchecked="LiveDrive_Changed">
                         <TextBlock><Run Text="● Live Drive: "/><Run x:Name="LiveDriveState" Text="Off" FontWeight="Bold"/></TextBlock>
                     </ToggleButton>
-                    <Button Content="Disable Servos" Height="20" Foreground="#FFFF00" MinHeight="0" Padding="8,0"
+                    <Button Content="Disable Servos" Height="20" Foreground="{DynamicResource WarningText}" MinHeight="0" Padding="8,0"
                             Margin="0,0,6,0" VerticalAlignment="Center"
                             ToolTip="Disable PWM on every Maestro servo channel (servos go limp)"
                             Click="DisableAll_Click"/>
@@ -452,7 +463,7 @@
         </Border>
 
         <!-- Sequence work area header and one-line description. -->
-        <Border DockPanel.Dock="Top" Background="{DynamicResource SequencePanelBackground}" Padding="8,6"
+        <Border x:Name="SequenceDescriptionPanel" DockPanel.Dock="Top" Background="{DynamicResource SequencePanelBackground}" Padding="8,6"
                 Margin="6,5,6,0" CornerRadius="{StaticResource PanelCornerRadius}"
                 BorderBrush="{DynamicResource SequenceAccent}" BorderThickness="1">
             <Grid>
@@ -468,7 +479,7 @@
                     <TextBlock Text="SEQUENCE" Foreground="#DCEBFA" FontWeight="SemiBold"
                                VerticalAlignment="Center" TextAlignment="Center"/>
                 </Border>
-                <TextBlock Grid.Column="1" Text="Description:" Foreground="#C8CCD4"
+                <TextBlock Grid.Column="1" Text="Description:" Foreground="{DynamicResource SecondaryText}"
                            VerticalAlignment="Center" Margin="0,0,4,0"/>
                 <TextBox Grid.Column="2" x:Name="DescriptionBox" MinWidth="240" Height="34"
                          VerticalAlignment="Center" AcceptsReturn="False" TextWrapping="NoWrap"
@@ -489,8 +500,14 @@
         <Border DockPanel.Dock="Bottom" Background="{DynamicResource StatusBackground}" Height="26"
                 Margin="6,2,6,5" CornerRadius="{StaticResource ControlCornerRadius}"
                 BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1">
-            <TextBlock x:Name="StatusText" Text="Ready" Foreground="{DynamicResource SecondaryText}"
-                       VerticalAlignment="Center" Margin="8,0"/>
+            <DockPanel LastChildFill="True">
+                <TextBlock x:Name="DirtySummaryText" DockPanel.Dock="Right"
+                           Text="Sequence: Saved  |  Movie: Saved  |  Config: Saved"
+                           Foreground="{DynamicResource SecondaryText}" FontFamily="Consolas"
+                           VerticalAlignment="Center" Margin="12,0,8,0"/>
+                <TextBlock x:Name="StatusText" Text="Ready" Foreground="{DynamicResource SecondaryText}"
+                           VerticalAlignment="Center" Margin="8,0" TextTrimming="CharacterEllipsis"/>
+            </DockPanel>
         </Border>
 
 
@@ -528,6 +545,18 @@
                 <Grid Grid.Row="1">
                     <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="14"/></Grid.RowDefinitions>
                     <local:MovieTimelineView x:Name="MovieTimeline" Grid.Row="0" Margin="0,0,0,2" Focusable="True"/>
+                    <Border x:Name="MovieEmptyStatePanel" Grid.Row="0" Panel.ZIndex="5"
+                            Background="{DynamicResource MoviePanelBackground}" BorderBrush="{DynamicResource DividerBrush}"
+                            BorderThickness="1" CornerRadius="4" Margin="1,1,1,3">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="Build a movie timeline" Foreground="{DynamicResource PrimaryText}"
+                                       FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Content="Load Movie…" Padding="10,4" Margin="0,0,5,0" Click="EmptyLoadMovie_Click"/>
+                                <Button Content="Insert First Sequence…" Padding="10,4" Click="EmptyInsertFirstSequence_Click"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                     <ScrollBar x:Name="MovieScroll" Grid.Row="1" Orientation="Horizontal" Height="14" Scroll="MovieScroll_Scroll"/>
                 </Grid>
                 <Grid Grid.Row="2">
@@ -539,6 +568,9 @@
                         <TextBlock Text="MOVIE" Foreground="#FFF1D8" FontWeight="SemiBold"/>
                     </Border>
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button x:Name="MoviePreviousButton" Content="|◀" Width="42" Margin="0,0,4,0"
+                                ToolTip="Restart current sequence; if already at its start, move to previous sequence — Left Arrow"
+                                Click="MoviePrevious_Click"/>
                         <Button x:Name="MoviePlayButton" Content="▶ Movie" Width="82" Margin="0,0,4,0"
                                 ToolTip="Play/Pause movie sequence — Up Arrow" Click="MoviePlay_Click"/>
                         <Button x:Name="MovieNextButton" Content="▶|" Width="42"
@@ -548,12 +580,12 @@
                         <Button Content="Fit" Width="42" Margin="2,0" ToolTip="Fit complete movie" Click="MovieZoomFit_Click"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0,0,0">
-                        <TextBlock Text="Movie: " Foreground="#C8CCD4" VerticalAlignment="Center"/>
+                        <TextBlock Text="Movie: " Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
                         <TextBlock x:Name="MovieFileText" Text="(unsaved) *" Foreground="{DynamicResource WarningText}"
                                    VerticalAlignment="Center" FontFamily="Consolas" MaxWidth="155" TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
-                    <TextBlock Grid.Column="3" x:Name="MovieCreatedText" Text="Created:" Foreground="#9F927B" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                    <TextBlock Grid.Column="4" Text="  Description:" Foreground="#C8CCD4" VerticalAlignment="Center" Margin="8,0,4,0"/>
+                    <TextBlock Grid.Column="3" x:Name="MovieCreatedText" Text="Created:" Foreground="{DynamicResource HeaderText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    <TextBlock Grid.Column="4" Text="  Description:" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,4,0"/>
                     <TextBox Grid.Column="5" x:Name="MovieDescriptionBox" MinWidth="180" Height="32" VerticalAlignment="Center"
                              AcceptsReturn="False" TextWrapping="NoWrap" HorizontalScrollBarVisibility="Hidden"
                              VerticalScrollBarVisibility="Hidden" TextChanged="MovieDescriptionBox_TextChanged"/>
@@ -571,7 +603,7 @@
                 <Button Content="|◀" Width="42" Margin="0,0,4,0" ToolTip="Move sequence cursor to beginning" Click="SequenceRestart_Click"/>
                 <Button x:Name="PlayPauseBtn" Content="▶ Sequence" Width="100" Click="PlayPause_Click"/>
                 <Button Content="■" Width="42" Margin="4,0,0,0" ToolTip="Stop sequence playback" Click="SequenceStop_Click"/>
-                <TextBlock Text="  Time: " Foreground="#C8CCD4" VerticalAlignment="Center"/>
+                <TextBlock Text="  Time: " Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
                 <TextBlock x:Name="TimeText" Text="0.000 s" Foreground="{DynamicResource WarningText}" FontFamily="Consolas" FontSize="16" VerticalAlignment="Center" Width="110"/>
                 <TextBlock Text="Volume:" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="4,0,5,0"/>
                 <Slider x:Name="VolumeSlider" Width="105" Minimum="0" Maximum="100" Value="100"
@@ -590,7 +622,7 @@
                               IsChecked="True" ToolTip="Show or hide the Commands view below the spline"
                               Checked="CommandsListToggle_Changed" Unchecked="CommandsListToggle_Changed"/>
                 <Button Content="?" Width="30" Margin="6,0,0,0" ToolTip="Controls and hotkeys" Click="HelpControls_Click"/>
-                <TextBlock Text="   wheel zoom • middle-drag pan • right-click actions" Foreground="#78818E" VerticalAlignment="Center"/>
+                <TextBlock Text="   wheel zoom • middle-drag pan • right-click actions" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
 
@@ -732,6 +764,20 @@
             <!-- Audio waveform timeline. -->
             <Grid Grid.Row="2" Grid.ColumnSpan="3">
                 <local:WaveformView x:Name="Waveform"/>
+                <Border x:Name="SequenceEmptyStatePanel" Panel.ZIndex="5"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Background="{DynamicResource ElevatedPanelBackground}"
+                        BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
+                        CornerRadius="6" Padding="16,12">
+                    <StackPanel>
+                        <TextBlock Text="Start a sequence" Foreground="{DynamicResource PrimaryText}"
+                                   FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,7"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Open Sequence…" Padding="10,4" Margin="0,0,5,0" Click="EmptyOpenSequence_Click"/>
+                            <Button Content="Insert Audio…" Padding="10,4" Click="EmptyInsertAudio_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
             </Grid>
 
             <!-- Relative height splitter between audio and spline timelines. -->
@@ -754,7 +800,7 @@
                     <DockPanel VerticalAlignment="Top" Margin="8,4">
                         <!-- Sample-rate picklist (upper right) -->
                         <TextBlock DockPanel.Dock="Right" x:Name="SplineInspectorText"
-                                   Text="Hover a spline for exact time/value" Foreground="#B9BFCA"
+                                   Text="Hover a spline for exact time/value" Foreground="{DynamicResource SecondaryText}"
                                    Background="{DynamicResource InspectorBackground}" Padding="6,2" Margin="12,0,0,0"/>
                         <!-- Legend: colored square + name + show/hide box -->
                         <ItemsControl x:Name="SplineLegend">

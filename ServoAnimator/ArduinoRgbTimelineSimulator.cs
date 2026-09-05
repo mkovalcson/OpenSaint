@@ -33,23 +33,37 @@ namespace ServoAnimator
         private int _eventIndex;
         private long _evaluatedMs = -1;
         private int _signature;
+        private bool _invalidated = true;
         private string _activeFunction = "";
         private long _triggerMs;
         private bool _triggerActive;
+        private RgbRingFrame _initialFrame;
+        private long _frameVersion;
+        private long _snapshotVersion = -1;
+        private RgbRingFrame _cachedSnapshot;
+
+        /// <summary>Seed a newly loaded movie sequence from the RGB state left
+        /// by the preceding sequence. Null restores the normal all-off start.</summary>
+        public void SetInitialFrame(RgbRingFrame frame)
+        {
+            _initialFrame = frame;
+            Invalidate();
+        }
 
         public void Invalidate()
         {
-            _signature = int.MinValue;
+            _invalidated = true;
             _evaluatedMs = -1;
         }
 
         public RgbRingFrame Evaluate(IReadOnlyList<ServoCommand> commands, double timeSeconds)
         {
             long targetMs = Math.Max(0L, (long)Math.Floor(timeSeconds * 1000.0 + 1e-7));
-            int sig = ComputeSignature(commands);
-
-            if (_evaluatedMs < 0 || sig != _signature || targetMs < _evaluatedMs)
-                Reset(commands, sig);
+            if (_invalidated || _evaluatedMs < 0 || targetMs < _evaluatedMs)
+            {
+                Reset(commands, ComputeSignature(commands));
+                _invalidated = false;
+            }
 
             while (_eventIndex < _events.Count && _events[_eventIndex].TimeMs <= targetMs)
             {
@@ -72,7 +86,9 @@ namespace ServoAnimator
         {
             Reset(Array.Empty<ServoCommand>(), 0);
             ParseLine(command ?? "", 0);
-            return Snapshot();
+            RgbRingFrame preview = Snapshot();
+            _invalidated = true;
+            return preview;
         }
 
         private void Reset(IReadOnlyList<ServoCommand> commands, int signature)
@@ -81,6 +97,14 @@ namespace ServoAnimator
             _leftVent.Clear();
             _rightEye.Clear();
             _rightVent.Clear();
+            if (_initialFrame != null)
+            {
+                _leftEye.Load(_initialFrame.LeftEye);
+                _leftVent.Load(_initialFrame.LeftVent);
+                _rightEye.Load(_initialFrame.RightEye);
+                _rightVent.Load(_initialFrame.RightVent);
+            }
+            _frameVersion++;
             _g = new Globals();
 
             _pulse.Reset();
@@ -672,11 +696,20 @@ namespace ServoAnimator
                 if (left) _leftVent.Show();
                 if (right) _rightVent.Show();
             }
+            if ((eyes || vents) && (left || right))
+                _frameVersion++;
         }
 
-        private RgbRingFrame Snapshot() => new(
-            _leftEye.DisplayColors(), _leftVent.DisplayColors(),
-            _rightEye.DisplayColors(), _rightVent.DisplayColors());
+        private RgbRingFrame Snapshot()
+        {
+            if (_cachedSnapshot != null && _snapshotVersion == _frameVersion)
+                return _cachedSnapshot;
+            _cachedSnapshot = new RgbRingFrame(
+                _leftEye.DisplayColors(), _leftVent.DisplayColors(),
+                _rightEye.DisplayColors(), _rightVent.DisplayColors());
+            _snapshotVersion = _frameVersion;
+            return _cachedSnapshot;
+        }
 
         private static byte Byte(string[] t, int i, int fallback = 0) =>
             (byte)Math.Clamp(Int(t, i, fallback), 0, 255);
@@ -724,6 +757,18 @@ namespace ServoAnimator
                 if ((uint)i < (uint)NumLeds) _buffer[i] = c;
             }
             public void SetAllPixels(Rgb24 c) => Array.Fill(_buffer, c);
+            public void Load(Color[] colors)
+            {
+                for (int i = 0; i < NumLeds; i++)
+                {
+                    Color color = colors != null && i < colors.Length
+                        ? colors[i] : Colors.Black;
+                    var rgb = new Rgb24(color.R, color.G, color.B);
+                    _buffer[i] = rgb;
+                    _display[i] = rgb;
+                }
+                _brightness = 255;
+            }
             public void Show()
             {
                 for (int i = 0; i < NumLeds; i++)

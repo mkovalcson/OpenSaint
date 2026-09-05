@@ -1,0 +1,30 @@
+<Window x:Class="ServoAnimator.MissingFileRepairWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Repair Missing Files" Width="920" Height="470" MinWidth="700" MinHeight="360"
+        WindowStartupLocation="CenterOwner" Background="{DynamicResource AppBackground}">
+    <DockPanel Margin="12">
+        <TextBlock DockPanel.Dock="Top" Text="Choose a replacement or remove references that are no longer needed. Changes are applied only when you click Apply."
+                   Foreground="{DynamicResource SecondaryText}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="Apply" IsDefault="True" Padding="18,5" Margin="0,0,6,0" Click="Apply_Click"/>
+            <Button Content="Cancel" IsCancel="True" Padding="18,5"/>
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
+            <Button Content="Locate…" Padding="10,4" Margin="0,0,6,0" Click="Locate_Click"/>
+            <Button Content="Search Folder…" Padding="10,4" Margin="0,0,6,0" Click="SearchFolder_Click"/>
+            <Button Content="Replace All Matching Paths…" Padding="10,4" Margin="0,0,6,0" Click="ReplaceAll_Click"/>
+            <Button Content="Remove Reference" Padding="10,4" Click="Remove_Click"/>
+        </StackPanel>
+        <DataGrid x:Name="FilesGrid" ItemsSource="{Binding}" AutoGenerateColumns="False" IsReadOnly="True"
+                  SelectionMode="Single" CanUserAddRows="False" HeadersVisibility="Column"
+                  Background="{DynamicResource PanelBackground}" Foreground="{DynamicResource PrimaryText}"
+                  BorderBrush="{DynamicResource DividerBrush}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Type" Binding="{Binding DisplayKind}" Width="130"/>
+                <DataGridTextColumn Header="Missing path" Binding="{Binding MissingPath}" Width="*"/>
+                <DataGridTextColumn Header="Action / replacement" Binding="{Binding ResolutionText}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</Window>

@@ -151,7 +151,7 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="{StaticResource InputPadding}"/>
             <Setter Property="MinHeight" Value="24"/>
-            <Setter Property="CaretBrush" Value="White"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource PrimaryText}"/>
             <Setter Property="SelectionBrush" Value="{DynamicResource SelectionBackground}"/>
             <Setter Property="Template">
                 <Setter.Value>

@@ -1,16 +1,21 @@
 {
-  "LastActivePath": "X:\\Johnny5\\Software\\animatorConfig\\Projects\\MyProject\\demosequence1_seq.json",
-  "LastActiveKind": "Sequence",
+  "LastActivePath": "X:\\Johnny5\\Software\\animatorConfig\\Projects\\testmovie.json",
+  "LastActiveKind": "Movie",
   "Files": [
-    {
-      "Path": "X:\\Johnny5\\Software\\animatorConfig\\Projects\\MyProject\\demosequence1_seq.json",
-      "Kind": "Sequence",
-      "LastOpenedUtc": "2026-08-24T10:03:32.9663308Z"
-    },
     {
       "Path": "X:\\Johnny5\\Software\\animatorConfig\\Projects\\testmovie.json",
       "Kind": "Movie",
-      "LastOpenedUtc": "2026-08-22T16:59:24.6589227Z"
+      "LastOpenedUtc": "2026-09-04T17:16:53.2827886Z"
+    },
+    {
+      "Path": "X:\\Johnny5\\Software\\animatorConfig\\Projects\\MyProject\\eyeroll_Loop_seq.json",
+      "Kind": "Sequence",
+      "LastOpenedUtc": "2026-09-04T15:31:16.6307568Z"
+    },
+    {
+      "Path": "X:\\Johnny5\\Software\\animatorConfig\\Projects\\MyProject\\demosequence1_seq.json",
+      "Kind": "Sequence",
+      "LastOpenedUtc": "2026-08-28T19:56:23.0627798Z"
     }
   ]
 }

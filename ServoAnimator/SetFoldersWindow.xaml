@@ -9,7 +9,7 @@
     <!-- Prompted automatically on first run and available from Config > Set Paths.
          Only Configuration is selected; Projects is always its Projects child. -->
     <StackPanel Margin="14">
-        <TextBlock x:Name="IntroText" Foreground="#C8CCD4" TextWrapping="Wrap"
+        <TextBlock x:Name="IntroText" Foreground="{DynamicResource SecondaryText}" TextWrapping="Wrap"
                    Margin="0,0,0,10"
                    Text="Choose the Configuration folder. The application will always use its Projects child folder for sequences, movies, source audio, and exported animation JSONs."/>
 

@@ -52,7 +52,12 @@ namespace ServoAnimator
         public double? Offset
         {
             get => _offset;
-            set { _offset = value; Raise(nameof(OffsetText)); }
+            set
+            {
+                if (_offset == value) return;
+                _offset = value;
+                Raise(nameof(OffsetText));
+            }
         }
         private double? _offset;
         public string OffsetText => _offset.HasValue ? _offset.Value.ToString("F3") : "—";
@@ -63,7 +68,13 @@ namespace ServoAnimator
         public ServoSpeed Speed
         {
             get => _speed;
-            set { _speed = value; Raise(nameof(SpeedText)); Raise(nameof(Speed)); }
+            set
+            {
+                if (_speed == value) return;
+                _speed = value;
+                Raise(nameof(SpeedText));
+                Raise(nameof(Speed));
+            }
         }
         private ServoSpeed _speed = ServoSpeed.Default;
         public string SpeedText => _speed.ToString();
@@ -82,7 +93,12 @@ namespace ServoAnimator
         public bool SpeedEnabled
         {
             get => _speedEnabled;
-            set { _speedEnabled = value; Raise(nameof(SpeedEnabled)); }
+            set
+            {
+                if (_speedEnabled == value) return;
+                _speedEnabled = value;
+                Raise(nameof(SpeedEnabled));
+            }
         }
         private bool _speedEnabled = true;
 
@@ -111,7 +127,9 @@ namespace ServoAnimator
             get => _colorHex;
             set
             {
-                _colorHex = value ?? "";
+                value ??= "";
+                if (string.Equals(_colorHex, value, StringComparison.Ordinal)) return;
+                _colorHex = value;
                 Raise(nameof(ColorHex));
                 Raise(nameof(ColorBrush));
             }
@@ -141,7 +159,9 @@ namespace ServoAnimator
             get => _textValue;
             set
             {
-                _textValue = value ?? "";
+                value ??= "";
+                if (string.Equals(_textValue, value, StringComparison.Ordinal)) return;
+                _textValue = value;
                 Raise(nameof(TextValue));
                 Raise(nameof(ValueText));
             }
@@ -157,7 +177,12 @@ namespace ServoAnimator
         public bool SliderEnabled
         {
             get => _sliderEnabled;
-            set { _sliderEnabled = value; Raise(nameof(SliderEnabled)); }
+            set
+            {
+                if (_sliderEnabled == value) return;
+                _sliderEnabled = value;
+                Raise(nameof(SliderEnabled));
+            }
         }
         private bool _sliderEnabled = true;
 
@@ -211,7 +236,12 @@ namespace ServoAnimator
         public bool IsExpanded
         {
             get => _isExpanded;
-            set { _isExpanded = value; Raise(nameof(IsExpanded)); }
+            set
+            {
+                if (_isExpanded == value) return;
+                _isExpanded = value;
+                Raise(nameof(IsExpanded));
+            }
         }
         private bool _isExpanded;
 
@@ -223,7 +253,12 @@ namespace ServoAnimator
         public bool SplineEnabled
         {
             get => _splineEnabled;
-            set { _splineEnabled = value; Raise(nameof(SplineEnabled)); }
+            set
+            {
+                if (_splineEnabled == value) return;
+                _splineEnabled = value;
+                Raise(nameof(SplineEnabled));
+            }
         }
         private bool _splineEnabled;
     }
@@ -268,7 +303,9 @@ namespace ServoAnimator
             get => _value;
             set
             {
-                _value = Math.Clamp(value, Min, Max);
+                double v = Math.Clamp(value, Min, Max);
+                if (Math.Abs(v - _value) < 1e-9) return;
+                _value = v;
                 Raise(nameof(Value));
             }
         }
@@ -277,7 +314,12 @@ namespace ServoAnimator
         public bool SliderEnabled
         {
             get => _sliderEnabled;
-            set { _sliderEnabled = value; Raise(nameof(SliderEnabled)); }
+            set
+            {
+                if (_sliderEnabled == value) return;
+                _sliderEnabled = value;
+                Raise(nameof(SliderEnabled));
+            }
         }
         private bool _sliderEnabled = true;
     }

@@ -29,6 +29,82 @@ using System.Text.RegularExpressions;
 
 namespace ServoAnimator
 {
+    /// <summary>A lazily opened, reusable serial connection. Writes are
+    /// serialized and a failed connection is discarded so the next command
+    /// can reopen it cleanly.</summary>
+    internal sealed class SerialPortWriter : IDisposable
+    {
+        private readonly string _portName;
+        private readonly int _baudRate;
+        private readonly object _gate = new();
+        private SerialPort _port;
+        private bool _disposed;
+
+        public SerialPortWriter(string portName, int baudRate)
+        {
+            _portName = portName;
+            _baudRate = baudRate;
+        }
+
+        public void Write(byte[] bytes)
+        {
+            lock (_gate)
+            {
+                try
+                {
+                    EnsureOpen();
+                    _port.Write(bytes, 0, bytes.Length);
+                }
+                catch
+                {
+                    ClosePort();
+                    throw;
+                }
+            }
+        }
+
+        public void WriteLine(string text)
+        {
+            lock (_gate)
+            {
+                try
+                {
+                    EnsureOpen();
+                    _port.WriteLine(text);
+                }
+                catch
+                {
+                    ClosePort();
+                    throw;
+                }
+            }
+        }
+
+        private void EnsureOpen()
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_port?.IsOpen == true) return;
+            _port = new SerialPort(_portName, _baudRate, Parity.None, 8, StopBits.One);
+            _port.Open();
+        }
+
+        private void ClosePort()
+        {
+            try { _port?.Close(); } catch { }
+            try { _port?.Dispose(); } catch { }
+            _port = null;
+        }
+
+        public void Dispose()
+        {
+            lock (_gate)
+            {
+                _disposed = true;
+                ClosePort();
+            }
+        }
+    }
+
     // ==================== Maestro PWM servo ====================
 
     public class MaestroServo
@@ -45,8 +121,15 @@ namespace ServoAnimator
         public int[] Speed { get; }
         public int[] Accel { get; }
         public int CurrentPosition { get; private set; }
+        private readonly SerialPortWriter _writer;
 
         public MaestroServo(ServoConfigEntry cfg, string usbPort)
+            : this(cfg, usbPort, null)
+        {
+        }
+
+        internal MaestroServo(ServoConfigEntry cfg, string usbPort,
+                              SerialPortWriter writer)
         {
             Name = cfg.Control;
             UsbPort = usbPort;
@@ -58,6 +141,7 @@ namespace ServoAnimator
             Speed = cfg.Speeds;
             Accel = cfg.Accels;
             CurrentPosition = HomeValue;
+            _writer = writer ?? new SerialPortWriter(usbPort, BaudRate);
         }
 
         /// <summary>
@@ -147,9 +231,7 @@ namespace ServoAnimator
 
         private void Write(byte[] cmd)
         {
-            using var port = new SerialPort(UsbPort, BaudRate, Parity.None, 8, StopBits.One);
-            port.Open();
-            port.Write(cmd, 0, cmd.Length);
+            _writer.Write(cmd);
         }
     }
 
@@ -220,17 +302,14 @@ namespace ServoAnimator
     /// (open/write/close per command, matching RGBLight.cs). The command
     /// strings passed here are already in Arduino wire order. For commands
     /// with explicit colors that means Green,Red,Blue.</summary>
-    public class RGBLight
+    public class RGBLight : IDisposable
     {
-        private readonly string _portName;
-        public RGBLight(string portName) => _portName = portName;
+        private readonly SerialPortWriter _writer;
+        public RGBLight(string portName) =>
+            _writer = new SerialPortWriter(portName, 115200);
 
-        public void Command(string command)
-        {
-            using var port = new SerialPort(_portName, 115200);
-            port.Open();
-            port.WriteLine(command);
-        }
+        public void Command(string command) => _writer.WriteLine(command);
+        public void Dispose() => _writer.Dispose();
     }
 
     // ==================== USB device discovery ====================

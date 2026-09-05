@@ -26,7 +26,7 @@ A small handle centered at the bottom of the docked URDF view can be dragged ver
 
 ## Camera
 
-Use normal mouse controls to orbit and zoom. **Recenter** returns yaw and pitch to straight-on while preserving zoom. The **←** and **→** buttons immediately to either side rotate camera yaw by exactly 90 degrees. The neck base is screen-anchored 35 pixels above the bottom of the URDF viewport while zooming or resizing. When the model is undocked, the current docked camera view is carried into the detached window; docking carries the current view back.
+Use normal mouse controls to orbit and zoom. **Recenter** returns yaw and pitch to straight-on while preserving zoom. The **←** and **→** buttons immediately to either side rotate camera yaw by exactly 90 degrees. The neck base is screen-anchored 35 pixels above the bottom of the URDF viewport while zooming or resizing. When the model is undocked, the current docked camera view is carried into the detached window; docking carries the current view back. Camera orientation and zoom are saved in `EditorLayout.json` and restored at the next launch.
 
 The URDF camera and its on-screen controls remain operational while the modeless **Edit Commands** window is open.
 

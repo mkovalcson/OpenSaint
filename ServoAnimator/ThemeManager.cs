@@ -24,6 +24,10 @@ namespace ServoAnimator
             "Steel Blue",
             "Teal",
             "Violet",
+            "Slate Mid",
+            "Sandstone Mid",
+            "Mist Light",
+            "Warm Paper",
         };
 
         public static string CurrentTheme { get; private set; } = DefaultTheme;
@@ -98,6 +102,38 @@ namespace ServoAnimator
                     "#9B82D4", "#51446F", "#30283A", "#4E4168",
                     "#D1A05B", "#66502E", "#302B24", "#604B2C",
                     "#51446F", "#A48AD9", "#19151F", "#27202F", "#FFD27A"),
+
+                ["Slate Mid"] = new(
+                    "#77828D", "#A8B1BA", "#B5BDC5", "#AEB7BF", "#D8DDE2",
+                    "#BBC3CB", "#C8CFD6", "#A6B0BA", "#65727E", "#7E8A95",
+                    "#15202A", "#334552", "#294F6B",
+                    "#315F8C", "#91B2CF", "#93A8BA", "#294F73",
+                    "#7A511C", "#D2B983", "#B7A98D", "#684515",
+                    "#8FB4D3", "#315F8C", "#8D99A4", "#A1ABB4", "#713C00"),
+
+                ["Sandstone Mid"] = new(
+                    "#8A7E70", "#B9AC9D", "#C5B9AB", "#BEB2A5", "#E2DAD0",
+                    "#CCBFB0", "#DACFC2", "#B7A898", "#76695C", "#958778",
+                    "#2A2119", "#57493C", "#664B34",
+                    "#3F668D", "#A8BDD0", "#AAB6BE", "#345A7D",
+                    "#80551C", "#D6BD88", "#C4B18E", "#704817",
+                    "#A2B8CA", "#3F668D", "#9B8E80", "#B0A496", "#763F00"),
+
+                ["Mist Light"] = new(
+                    "#E6ECF2", "#F7F9FC", "#EDF2F7", "#F2F5F8", "#FFFFFF",
+                    "#E0E7EF", "#D2DDE8", "#C3D1DF", "#9AAABC", "#C1CBD6",
+                    "#1E2935", "#526273", "#476985",
+                    "#3F78B5", "#CFE0F1", "#DDE8F3", "#315F8C",
+                    "#9A6A24", "#F0DCB9", "#F4EBDD", "#80581E",
+                    "#BED7EF", "#3F78B5", "#D9E2EB", "#EEF3F7", "#8A4F00"),
+
+                ["Warm Paper"] = new(
+                    "#E8E0D4", "#F7F1E8", "#EFE6DA", "#F3ECE2", "#FFFDFC",
+                    "#E6D9C9", "#DCCBB8", "#CEBBA5", "#AD9B86", "#C8B9A6",
+                    "#2E2923", "#675D52", "#76604A",
+                    "#4F78A4", "#D0DEEB", "#E2E9EF", "#3E6287",
+                    "#9A6B2F", "#E6D2B5", "#EEE1CF", "#805622",
+                    "#C6D8E8", "#4F78A4", "#DED4C7", "#F0E8DD", "#8C4D00"),
             };
 
         private static string SettingsPath

@@ -56,6 +56,12 @@ namespace ServoAnimator
         public int EmbeddedUrdfHeightStage { get; set; }
         public double EmbeddedUrdfHeightPixels { get; set; }
 
+        // Camera values are shared between the embedded and detached URDF
+        // views. Distance is the model's wheel-controlled zoom level.
+        public double UrdfCameraYaw { get; set; }
+        public double UrdfCameraPitch { get; set; }
+        public double UrdfCameraDistance { get; set; } = 1.15;
+
         // Dock/undock state for the URDF preview. ServoEditorColumn and
         // UrdfEditorColumn always store the last *docked* splitter ratio so
         // undocking does not destroy the user's preferred docked layout.

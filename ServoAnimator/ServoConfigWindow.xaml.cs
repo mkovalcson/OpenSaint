@@ -33,6 +33,7 @@ namespace ServoAnimator
         private readonly Action<RobotControls, int> _drive;
         private readonly Action<ServoNames, int> _driveGang;
         private readonly Action _configChanged;
+        private readonly Action _configSaved;
         private readonly string _configFolder;
         private string _path;
         private readonly List<ServoConfigVM> _allConfigVms = new();
@@ -42,7 +43,8 @@ namespace ServoAnimator
                                  Action<RobotControls, int> driveServo,
                                  Action<ServoNames, int> driveGang,
                                  Action configChanged,
-                                 string configFolder)
+                                 string configFolder,
+                                 Action configSaved = null)
         {
             InitializeComponent();
             HelpSystem.EnableContextHelp(this, "servo-configuration");
@@ -53,6 +55,7 @@ namespace ServoAnimator
             _drive = driveServo;
             _driveGang = driveGang;
             _configChanged = configChanged;
+            _configSaved = configSaved;
             _configFolder = configFolder;
             LeftTicBox.Text = config.LeftTicSerialNumber ?? "";
 
@@ -228,6 +231,7 @@ namespace ServoAnimator
                 // sub-row ranges, gang directions, connected hardware).
                 BuildGroups();
                 _configChanged?.Invoke();
+                _configSaved?.Invoke();
             }
             catch (Exception ex)
             {
@@ -264,6 +268,7 @@ namespace ServoAnimator
                 _path = path;
                 ConfigPathText.Text = Path.GetFileName(path);
                 _configChanged?.Invoke();   // refresh everywhere on save too
+                _configSaved?.Invoke();
             }
             catch (Exception ex)
             {

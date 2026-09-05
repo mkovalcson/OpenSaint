@@ -1,15 +1,15 @@
 {
-  "WindowLeft": -1685,
-  "WindowTop": 163,
-  "WindowWidth": 1250,
-  "WindowHeight": 880,
+  "WindowLeft": -1608,
+  "WindowTop": 48,
+  "WindowWidth": 1487,
+  "WindowHeight": 1061,
   "WindowState": "Normal",
   "ServoEditorColumn": {
-    "Value": 1,
+    "Value": 623.5817610062879,
     "Unit": "Star"
   },
   "UrdfEditorColumn": {
-    "Value": 1,
+    "Value": 839.4182389937121,
     "Unit": "Star"
   },
   "UndockedServoLeftColumn": {
@@ -32,10 +32,13 @@
     "Value": 190,
     "Unit": "Pixel"
   },
-  "CommandsVisible": true,
+  "CommandsVisible": false,
   "MovieTimelineVisible": true,
   "EmbeddedUrdfHeightStage": 0,
-  "EmbeddedUrdfHeightPixels": 0,
+  "EmbeddedUrdfHeightPixels": 643.1199999999999,
+  "UrdfCameraYaw": 0,
+  "UrdfCameraPitch": 0,
+  "UrdfCameraDistance": 0.7937723207279906,
   "UrdfUndocked": false,
   "UrdfWindowLeft": -1430,
   "UrdfWindowTop": 278,

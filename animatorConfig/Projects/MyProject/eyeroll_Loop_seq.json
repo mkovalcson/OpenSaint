@@ -1,0 +1,199 @@
+{
+  "description": "",
+  "audioFiles": "",
+  "audioFile": "",
+  "audioFilePath": "",
+  "durationSeconds": 0,
+  "audioStartOffsetSeconds": 0,
+  "splineServos": [
+    "EyesVerticalUp",
+    "EyesHorizontalRight"
+  ],
+  "splineSampleHz": 50,
+  "animateMode": "Individual",
+  "scaleValues": false,
+  "commands": [
+    {
+      "offsetSeconds": 0,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 1.501,
+      "servo": "EyesVerticalUp",
+      "value": 100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 1.501,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 2.646,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 2.646,
+      "servo": "EyesHorizontalRight",
+      "value": -100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 3.752,
+      "servo": "EyesVerticalUp",
+      "value": -100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 3.752,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 4.818,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 4.818,
+      "servo": "EyesHorizontalRight",
+      "value": 100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 5.924,
+      "servo": "EyesVerticalUp",
+      "value": 100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 5.924,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 7.07,
+      "servo": "EyesHorizontalRight",
+      "value": -100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 7.07,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 8.294,
+      "servo": "EyesVerticalUp",
+      "value": -100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 8.294,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 9.518,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 9.518,
+      "servo": "EyesHorizontalRight",
+      "value": 100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 10.427,
+      "servo": "EyesVerticalUp",
+      "value": 100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 10.427,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 11.374,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 11.374,
+      "servo": "EyesHorizontalRight",
+      "value": -100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 12.125,
+      "servo": "EyesVerticalUp",
+      "value": -100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 12.125,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 12.836,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 12.836,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    }
+  ]
+}

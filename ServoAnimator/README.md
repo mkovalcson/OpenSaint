@@ -47,7 +47,7 @@ The top editor is now a 50/50 split: all servo groups are stacked in the left pa
 * Corrected the hardware label to **Left Tic 249**.
 * Menu commands no longer have visual dividers between individual items; explicit separators remain only between command groups.
 * Replaced stock square WPF chrome with shared rounded templates: 6 px controls, 8 px panels, consistent padding and spacing.
-* Added **View > Color Theme** with Graphite (default), Steel Blue, Teal, and Violet. The selected theme is stored per Windows user in LocalAppData and restored at startup.
+* Added **View > Color Theme** with Graphite (default), Steel Blue, Teal, Violet, Slate Mid, Sandstone Mid, Mist Light, and Warm Paper. The selected theme is stored per Windows user in LocalAppData and restored at startup.
 * Theme colors propagate through dialogs and the custom waveform, spline, and movie timeline surfaces.
 
 ## v1.0.7 UI and workflow improvements
@@ -721,7 +721,7 @@ The old animated red mouth rectangle has been removed. Voice amplitude now drive
 - Moved Live Drive and Disable Servos to the top-right hardware-status area immediately before Maestro/Arduino/Tic status.
 - Movie Description now has a taller collapsed editor and expands upward from the bottom Movie Timeline area rather than using the sequence-description overlay.
 - Commands now appears directly below the spline/audio editor region and above the movie controls; its toggle reads `Hide Commands` or `Show Commands`.
-- The editor saves `EditorLayout.json` in the selected Configuration folder on close and restores window placement, splitter positions, Commands visibility, Movie Timeline visibility, and embedded URDF height stage at startup.
+- The editor saves `EditorLayout.json` in the selected Configuration folder on close and restores window placement and size, splitter positions, Commands visibility, Movie Timeline visibility, embedded URDF height, and URDF camera orientation/zoom at startup.
 
 
 ## v1.5.2 — Optional command speed and ganged speed configuration

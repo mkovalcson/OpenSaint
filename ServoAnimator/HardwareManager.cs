@@ -27,7 +27,7 @@ using System.Diagnostics;
 
 namespace ServoAnimator
 {
-    public class HardwareManager
+    public class HardwareManager : IDisposable
     {
         /// <summary>True when at least one supported hardware device was found.
         /// Existing drive paths use this to allow a partially connected rig.</summary>
@@ -45,6 +45,7 @@ namespace ServoAnimator
         private string _maestroPort;
         private RGBLight _lights;
         private TicController _leftTic, _rightTic;
+        private SerialPortWriter _maestroWriter;
         private readonly Dictionary<RobotControls, MaestroServo> _servos = new();
 
         // Which of the four configured speed/accel profiles is currently
@@ -61,6 +62,7 @@ namespace ServoAnimator
         /// </summary>
         public List<string> Connect(ServoConfiguration config, string configFolder)
         {
+            CloseSerialConnections();
             _config = config;
             var problems = new List<string>();
             _servos.Clear();
@@ -102,11 +104,12 @@ namespace ServoAnimator
             // RGB ids have no ServoConfigEntry and are skipped naturally).
             if (_maestroPort != null)
             {
+                _maestroWriter = new SerialPortWriter(_maestroPort, 115200);
                 foreach (var entry in config.Servos)
                 {
                     try
                     {
-                        var s = new MaestroServo(entry, _maestroPort);
+                        var s = new MaestroServo(entry, _maestroPort, _maestroWriter);
                         s.ConfigureSpeed(ServoSpeed.Default);
                         _servos[entry.Control] = s;
                         _activeSpeedByControl[entry.Control] = ServoSpeed.Default;
@@ -143,7 +146,7 @@ namespace ServoAnimator
             {
                 try
                 {
-                    var s = new MaestroServo(entry, _maestroPort);
+                    var s = new MaestroServo(entry, _maestroPort, _maestroWriter);
                     ServoSpeed pick = active.TryGetValue(entry.Control, out var previous) &&
                                       previous != ServoSpeed.NoChange
                         ? previous : ServoSpeed.Default;
@@ -292,6 +295,21 @@ namespace ServoAnimator
         {
             try { act(); }
             catch (Exception ex) { Debug.WriteLine($"[hw {what}] {ex.Message}"); }
+        }
+
+        private void CloseSerialConnections()
+        {
+            try { _lights?.Dispose(); } catch { }
+            try { _maestroWriter?.Dispose(); } catch { }
+            _lights = null;
+            _maestroWriter = null;
+        }
+
+        public void Dispose()
+        {
+            CloseSerialConnections();
+            _servos.Clear();
+            Connected = false;
         }
     }
 }

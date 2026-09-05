@@ -1,0 +1,47 @@
+{
+  "description": "Eye roll",
+  "commands": [
+    {
+      "offsetSeconds": 0,
+      "servo": "EyesVerticalUp",
+      "value": 100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 1.146,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 1.146,
+      "servo": "EyesHorizontalRight",
+      "value": -100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 2.37,
+      "servo": "EyesVerticalUp",
+      "value": -100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 2.37,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    }
+  ]
+}

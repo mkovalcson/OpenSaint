@@ -369,6 +369,8 @@ namespace ServoAnimator
     {
         public string FilePath { get; set; } = "";
         public double DurationSeconds { get; set; }
+        public string Description { get; set; } = "";
+        public bool IsLooping { get; set; }
     }
 
     /// <summary>Movie project format: an ordered list of sequence filenames/pathnames.
@@ -387,6 +389,13 @@ namespace ServoAnimator
         [JsonPropertyName("sequences")]
         public List<string> Sequences { get; set; } = new();
 
+        /// <summary>Loop flag for each entry in Sequences. This parallel,
+        /// optional list keeps the original movie JSON shape backward-compatible;
+        /// missing/short lists mean that the corresponding sequences do not loop.</summary>
+        [JsonPropertyName("sequenceLoops")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public List<bool> SequenceLoops { get; set; } = new();
+
         private static readonly JsonSerializerOptions MovieJsonOpts = new()
         {
             WriteIndented = true,
@@ -401,6 +410,7 @@ namespace ServoAnimator
                         ?? new MovieDocument();
             movie.Description ??= "";
             movie.Sequences ??= new List<string>();
+            movie.SequenceLoops ??= new List<bool>();
             if (string.IsNullOrWhiteSpace(movie.CreatedDate))
             {
                 DateTime created = File.Exists(path) ? File.GetCreationTime(path) : DateTime.Today;
@@ -413,6 +423,7 @@ namespace ServoAnimator
         {
             Description ??= "";
             Sequences ??= new List<string>();
+            SequenceLoops ??= new List<bool>();
             if (string.IsNullOrWhiteSpace(CreatedDate))
                 CreatedDate = DateTime.Today.ToString("yyyy-MM-dd");
             File.WriteAllText(path, JsonSerializer.Serialize(this, MovieJsonOpts));
