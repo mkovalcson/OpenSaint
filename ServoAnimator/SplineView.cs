@@ -125,6 +125,9 @@ namespace ServoAnimator
 
     public class SplineView : SKElement
     {
+        private readonly TimelineDrawingCache _drawingCache = new();
+        public new void InvalidateVisual() { _drawingCache.Invalidate(); base.InvalidateVisual(); }
+        public void InvalidateCursor() => base.InvalidateVisual();
         private static SKColor ThemeSk(string key, SKColor fallback)
         {
             var c = ThemeManager.GetColor(key,
@@ -146,6 +149,8 @@ namespace ServoAnimator
 
         /// <summary>Left click: move the cursor (handled by MainWindow).</summary>
         public event Action<double> TimeClicked;
+        /// <summary>Right click on the cursor: open the shared cursor menu.</summary>
+        public event Action<double> RightClicked;
 
         // ---- point-editing events (MainWindow mutates the commands) ----
         /// <summary>Left-drag: (servo, point time key, new value).</summary>
@@ -172,6 +177,7 @@ namespace ServoAnimator
 
         public SplineView()
         {
+            Unloaded += (_, _) => _drawingCache.Dispose();
             // Needed so the view can receive the Delete key after a point is
             // selected with the left mouse button.
             Focusable = true;
@@ -183,6 +189,7 @@ namespace ServoAnimator
         private double _dragKey;            // time key of the point being dragged
 
         private const float HitRadius = 7f;  // px tolerance for grabbing points/lines
+        private const float CursorHitRadius = 7f;
         private const float Pad = 8f;        // vertical padding (matches rendering)
 
         private System.Windows.Point _panStart;
@@ -202,20 +209,23 @@ namespace ServoAnimator
             if (ActualWidth <= 0 || ActualHeight <= 0) return;
 
             float scale = (float)(e.Info.Width / Math.Max(1.0, ActualWidth));
-            canvas.Scale(scale);
 
             float w = (float)ActualWidth;
             float h = (float)ActualHeight;
             float pad = Pad;   // vertical padding inside the strip
 
-            DrawTimeGrid(canvas, w, h);
-
-            // Faint mid line (each curve's own range midpoint maps here).
-            using (var mid = new SKPaint { Color = ThemeSk("DividerBrush", new SKColor(70, 74, 82, 120)), StrokeWidth = 1 })
-                canvas.DrawLine(0, h / 2, w, h / 2, mid);
-
-            foreach (var c in Curves.Where(c => c.Visible))
-                DrawCurve(canvas, c, w, h, pad);
+            _drawingCache.Draw(canvas, e.Info,
+                (e.Info.Width, e.Info.Height, w, h, ViewStart, PixelsPerSecond, ThemeManager.CurrentTheme),
+                background =>
+                {
+                    background.Clear(ThemeSk("PanelBackground", new SKColor(27, 30, 35)));
+                    background.Scale(scale);
+                    DrawTimeGrid(background, w, h);
+                    using var mid = new SKPaint { Color = ThemeSk("DividerBrush", new SKColor(70, 74, 82, 120)), StrokeWidth = 1 };
+                    background.DrawLine(0, h / 2, w, h / 2, mid);
+                    foreach (var c in Curves.Where(c => c.Visible)) DrawCurve(background, c, w, h, pad);
+                });
+            canvas.Scale(scale);
 
             // Playback / selection cursor, matching the waveform's.
             using (var cur = new SKPaint { Color = new SKColor(255, 80, 80), StrokeWidth = 2 })
@@ -670,6 +680,17 @@ namespace ServoAnimator
                 _drag = DragKind.None;
                 ReleaseMouseCapture();
                 DragCompleted?.Invoke();   // MainWindow does a full refresh
+                return;
+            }
+
+            // Keep right-drag on a control point dedicated to moving its time,
+            // but let a right click elsewhere on the vertical cursor open the
+            // same cursor actions that are available from the waveform.
+            if (e.ChangedButton == MouseButton.Right &&
+                Math.Abs(e.GetPosition(this).X - XAtTime(CursorTime)) <= CursorHitRadius)
+            {
+                RightClicked?.Invoke(CursorTime);
+                e.Handled = true;
                 return;
             }
 

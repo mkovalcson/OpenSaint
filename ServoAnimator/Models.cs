@@ -462,9 +462,9 @@ namespace ServoAnimator
         [JsonPropertyName("audioFile")]
         public string AudioFile { get; set; } = "";
 
-        /// <summary>Full pathname of the audio file (PROJECT files). Load
-        /// Project reads the audio from here; plain animation exports may
-        /// leave it empty and rely on "audioFile" next to the JSON.</summary>
+        /// <summary>Audio pathname relative to the active Configuration folder.
+        /// Legacy absolute paths inside Config are accepted and rewritten as
+        /// relative paths on the next save.</summary>
         [JsonPropertyName("audioFilePath")]
         public string AudioFilePath { get; set; } = "";
 
@@ -515,6 +515,16 @@ namespace ServoAnimator
         };
 
         /// <summary>Read a full animation document from disk.</summary>
+        public AnimationDocument Clone() => new()
+        {
+            Description = Description, AudioFiles = AudioFiles, AudioFile = AudioFile,
+            AudioFilePath = AudioFilePath, DurationSeconds = DurationSeconds,
+            AudioStartOffsetSeconds = AudioStartOffsetSeconds,
+            SplineServos = SplineServos?.ToList() ?? new(), SplineSampleHz = SplineSampleHz,
+            AnimateMode = AnimateMode, ScaleValues = ScaleValues,
+            Commands = Commands?.Select(c => c.Clone()).ToList() ?? new(),
+        };
+
         public static AnimationDocument Load(string path)
         {
             var doc = JsonSerializer.Deserialize<AnimationDocument>(

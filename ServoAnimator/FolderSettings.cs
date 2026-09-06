@@ -5,9 +5,9 @@
 // the TIC\ folder with Pololu's ticcmd, the Library\ folders, and the
 // Projects\ folder holding sequence files) and the PROJECT folder (source
 // audio and exported animation JSONs). Persisted to Paths.json in the exe
-// folder. On first run the app first looks for an animatorConfig folder beside
-// the ServoAnimator project folder; if it exists, it becomes the default CONFIG
-// folder automatically. Otherwise the user is prompted. Config > Set Paths… can
+// folder. On first run the app first looks for Config beside the executable
+// (the deployed layout), then for animatorConfig beside the ServoAnimator
+// project folder (the live-development layout). Config > Set Paths… can
 // change it later. A legacy Folder.json (with its old "audioFolder" field) is
 // migrated to Paths.json automatically.
 // ---------------------------------------------------------------------------
@@ -55,21 +55,22 @@ namespace ServoAnimator
             Path.Combine(AppContext.BaseDirectory, "Folder.json");
 
         /// <summary>Load the persisted paths. On first run, before prompting,
-        /// automatically use a sibling `animatorConfig` folder when one exists at
-        /// the same level as the ServoAnimator project directory. A legacy
+        /// automatically use a child `Config` folder in a deployment, or a sibling
+        /// `animatorConfig` folder in the live development tree. A legacy
         /// Folder.json is loaded and re-saved as Paths.json automatically.</summary>
         public static FolderSettings Load()
         {
             try
             {
                 if (File.Exists(FilePath))
-                    return JsonSerializer.Deserialize<FolderSettings>(
-                        File.ReadAllText(FilePath));
+                    return NormalizeLoaded(JsonSerializer.Deserialize<FolderSettings>(
+                        File.ReadAllText(FilePath)));
 
                 if (File.Exists(LegacyFilePath))
                 {
                     var migrated = JsonSerializer.Deserialize<FolderSettings>(
                         File.ReadAllText(LegacyFilePath));
+                    migrated = NormalizeLoaded(migrated);
                     migrated?.Save();          // write Paths.json going forward
                     return migrated;
                 }
@@ -89,13 +90,19 @@ namespace ServoAnimator
             catch { return null; }
         }
 
-        /// <summary>Find `animatorConfig` beside the ServoAnimator project folder.
-        /// This works both when launched from Visual Studio's bin output directory
-        /// and when the current directory is somewhere above the project.</summary>
+        /// <summary>Find the portable deployed Config folder first, then retain
+        /// the established live-development animatorConfig discovery behavior.</summary>
         private static string FindSiblingAnimatorConfigFolder()
         {
             try
             {
+                // Deployment layout:
+                //   J5_Animator\AnimationEditorPlayer.exe
+                //   J5_Animator\Config\...
+                string deployedConfig = Path.Combine(AppContext.BaseDirectory, "Config");
+                if (Directory.Exists(deployedConfig))
+                    return Path.GetFullPath(deployedConfig);
+
                 for (DirectoryInfo dir = new(AppContext.BaseDirectory);
                      dir != null;
                      dir = dir.Parent)
@@ -129,19 +136,59 @@ namespace ServoAnimator
         {
             ProjectFolder = Path.Combine(ConfigFolderOrDefault, "Projects");
             try { Directory.CreateDirectory(ProjectFolder); } catch { }
+            string config = Path.GetFullPath(ConfigFolderOrDefault);
+            string storedConfig = ConfigPathService.IsWithin(AppContext.BaseDirectory, config)
+                ? Path.GetRelativePath(AppContext.BaseDirectory, config)
+                : config;
+            var persisted = new FolderSettings
+            {
+                ConfigFolder = storedConfig,
+                ProjectFolder = "Projects",
+                LastSequenceFolder = ConfigPathService.IsWithin(config, LastSequenceFolder)
+                    ? Path.GetRelativePath(config, Path.GetFullPath(LastSequenceFolder))
+                    : "",
+            };
             File.WriteAllText(FilePath, JsonSerializer.Serialize(
-                this, new JsonSerializerOptions { WriteIndented = true }));
+                persisted, new JsonSerializerOptions { WriteIndented = true }));
+        }
+
+        private static FolderSettings NormalizeLoaded(FolderSettings settings)
+        {
+            if (settings == null) return null;
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(settings.ConfigFolder) &&
+                    !Path.IsPathRooted(settings.ConfigFolder))
+                    settings.ConfigFolder = Path.GetFullPath(Path.Combine(
+                        AppContext.BaseDirectory, settings.ConfigFolder));
+
+                if (!string.IsNullOrWhiteSpace(settings.ConfigFolder))
+                {
+                    settings.ProjectFolder = Path.Combine(settings.ConfigFolder, "Projects");
+                    if (!string.IsNullOrWhiteSpace(settings.LastSequenceFolder) &&
+                        !Path.IsPathRooted(settings.LastSequenceFolder))
+                        settings.LastSequenceFolder = Path.GetFullPath(Path.Combine(
+                            settings.ConfigFolder, settings.LastSequenceFolder));
+                    if (!ConfigPathService.IsWithin(settings.ConfigFolder,
+                                                     settings.LastSequenceFolder))
+                        settings.LastSequenceFolder = "";
+                }
+            }
+            catch { settings.LastSequenceFolder = ""; }
+            return settings;
         }
 
         /// <summary>The config folder, falling back to the exe folder when
         /// unset or missing on disk.</summary>
+        [JsonIgnore]
         public string ConfigFolderOrDefault =>
             !string.IsNullOrWhiteSpace(ConfigFolder) && Directory.Exists(ConfigFolder)
-                ? ConfigFolder : AppContext.BaseDirectory;
+                ? Path.GetFullPath(ConfigFolder) : AppContext.BaseDirectory;
 
         /// <summary>The Projects folder is always directly under the selected
         /// Configuration folder. The persisted ProjectFolder field is retained
         /// only for backward-compatible Paths.json reading.</summary>
+        [JsonIgnore]
         public string ProjectFolderOrDefault
         {
             get

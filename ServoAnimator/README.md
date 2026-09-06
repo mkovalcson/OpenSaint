@@ -6,6 +6,12 @@ format.
 
 ## Build & run
 
+Version 1.17.0 improves transport cancellation, uses a monotonic playback clock
+corrected by audio output position, caches waveform/sequence data and timeline
+backgrounds, prepares upcoming movie cues, and removes file reads from movie
+hover handling. Document replacement checks unsaved work, and movie arrow keys
+respect control focus. See Help > Controls & Hotkeys for the file and playback shortcuts.
+
 Requires the .NET 10 SDK on Windows (WPF is Windows-only).
 
 ```
@@ -71,7 +77,7 @@ extra confirmation popups.
 The menu bar is organized by workflow:
 
 * **File**: New · Open Audio… · Load/Save Sequence · Load/Save Movie · Export Animation JSON… · Exit
-* **Edit**: Undo (Ctrl+Z) · Redo (Ctrl+Y) · Clear Timeline…
+* **Edit**: Undo (Ctrl+Z) · Undo History (up to 10 actions) · Redo (Ctrl+Y) · Clear Timeline…
 * **Animation Library**: Create Library Item… · Insert Library Sequence… · Manage Library Items…
 * **Tools**: Servo Configuration… · Set Paths…
 * **View**: Robot Head · Movie Timeline
@@ -101,7 +107,7 @@ timeline or the project path.
 
 Every timeline mutation (insert, edit, delete, paste, clear, library insert,
 spline point add/delete, and point drags — one step per drag) pushes an undo
-snapshot. Ctrl+Z undoes, Ctrl+Y (or Edit > Redo) puts the last change back.
+snapshot. Ctrl+Z undoes, Ctrl+Y (or Edit > Redo) puts the last change back. Edit > Undo History shows the ten most recent undoable actions; choosing an older entry undoes through that action.
 Up to 100 steps are kept; a new edit clears the redo history.
 
 ### Animation Library
@@ -358,17 +364,17 @@ receives).
 
 ## Folders (Paths.json)
 
-On **first run** (no `Paths.json` beside the exe yet), the app first looks for
-an `animatorConfig` folder beside the `ServoAnimator` project folder. If found,
-it uses that folder automatically and persists the choice to `Paths.json` when
-possible. If it is not found, the app prompts for the Configuration folder and
-saves the selection to `Paths.json`, read automatically on every
+On **first run** (no `Paths.json` beside the exe yet), the deployed app first
+looks for a `Config` child folder beside `AnimationEditorPlayer.exe`. The live
+development build retains the existing discovery of `animatorConfig` beside the
+`ServoAnimator` project folder. If neither is found, the app prompts for the
+Configuration folder and saves the selection to `Paths.json`, read on every
 later start; **Config > Set Paths…** can change it at any time. The
 **Configuration folder** holds servo configuration JSONs, the `TIC\` folder
 with Pololu's `ticcmd`, Library data, and its `Projects\` child folder.
-Sequences, movies, source audio, and exported animation JSONs default to the
-`Projects\` child, subject to the application's remembered last-used sequence
-folder behavior.
+Sequences, movies, source audio, exported animation JSONs, and Library items
+must remain inside Configuration or its child folders. Their JSON references
+are stored relative to Configuration, making the complete folder portable.
 
 ## Gangs, directions, and export modes
 

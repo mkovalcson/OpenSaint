@@ -35,11 +35,14 @@ namespace ServoAnimator
 
     public partial class MissingFileRepairWindow : Window
     {
+        private readonly string _configFolder;
         public ObservableCollection<MissingFileReference> Files { get; }
 
-        public MissingFileRepairWindow(IEnumerable<MissingFileReference> files)
+        public MissingFileRepairWindow(IEnumerable<MissingFileReference> files,
+                                       string configFolder)
         {
             InitializeComponent();
+            _configFolder = configFolder;
             Files = new ObservableCollection<MissingFileReference>(files ?? Array.Empty<MissingFileReference>());
             DataContext = Files;
             if (Files.Count > 0) FilesGrid.SelectedIndex = 0;
@@ -61,8 +64,17 @@ namespace ServoAnimator
                 Title = "Locate " + Path.GetFileName(item.MissingPath),
                 Filter = FilterFor(item),
                 FileName = Path.GetFileName(item.MissingPath),
+                InitialDirectory = _configFolder,
             };
-            return dialog.ShowDialog(this) == true ? dialog.FileName : null;
+            if (dialog.ShowDialog(this) != true) return null;
+            if (ConfigPathService.IsWithin(_configFolder, dialog.FileName))
+                return dialog.FileName;
+            MessageBox.Show(this,
+                "Replacement files must be inside the Configuration folder or one of its child folders:\n\n" +
+                _configFolder,
+                "File outside Configuration folder", MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return null;
         }
 
         private void Locate_Click(object sender, RoutedEventArgs e)
@@ -91,8 +103,21 @@ namespace ServoAnimator
 
         private void SearchFolder_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new OpenFolderDialog { Title = "Search for missing files" };
+            var dialog = new OpenFolderDialog
+            {
+                Title = "Search for missing files",
+                InitialDirectory = _configFolder,
+            };
             if (dialog.ShowDialog(this) != true) return;
+            if (!ConfigPathService.IsWithin(_configFolder, dialog.FolderName))
+            {
+                MessageBox.Show(this,
+                    "The search folder must be inside the Configuration folder:\n\n" +
+                    _configFolder,
+                    "Folder outside Configuration folder", MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
 
             int found = 0;
             foreach (var item in Files.Where(f => !f.Remove && string.IsNullOrWhiteSpace(f.ReplacementPath)))

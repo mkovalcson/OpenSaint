@@ -10,6 +10,8 @@
             <StackPanel>
                 <TextBlock Text="Controls &amp; Hotkeys" Foreground="{DynamicResource PrimaryText}" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12"/>
                 <TextBlock Text="Movie" Foreground="{DynamicResource MovieAccent}" FontSize="15" FontWeight="SemiBold" Margin="0,5"/>
+                <TextBlock Text="Click the movie timeline or its transport controls to use movie arrows. They also work during movie playback. Sliders, lists, menus and text fields keep their normal keys."
+                           TextWrapping="Wrap" Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,8"/>
                 <Grid Margin="0,0,0,10">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="155"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="Up Arrow" Foreground="{DynamicResource WarningText}"/><TextBlock Grid.Column="1" Text="Play / pause / resume movie sequence" Foreground="{DynamicResource PrimaryText}"/>
@@ -23,7 +25,7 @@
                 </TextBlock>
                 <TextBlock Text="Spline editor" Foreground="{DynamicResource SequenceAccent}" FontSize="15" FontWeight="SemiBold" Margin="0,10,0,5"/>
                 <TextBlock Foreground="{DynamicResource PrimaryText}" TextWrapping="Wrap" Margin="0,0,0,10">
-                    Left-drag a control point vertically to change value. Right-drag a point horizontally to change time. Ctrl+left-click or double-left-click a spline line to add a point. Select a point and press Delete to remove it. NeckNodUp and NeckTiltRight share one spline; its line changes color when ownership changes, and middle-clicking an already-selected neck point toggles it between those two controls. Hovering shows the exact servo, time and value.
+                    Left-drag a control point vertically to change value. Right-drag a point horizontally to change time. Right-click the vertical cursor to open the timeline cursor actions. Ctrl+left-click or double-left-click a spline line to add a point. Select a point and press Delete to remove it. NeckNodUp and NeckTiltRight share one spline; its line changes color when ownership changes, and middle-clicking an already-selected neck point toggles it between those two controls. Hovering shows the exact servo, time and value.
                 </TextBlock>
                 <TextBlock Text="Movie blocks" Foreground="{DynamicResource MovieAccent}" FontSize="15" FontWeight="SemiBold" Margin="0,10,0,5"/>
                 <TextBlock Foreground="{DynamicResource PrimaryText}" TextWrapping="Wrap" Margin="0,0,0,10">
@@ -31,7 +33,7 @@
                 </TextBlock>
                 <TextBlock Text="Editing" Foreground="{DynamicResource HeaderText}" FontSize="15" FontWeight="SemiBold" Margin="0,10,0,5"/>
                 <TextBlock Foreground="{DynamicResource PrimaryText}" TextWrapping="Wrap">
-                    Ctrl+Z = Undo. Ctrl+Y = Redo. In Commands at Cursor, double-click edits the command group and Delete removes the selected command. An asterisk next to a Sequence or Movie filename indicates unsaved changes.
+                    Ctrl+O = Open Sequence. Ctrl+Shift+O = Open Movie. Ctrl+S = Save active Sequence or Movie. Ctrl+Shift+S = Save active document As. Space = Play/pause Sequence when a timeline or background has focus. Ctrl+Z = Undo. Edit &gt; Undo History lists the last ten actions and can undo through an older action. Ctrl+Y = Redo. In Commands at Cursor, double-click edits the command group and Delete removes the selected command. An asterisk next to a Sequence or Movie filename indicates unsaved changes.
                 </TextBlock>
             </StackPanel>
         </ScrollViewer>

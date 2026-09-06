@@ -355,14 +355,14 @@
             <MenuItem Header="_File" Style="{StaticResource TopLevelMenuItem}">
                 <MenuItem Header="_New" Click="FileNew_Click"/>
                 <MenuItem Header="Open _Audio…" Click="OpenAudio_Click"/>
-                <MenuItem Header="_Load Sequence…" Click="LoadProject_Click"/>
+                <MenuItem Header="_Load Sequence…" InputGestureText="Ctrl+O" Click="LoadProject_Click"/>
                 <MenuItem x:Name="OpenRecentMenuItem" Header="Open _Recent"/>
-                <MenuItem Header="_Save Sequence" Click="SaveProject_Click"/>
-                <MenuItem Header="Save Sequence _As…" Click="SaveProjectAs_Click"/>
+                <MenuItem Header="_Save Sequence" InputGestureText="Ctrl+S (active)" Click="SaveProject_Click"/>
+                <MenuItem Header="Save Sequence _As…" InputGestureText="Ctrl+Shift+S (active)" Click="SaveProjectAs_Click"/>
                 <Separator/>
-                <MenuItem Header="Load _Movie…" Click="LoadMovie_Click"/>
-                <MenuItem Header="_Save Movie" Click="SaveMovie_Click"/>
-                <MenuItem Header="Save Movie _As…" Click="SaveMovieAs_Click"/>
+                <MenuItem Header="Load _Movie…" InputGestureText="Ctrl+Shift+O" Click="LoadMovie_Click"/>
+                <MenuItem Header="_Save Movie" InputGestureText="Ctrl+S (active)" Click="SaveMovie_Click"/>
+                <MenuItem Header="Save Movie _As…" InputGestureText="Ctrl+Shift+S (active)" Click="SaveMovieAs_Click"/>
                 <MenuItem Header="_Repair Missing Files…" Click="RepairMissingFiles_Click"/>
                 <Separator/>
                 <MenuItem Header="_Export Animation JSON…" Click="ExportAnimation_Click"/>
@@ -371,6 +371,10 @@
             </MenuItem>
             <MenuItem Header="_Edit" Style="{StaticResource TopLevelMenuItem}">
                 <MenuItem Header="_Undo" Command="ApplicationCommands.Undo" InputGestureText="Ctrl+Z"/>
+                <MenuItem x:Name="UndoHistoryMenuItem" Header="Undo _History"
+                          SubmenuOpened="UndoHistory_SubmenuOpened">
+                    <MenuItem Header="No actions to undo" IsEnabled="False"/>
+                </MenuItem>
                 <MenuItem Header="_Redo" Command="ApplicationCommands.Redo" InputGestureText="Ctrl+Y"/>
                 <Separator/>
                 <MenuItem Header="_Clear Timeline…" Click="Clear_Click"/>
@@ -601,7 +605,7 @@
                 Margin="6,4,6,0" CornerRadius="{StaticResource PanelCornerRadius}">
             <StackPanel Orientation="Horizontal">
                 <Button Content="|◀" Width="42" Margin="0,0,4,0" ToolTip="Move sequence cursor to beginning" Click="SequenceRestart_Click"/>
-                <Button x:Name="PlayPauseBtn" Content="▶ Sequence" Width="100" Click="PlayPause_Click"/>
+                <Button x:Name="PlayPauseBtn" Content="▶ Sequence" Width="100" ToolTip="Play/pause sequence — Space (timeline or background focus)" Click="PlayPause_Click"/>
                 <Button Content="■" Width="42" Margin="4,0,0,0" ToolTip="Stop sequence playback" Click="SequenceStop_Click"/>
                 <TextBlock Text="  Time: " Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
                 <TextBlock x:Name="TimeText" Text="0.000 s" Foreground="{DynamicResource WarningText}" FontFamily="Consolas" FontSize="16" VerticalAlignment="Center" Width="110"/>

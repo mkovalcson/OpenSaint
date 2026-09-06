@@ -18,6 +18,7 @@ namespace ServoAnimator
     public partial class ExportAnimationWindow : Window
     {
         private readonly int[] _hzOptions;
+        private readonly string _configFolder;
 
         /// <summary>True = "Animate individual" (expand ganged commands).</summary>
         public bool AnimateIndividual =>
@@ -36,11 +37,12 @@ namespace ServoAnimator
 
         public ExportAnimationWindow(int[] hzOptions, bool animateIndividual,
                                      int sampleHz, bool scaleValues,
-                                     string defaultPath)
+                                     string defaultPath, string configFolder)
         {
             InitializeComponent();
             HelpSystem.EnableContextHelp(this, "files-configuration");
             _hzOptions = hzOptions;
+            _configFolder = configFolder;
 
             ModeCombo.Items.Add("Animate ganged");
             ModeCombo.Items.Add("Animate individual");
@@ -63,8 +65,13 @@ namespace ServoAnimator
                 FileName = Path.GetFileName(FilePath),
                 InitialDirectory = SafeDirectory(FilePath),
             };
-            if (dlg.ShowDialog() == true)
-                PathBox.Text = dlg.FileName;
+            if (dlg.ShowDialog() != true) return;
+            if (!ConfigPathService.IsWithin(_configFolder, dlg.FileName))
+            {
+                ShowOutsideConfigMessage();
+                return;
+            }
+            PathBox.Text = dlg.FileName;
         }
 
         private static string SafeDirectory(string path)
@@ -88,7 +95,18 @@ namespace ServoAnimator
                                 MessageBoxImage.Information);
                 return;
             }
+            if (!ConfigPathService.IsWithin(_configFolder, FilePath))
+            {
+                ShowOutsideConfigMessage();
+                return;
+            }
             DialogResult = true;
         }
+
+        private void ShowOutsideConfigMessage() => MessageBox.Show(this,
+            "Animation files must be saved inside the Configuration folder or one of its child folders:\n\n" +
+            _configFolder,
+            "File outside Configuration folder", MessageBoxButton.OK,
+            MessageBoxImage.Warning);
     }
 }

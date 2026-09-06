@@ -27,6 +27,12 @@ namespace ServoAnimator
         private double _pixelsPerSecond;
         private double _viewStart;
         private bool _autoFitOnResize = true;
+        private int _tooltipIndex = -1;
+        public void RefreshBlockToolTip()
+        {
+            _tooltipIndex = -1;
+            ToolTip = null;
+        }
 
         private const double MinPixelsPerSecond = 0.25;
         private const double MaxPixelsPerSecond = 1000;
@@ -62,6 +68,7 @@ namespace ServoAnimator
 
         public void SetItems(IEnumerable<MovieSequenceItem> items)
         {
+            RefreshBlockToolTip();
             bool hadItems = _items.Count > 0;
             double oldPps = _pixelsPerSecond;
             double oldView = _viewStart;
@@ -348,6 +355,8 @@ namespace ServoAnimator
             }
 
             int idx = IndexAtTime(TimeAtX(p.X));
+            if (idx == _tooltipIndex) return;
+            _tooltipIndex = idx;
             ToolTip = idx >= 0 && idx < _items.Count
                 ? (BlockToolTipProvider?.Invoke(_items[idx]) ??
                    $"{Path.GetFileName(_items[idx].FilePath)}\nDuration: {_items[idx].DurationSeconds:0.###} s")

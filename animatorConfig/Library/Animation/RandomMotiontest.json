@@ -32,7 +32,7 @@
     {
       "offsetSeconds": 5.312,
       "servo": "Play",
-      "value": "X:\\Johnny5\\animatorConfig\\Library\\Audio\\LR7_Expressive.mp3",
+      "value": "Library\\Audio\\LR7_Expressive.mp3",
       "speed": "Default",
       "reason": "LR7_Expressive.mp3"
     },

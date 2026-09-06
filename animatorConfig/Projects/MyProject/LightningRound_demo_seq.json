@@ -2,7 +2,7 @@
   "description": "A full description of what I\u0027m trying to do with this animation sequence including any notes I may care about.",
   "audioFiles": "LightningRound.mp3|LR7_Expressive.mp3",
   "audioFile": "LightningRound.mp3",
-  "audioFilePath": "X:\\Johnny5\\Software\\animatorConfig\\Projects\\MyProject\\LightningRound.mp3",
+  "audioFilePath": "Projects\\MyProject\\LightningRound.mp3",
   "durationSeconds": 13.28,
   "audioStartOffsetSeconds": 0,
   "splineServos": [
@@ -259,7 +259,7 @@
     {
       "offsetSeconds": 15.819,
       "servo": "Play",
-      "value": "X:\\Johnny5\\animatorConfig\\Projects\\MyProject\\LR7_Expressive.mp3",
+      "value": "Projects\\MyProject\\LR7_Expressive.mp3",
       "speed": "Default",
       "reason": "LR7_Expressive.mp3"
     },

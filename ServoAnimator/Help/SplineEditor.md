@@ -6,6 +6,7 @@ The Spline Editor creates smooth interpolated servo motion between control point
 
 - Left-drag a control point vertically to change its value.
 - Right-drag a point horizontally to change its time.
+- Right-click the vertical sequence cursor to open the same cursor actions as the waveform.
 - Ctrl+left-click **or double-left-click** a spline line to add a control point.
 - Select a point and press Delete to remove it.
 - For the shared `NeckNodUp` / `NeckTiltRight` spline, middle-click an already-selected control point to toggle which neck control owns that point.

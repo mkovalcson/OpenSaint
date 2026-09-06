@@ -2,7 +2,7 @@
   "description": "Test Animation 2.",
   "audioFiles": "LightningRound.mp3|LR7_Expressive.mp3",
   "audioFile": "LightningRound.mp3",
-  "audioFilePath": "X:\\Johnny5\\Software\\animatorConfig\\Projects\\MyProject\\LightningRound.mp3",
+  "audioFilePath": "Projects\\MyProject\\LightningRound.mp3",
   "durationSeconds": 15.86,
   "audioStartOffsetSeconds": 2.577,
   "splineServos": [
@@ -57,7 +57,7 @@
     {
       "offsetSeconds": 20.081,
       "servo": "Play",
-      "value": "X:\\Johnny5\\animatorConfig\\Projects\\MyProject\\LR7_Expressive.mp3",
+      "value": "Projects\\MyProject\\LR7_Expressive.mp3",
       "speed": "Default",
       "reason": "LR7_Expressive.mp3"
     },

@@ -43,6 +43,9 @@ namespace ServoAnimator
         // then aggregates buckets per screen pixel, which stays fast at any
         // zoom level and any file length.
         private float[] _peakMin = Array.Empty<float>();
+        private readonly TimelineDrawingCache _drawingCache = new();
+        public new void InvalidateVisual() { _drawingCache.Invalidate(); base.InvalidateVisual(); }
+        public void InvalidateCursor() => base.InvalidateVisual();
         private float[] _peakMax = Array.Empty<float>();
         private double _bucketDuration = 0.001;    // seconds represented by one bucket
 
@@ -309,6 +312,7 @@ namespace ServoAnimator
         public WaveformView()
         {
             Focusable = true;
+            Unloaded += (_, _) => _drawingCache.Dispose();
             SnapsToDevicePixels = true;
             ToolTipService.SetInitialShowDelay(this, 200);
             ToolTipService.SetShowDuration(this, 10000);
@@ -404,7 +408,6 @@ namespace ServoAnimator
             // The Skia surface is in device pixels; scale so the rest of the
             // drawing code can work in WPF device-independent units.
             float scale = (float)(e.Info.Width / Math.Max(1.0, ActualWidth));
-            canvas.Scale(scale);
 
             float w = (float)ActualWidth;
             float h = (float)ActualHeight;
@@ -413,12 +416,20 @@ namespace ServoAnimator
             float waveMidY = (waveTop + waveBottom) / 2f;
             float waveHalf = (waveBottom - waveTop) / 2f * 0.95f;
 
-            DrawPreRollShade(canvas, waveTop, waveBottom);
-            DrawWaveform(canvas, w, waveMidY, waveHalf);
-            DrawAudioClips(canvas, w, waveMidY, waveHalf, waveBottom);
-            DrawTimeAxis(canvas, w, h);
-            DrawMarkers(canvas, w);
-            DrawOffsetHandle(canvas);
+            _drawingCache.Draw(canvas, e.Info,
+                (e.Info.Width, e.Info.Height, w, h, ViewStart, PixelsPerSecond, ThemeManager.CurrentTheme),
+                background =>
+                {
+                    background.Clear(ThemeSk("AppBackground", new SKColor(24, 26, 30)));
+                    background.Scale(scale);
+                    DrawPreRollShade(background, waveTop, waveBottom);
+                    DrawWaveform(background, w, waveMidY, waveHalf);
+                    DrawAudioClips(background, w, waveMidY, waveHalf, waveBottom);
+                    DrawTimeAxis(background, w, h);
+                    DrawMarkers(background, w);
+                    DrawOffsetHandle(background);
+                });
+            canvas.Scale(scale);
             DrawSelectionArrows(canvas, h);
             DrawCursor(canvas, h);
         }
@@ -453,12 +464,7 @@ namespace ServoAnimator
                 int i0 = Math.Clamp((int)(t0 / _bucketDuration), 0, _peakMin.Length - 1);
                 int i1 = Math.Clamp((int)(t1 / _bucketDuration), i0, _peakMin.Length - 1);
 
-                float mn = float.MaxValue, mx = float.MinValue;
-                for (int i = i0; i <= i1; i++)
-                {
-                    if (_peakMin[i] < mn) mn = _peakMin[i];
-                    if (_peakMax[i] > mx) mx = _peakMax[i];
-                }
+                var (mn, mx) = PeakEnvelope.For(_peakMin, _peakMax).Query(i0, i1);
                 if (mn > mx) continue;
 
                 float yTop = midY - mx * half;
@@ -511,12 +517,7 @@ namespace ServoAnimator
 
                         int i0 = Math.Clamp((int)(t0 / 0.001), 0, clip.PeakMin.Length - 1);
                         int i1 = Math.Clamp((int)(t1 / 0.001), i0, clip.PeakMin.Length - 1);
-                        float mn = float.MaxValue, mx = float.MinValue;
-                        for (int i = i0; i <= i1; i++)
-                        {
-                            if (clip.PeakMin[i] < mn) mn = clip.PeakMin[i];
-                            if (clip.PeakMax[i] > mx) mx = clip.PeakMax[i];
-                        }
+                        var (mn, mx) = PeakEnvelope.For(clip.PeakMin, clip.PeakMax).Query(i0, i1);
                         if (mn > mx) continue;
                         float yTop = midY - mx * half;
                         float yBot = midY - mn * half;

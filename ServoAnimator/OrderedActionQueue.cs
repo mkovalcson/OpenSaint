@@ -10,7 +10,8 @@ namespace ServoAnimator
     /// </summary>
     internal sealed class OrderedActionQueue : IDisposable
     {
-        private readonly BlockingCollection<Action> _actions = new();
+        private readonly BlockingCollection<(long Generation, Action Action)> _actions = new();
+        private long _generation;
         private readonly Task _worker;
         private bool _disposed;
 
@@ -24,14 +25,21 @@ namespace ServoAnimator
         public void Enqueue(Action action)
         {
             if (action == null || _disposed) return;
-            try { _actions.Add(action); }
+            try { _actions.Add((Interlocked.Read(ref _generation), action)); }
             catch (InvalidOperationException) { }
         }
 
         public void ClearPending()
         {
             if (_disposed) return;
-            while (_actions.TryTake(out _)) { }
+            Interlocked.Increment(ref _generation);
+        }
+
+        public void EnqueueBarrier(Action action)
+        {
+            if (action == null || _disposed) return;
+            try { _actions.Add((-1, action)); }
+            catch (InvalidOperationException) { }
         }
 
         private void Run(string workerName)
@@ -39,9 +47,13 @@ namespace ServoAnimator
             try { Thread.CurrentThread.Name ??= workerName; }
             catch { }
 
-            foreach (Action action in _actions.GetConsumingEnumerable())
+            foreach (var work in _actions.GetConsumingEnumerable())
             {
-                try { action(); }
+                // Also reject work already removed from the collection by the
+                // consumer when cancellation occurred. An active device write
+                // must finish; subsequent commands from that run are skipped.
+                if (work.Generation >= 0 && work.Generation != Interlocked.Read(ref _generation)) continue;
+                try { work.Action(); }
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"[{workerName}] {ex.Message}");
@@ -49,12 +61,18 @@ namespace ServoAnimator
             }
         }
 
-        public void Dispose()
+        public void Dispose() => Dispose(null);
+
+        public void Dispose(Action afterDrain)
         {
             if (_disposed) return;
+            ClearPending();
+            if (afterDrain != null) EnqueueBarrier(afterDrain);
             _disposed = true;
-            while (_actions.TryTake(out _)) { }
             _actions.CompleteAdding();
+            // Device disposal is itself ordered after an in-flight write.
+            // A slow device may outlive this short UI wait but never races
+            // cleanup on the closing window's thread.
             try { _worker.Wait(500); } catch { }
         }
     }

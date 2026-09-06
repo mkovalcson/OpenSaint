@@ -39,10 +39,24 @@ namespace ServoAnimator
                 loaded ??= new RecentFilesSettings();
                 loaded.Files ??= new List<RecentFileEntry>();
                 loaded.Files = loaded.Files
-                    .Where(e => e != null && !string.IsNullOrWhiteSpace(e.Path))
+                    .Where(e => e != null &&
+                                ConfigPathService.TryResolve(configFolder, e.Path,
+                                    out _))
+                    .Select(e => new RecentFileEntry
+                    {
+                        Path = ConfigPathService.TryResolve(configFolder, e.Path,
+                            out string full) ? full : "",
+                        Kind = e.Kind,
+                        LastOpenedUtc = e.LastOpenedUtc,
+                    })
                     .OrderByDescending(e => e.LastOpenedUtc)
                     .Take(10)
                     .ToList();
+                loaded.LastActivePath = ConfigPathService.TryResolve(
+                    configFolder, loaded.LastActivePath, out string active)
+                    ? active : "";
+                if (loaded.LastActivePath.Length == 0)
+                    loaded.LastActiveKind = "";
                 return loaded;
             }
             catch
@@ -51,12 +65,11 @@ namespace ServoAnimator
             }
         }
 
-        public void Touch(string path, string kind, bool setActive)
+        public void Touch(string path, string kind, bool setActive,
+                          string configFolder)
         {
-            if (string.IsNullOrWhiteSpace(path)) return;
-            string full;
-            try { full = System.IO.Path.GetFullPath(path); }
-            catch { full = path; }
+            if (!ConfigPathService.TryResolve(configFolder, path, out string full))
+                return;
 
             Files ??= new List<RecentFileEntry>();
             Files.RemoveAll(e => string.Equals(e.Path, full, StringComparison.OrdinalIgnoreCase));
@@ -88,8 +101,23 @@ namespace ServoAnimator
         {
             if (string.IsNullOrWhiteSpace(configFolder)) return;
             Directory.CreateDirectory(configFolder);
+            var persisted = new RecentFilesSettings
+            {
+                LastActivePath = string.IsNullOrWhiteSpace(LastActivePath)
+                    ? "" : ConfigPathService.ToRelative(configFolder, LastActivePath),
+                LastActiveKind = LastActiveKind,
+                Files = (Files ?? new List<RecentFileEntry>())
+                    .Where(e => e != null &&
+                                ConfigPathService.IsWithin(configFolder, e.Path))
+                    .Select(e => new RecentFileEntry
+                    {
+                        Path = ConfigPathService.ToRelative(configFolder, e.Path),
+                        Kind = e.Kind,
+                        LastOpenedUtc = e.LastOpenedUtc,
+                    }).ToList(),
+            };
             File.WriteAllText(PathFor(configFolder), JsonSerializer.Serialize(
-                this, new JsonSerializerOptions { WriteIndented = true }));
+                persisted, new JsonSerializerOptions { WriteIndented = true }));
         }
     }
 }

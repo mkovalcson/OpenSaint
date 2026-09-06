@@ -123,8 +123,8 @@ namespace ServoAnimator
         /// </summary>
         private enum PlayMode { Stopped, Running, Paused }
         private PlayMode _mode = PlayMode.Stopped;
-        private DateTime _anchorWall;     // wall-clock instant of the anchor
-        private double _anchorTime;       // timeline seconds at that instant
+        private readonly PlaybackClock _playbackClock = new();
+        private double _outputTimelineOrigin;
 
         /// <summary>Consecutive failed attempts to start the audio during a
         /// run; after MaxAudioStartAttempts the run continues silently on
@@ -145,8 +145,11 @@ namespace ServoAnimator
 
         /// <summary>Peak-envelope cache per audio path, so refreshing the
         /// clip visuals never rescans files.</summary>
-        private readonly Dictionary<string, (float[] Min, float[] Max, double Dur)>
-            _peakCache = new();
+        private readonly MediaAssetCache _mediaCache = new();
+        private FileSystemWatcher _movieMetadataWatcher;
+        private readonly HashSet<string> _changedMovieFiles = new(StringComparer.OrdinalIgnoreCase);
+        private readonly DispatcherTimer _movieMetadataRefreshTimer = new()
+        { Interval = TimeSpan.FromMilliseconds(250) };
 
         /// <summary>Where the audio starts on the timeline (seconds). Set by
         /// dragging the handle at the top-left of the waveform. Commands can
@@ -158,11 +161,12 @@ namespace ServoAnimator
 
         // ----- undo / redo (Edit menu, Ctrl+Z / Ctrl+Y) -----
         // Snapshot-based: before every mutating timeline operation the whole
-        // command list is deep-copied onto the undo stack. Undo swaps the
-        // current list with the top snapshot (pushing the current one onto
-        // the redo stack); any NEW edit clears the redo stack.
-        private readonly List<List<ServoCommand>> _undoStack = new();
-        private readonly List<List<ServoCommand>> _redoStack = new();
+        // command list and a user-facing action description are stored. Undo
+        // swaps the current list with the top snapshot (pushing the current
+        // one and its description onto redo); any NEW edit clears redo.
+        private sealed record UndoEntry(List<ServoCommand> Commands, string Description);
+        private readonly List<UndoEntry> _undoStack = new();
+        private readonly List<UndoEntry> _redoStack = new();
         private const int UndoLimit = 100;
         /// <summary>True from the first change of a spline point drag until
         /// the drag completes, so a whole drag is ONE undo step.</summary>
@@ -218,7 +222,7 @@ namespace ServoAnimator
         // day, increment minor/reset patch on a new day, and major only on
         // explicit user request.
         private const string AppDisplayName = "Animation Editor & Player";
-        private const string AppVersion = "1.15.0";
+        private const string AppVersion = "1.17.2";
 
         /// <summary>Detached URDF preview used when the user presses Undock.
         /// The old View > Robot Head entry has been removed; docking is now
@@ -263,8 +267,8 @@ namespace ServoAnimator
         private readonly ArduinoRgbTimelineSimulator _rgbSimulator = new();
 
         /// <summary>Configuration/project folder locations, normally from
-        /// Paths.json beside the exe. On first run a sibling animatorConfig folder
-        /// is auto-discovered before prompting; Config > Set Paths… edits.</summary>
+        /// Paths.json beside the exe. A deployed child Config folder is preferred;
+        /// the live tree's sibling animatorConfig layout remains supported.</summary>
         private FolderSettings _folders;
 
         /// <summary>Rows of the servo status grid, one per ServoNames value.</summary>
@@ -413,6 +417,7 @@ namespace ServoAnimator
             _statusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
             _statusTimer.Tick += (_, _) => { _statusTimer.Stop(); if (StatusText != null) StatusText.Text = "Ready"; };
             _recoveryTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+            _movieMetadataRefreshTimer.Tick += RefreshChangedMovieMetadata;
             _recoveryTimer.Tick += (_, _) => SaveRecoverySnapshotIfNeeded();
 
             // One row object per servo in the enum. _rows stays the master
@@ -460,6 +465,7 @@ namespace ServoAnimator
             // cursor just like clicking the waveform.
             Spline.SyncTarget = Waveform;
             Spline.TimeClicked += Waveform_TimeClicked;
+            Spline.RightClicked += Spline_RightClicked;
             Spline.PointValueChanged += Spline_PointValueChanged;
             Spline.PointTimeChanged += Spline_PointTimeChanged;
             Spline.PointAdded += Spline_PointAdded;
@@ -486,10 +492,9 @@ namespace ServoAnimator
 
             Loaded += (_, _) =>
             {
-                // First run: FolderSettings.Load first checks for a sibling
-                // animatorConfig folder beside the ServoAnimator project and uses
-                // it automatically. Only prompt when neither saved paths nor that
-                // conventional folder are available.
+                // First run: use a deployed child Config folder when present;
+                // otherwise retain the live project's sibling animatorConfig
+                // discovery behavior.
                 _folders = FolderSettings.Load();
                 if (_folders == null)
                 {
@@ -505,6 +510,7 @@ namespace ServoAnimator
                 // The File > Open Recent menu is populated before the last document
                 // is automatically restored below.
                 _recentFiles = RecentFilesSettings.Load(_folders.ConfigFolderOrDefault);
+                WatchMovieMetadata();
                 RefreshOpenRecentMenu();
 
                 // Restore the user's last screen arrangement from the selected
@@ -557,10 +563,12 @@ namespace ServoAnimator
             _urdfConfigReloadTimer.Stop();
             _urdfConfigWatcher?.Dispose();
             _urdfConfigWatcher = null;
+            _movieMetadataWatcher?.Dispose();
+            _movieMetadataWatcher = null;
+            _movieMetadataRefreshTimer.Stop();
             DisposeAudioDevice();
             _reader?.Dispose();
-            _hardwarePlaybackQueue.Dispose();
-            _hw.Dispose();
+            _hardwarePlaybackQueue.Dispose(_hw.Dispose);
             base.OnClosed(e);
         }
 
@@ -824,6 +832,7 @@ namespace ServoAnimator
                 InitialDirectory = _folders?.ProjectFolderOrDefault ?? "",
             };
             if (dlg.ShowDialog() != true) return;
+            if (!RequireConfigPath(dlg.FileName, "audio file")) return;
             LoadAudio(dlg.FileName);
         }
 
@@ -832,62 +841,23 @@ namespace ServoAnimator
         /// min/max peak envelope for drawing, then rewinds it and hands it to
         /// a WaveOutEvent for playback.
         /// </summary>
-        private void LoadAudio(string path)
+        private void LoadAudio(string path, bool stopPlayback = true)
         {
             try
             {
-                StopPlayback();            // also disposes the output device
+                if (stopPlayback) StopPlayback();
+                var peaks = LoadingWindow.Wait(this, _mediaCache.Audio(path), "Preparing audio waveform…");
                 _reader?.Dispose();
 
                 _reader = new AudioFileReader(path);   // decodes to 32-bit float
                 _audioPath = path;
 
-                int sampleRate = _reader.WaveFormat.SampleRate;
-                int channels = _reader.WaveFormat.Channels;
-
-                // One peak bucket per millisecond of audio: fine enough to look
-                // correct fully zoomed in, small enough to render instantly.
-                int framesPerBucket = Math.Max(1, sampleRate / 1000);
-                var mins = new List<float>();
-                var maxs = new List<float>();
-
-                float[] buffer = new float[sampleRate * channels]; // ~1 s chunks
-                float mn = float.MaxValue, mx = float.MinValue;
-                int framesInBucket = 0;
-
-                int read;
-                while ((read = _reader.Read(buffer, 0, buffer.Length)) > 0)
-                {
-                    // Fold all channels of a frame into one min/max envelope.
-                    for (int i = 0; i < read; i += channels)
-                    {
-                        for (int c = 0; c < channels && i + c < read; c++)
-                        {
-                            float s = buffer[i + c];
-                            if (s < mn) mn = s;
-                            if (s > mx) mx = s;
-                        }
-                        if (++framesInBucket >= framesPerBucket)
-                        {
-                            mins.Add(mn); maxs.Add(mx);
-                            mn = float.MaxValue; mx = float.MinValue;
-                            framesInBucket = 0;
-                        }
-                    }
-                }
-                if (framesInBucket > 0) { mins.Add(mn); maxs.Add(mx); }
-
-                _reader.Position = 0;   // rewind; the output device is
-                                        // created on demand by SwitchAudioTo
-
-                double duration = _reader.TotalTime.TotalSeconds;
-                _primaryDuration = duration;
-                Waveform.AudioOffset = _audioOffset;   // keep any existing offset
-                Waveform.SetAudio(mins.ToArray(), maxs.ToArray(),
-                                  (double)framesPerBucket / sampleRate, duration);
+                _primaryDuration = peaks.Duration;
+                Waveform.AudioOffset = _audioOffset;
+                Waveform.SetAudio(peaks.Min, peaks.Max, 0.001, peaks.Duration);
 
                 _doc.AudioFile = Path.GetFileName(path);
-                _doc.DurationSeconds = Math.Round(_audioOffset + duration, 2);
+                _doc.DurationSeconds = Math.Round(_audioOffset + peaks.Duration, 2);
 
                 // The audio's name is drawn at the lower-left of where it
                 // starts on the waveform (replacing the old top-bar label).
@@ -1046,6 +1016,7 @@ namespace ServoAnimator
             old?.Dispose();               // old device thread (if any) holds
                                           // its own reference-free stream now
             SeekAudio(t - src.Start);
+            _outputTimelineOrigin = src.Start + _reader.CurrentTime.TotalSeconds;
 
             _waveOut = new WaveOutEvent { DesiredLatency = 100, Volume = _playbackVolume };
             _waveOut.Init(_reader);
@@ -1082,8 +1053,9 @@ namespace ServoAnimator
         /// audio is started there immediately, otherwise the audio is parked
         /// and Timer_Tick starts it when the cursor reaches the offset.
         /// </summary>
-        private void StartPlaybackAt(double t)
+        private void StartPlaybackAt(double t, bool preservePending = false)
         {
+            if (!preservePending) _hardwarePlaybackQueue.ClearPending();
             // Playback always returns the grid to the authored timeline pose;
             // any manually staged multi-row values are intentionally discarded.
             ClearManualGridOverrides();
@@ -1096,8 +1068,7 @@ namespace ServoAnimator
 
             _cursorTime = Math.Clamp(t, 0, TimelineDuration);
             _lastFiredTime = _cursorTime;
-            _anchorWall = DateTime.UtcNow;
-            _anchorTime = _cursorTime;
+            _playbackClock.Start(_cursorTime);
             _audioStartAttempts = 0;   // fresh retry budget for this run
             _lastDesiredKey = null;
 
@@ -1155,6 +1126,7 @@ namespace ServoAnimator
 
         private void PausePlayback()
         {
+            _hardwarePlaybackQueue.ClearPending();
             // Resume always rebuilds a fresh device at the right source and
             // position, so the paused device is simply torn down.
             DisposeAudioDevice();
@@ -1166,8 +1138,9 @@ namespace ServoAnimator
             PlayPauseBtn.Content = "▶ Resume";
         }
 
-        private void StopPlayback()
+        private void StopPlayback(bool cancelPending = true)
         {
+            if (cancelPending) _hardwarePlaybackQueue.ClearPending();
             StopPlaybackRendering();
             DisposeAudioDevice();
             _activeSource = null;
@@ -1200,7 +1173,17 @@ namespace ServoAnimator
         {
             if (_mode != PlayMode.Running) return;
 
-            double t = _anchorTime + (DateTime.UtcNow - _anchorWall).TotalSeconds;
+            double? outputTime = null;
+            if (_activeSource != null && _waveOut?.PlaybackState == PlaybackState.Playing)
+            {
+                try
+                {
+                    outputTime = _outputTimelineOrigin +
+                        _waveOut.GetPosition() / (double)_waveOut.OutputWaveFormat.AverageBytesPerSecond;
+                }
+                catch { /* The monotonic clock continues if the driver is unavailable. */ }
+            }
+            double t = _playbackClock.Advance(outputTime);
             double playbackEnd = CurrentPlaybackEnd;
 
             // ---- sequential audio: whichever source (primary or an
@@ -1229,11 +1212,7 @@ namespace ServoAnimator
 
             if (_activeSource != null && playing)
             {
-                // The active audio is the authoritative clock: re-anchor.
                 _audioStartAttempts = 0;
-                t = _activeSource.Start + _reader.CurrentTime.TotalSeconds;
-                _anchorWall = DateTime.UtcNow;
-                _anchorTime = t;
             }
             // else: wall clock carries through silence/gaps.
 
@@ -1244,13 +1223,13 @@ namespace ServoAnimator
                 FireCommandsBetween(_lastFiredTime, playbackEnd);
                 _cursorTime = playbackEnd;
                 Waveform.CursorTime = _cursorTime;
-                Waveform.InvalidateVisual();
+                Waveform.InvalidateCursor();
                 SyncSplineView();
                 UpdateTimeText();
                 UpdateServoGrid(_cursorTime);
                 SyncMovieCursorToSequencePlayback(_cursorTime);
                 if (!ContinueMoviePlaybackAfterSequenceEnd())
-                    StopPlayback();
+                    StopPlayback(cancelPending: false);
                 return;
             }
 
@@ -1261,7 +1240,7 @@ namespace ServoAnimator
             SyncMovieCursorToSequencePlayback(t);
             Waveform.CursorTime = t;
             Waveform.EnsureVisible(t);
-            Waveform.InvalidateVisual();
+            Waveform.InvalidateCursor();
             SyncSplineView();
 
             // Talking rectangle: amplitude of WHICHEVER audio is playing
@@ -1427,7 +1406,7 @@ namespace ServoAnimator
             // clip handle follows.
             if (Math.Abs(delta) > 1e-9 && _doc.Commands.Count > 0)
             {
-                if (!_offsetDragUndoPushed) { PushUndo(); _offsetDragUndoPushed = true; }
+                if (!_offsetDragUndoPushed) { PushUndo("Move primary audio and following commands"); _offsetDragUndoPushed = true; }
                 foreach (var c in _doc.Commands)
                     if (c.OffsetSeconds >= old - 1e-9)
                         c.OffsetSeconds = ServoCommand.TimeKey(
@@ -1454,7 +1433,7 @@ namespace ServoAnimator
         /// </summary>
         private void Waveform_MarkerDragged(double oldKey, double newKey)
         {
-            if (!_markerDragUndoPushed) { PushUndo(); _markerDragUndoPushed = true; }
+            if (!_markerDragUndoPushed) { PushUndo($"Move command group at {oldKey:F3} s"); _markerDragUndoPushed = true; }
 
             foreach (var c in _doc.Commands.Where(c =>
                          ServoCommand.TimeKey(c.OffsetSeconds) == oldKey).ToList())
@@ -1472,33 +1451,8 @@ namespace ServoAnimator
         /// <summary>Scan (or fetch cached) peaks for an audio file.</summary>
         private (float[] Min, float[] Max, double Dur) BuildPeaks(string path)
         {
-            using var r = new AudioFileReader(path);
-            double dur = r.TotalTime.TotalSeconds;
-            int buckets = Math.Max(1, (int)Math.Ceiling(dur / 0.001));
-            var mn = new float[buckets];
-            var mx = new float[buckets];
-            Array.Fill(mn, float.MaxValue);
-            Array.Fill(mx, float.MinValue);
-
-            int chans = r.WaveFormat.Channels;
-            double perSample = 1.0 / r.WaveFormat.SampleRate;
-            var buf = new float[r.WaveFormat.SampleRate * chans];
-            long frame = 0;
-            int read;
-            while ((read = r.Read(buf, 0, buf.Length)) > 0)
-            {
-                for (int i = 0; i < read; i += chans)
-                {
-                    float v = buf[i];
-                    int b = Math.Min(buckets - 1, (int)(frame * perSample / 0.001));
-                    if (v < mn[b]) mn[b] = v;
-                    if (v > mx[b]) mx[b] = v;
-                    frame++;
-                }
-            }
-            for (int b = 0; b < buckets; b++)
-                if (mn[b] > mx[b]) { mn[b] = 0; mx[b] = 0; }
-            return (mn, mx, dur);
+            var peaks = LoadingWindow.Wait(this, _mediaCache.Audio(path), "Preparing audio waveform…");
+            return (peaks.Min, peaks.Max, peaks.Duration);
         }
 
         /// <summary>Peak amplitude (0..1) of a clip's envelope around a
@@ -1515,19 +1469,21 @@ namespace ServoAnimator
             return Math.Clamp(amp, 0, 1);
         }
 
-        /// <summary>Resolve a clip's stored path: as-is, then the audio
-        /// folder, then next to the project file; null when not found.</summary>
+        /// <summary>Resolve a Config-relative clip path. Legacy filename-only
+        /// references are also searched beside the sequence and in Projects.</summary>
         private string ResolveAudioPath(string stored)
         {
             if (string.IsNullOrWhiteSpace(stored)) return null;
-            if (File.Exists(stored)) return stored;
+            if (ConfigPathService.TryResolve(ConfigRoot, stored, out string resolved) &&
+                File.Exists(resolved))
+                return resolved;
             string name = Path.GetFileName(stored);
             string p = Path.Combine(_folders?.ProjectFolderOrDefault ?? "", name);
-            if (File.Exists(p)) return p;
+            if (ConfigPathService.IsWithin(ConfigRoot, p) && File.Exists(p)) return p;
             if (!string.IsNullOrEmpty(_jsonPath))
             {
                 p = Path.Combine(Path.GetDirectoryName(_jsonPath) ?? "", name);
-                if (File.Exists(p)) return p;
+                if (ConfigPathService.IsWithin(ConfigRoot, p) && File.Exists(p)) return p;
             }
             return null;
         }
@@ -1549,11 +1505,7 @@ namespace ServoAnimator
                 {
                     try
                     {
-                        if (!_peakCache.TryGetValue(path, out var pk))
-                        {
-                            pk = BuildPeaks(path);
-                            _peakCache[path] = pk;
-                        }
+                        var pk = BuildPeaks(path);
                         (mn, mx, dur) = pk;
                     }
                     catch { missing.Add(c.TextValue); }
@@ -1588,7 +1540,7 @@ namespace ServoAnimator
             double delta = newStart - old;
             if (Math.Abs(delta) < 1e-9) return;
 
-            if (!_clipDragUndoPushed) { PushUndo(); _clipDragUndoPushed = true; }
+            if (!_clipDragUndoPushed) { PushUndo($"Move audio clip {Path.GetFileName(clip.Command.TextValue)}"); _clipDragUndoPushed = true; }
 
             foreach (var c in _doc.Commands)
             {
@@ -1670,7 +1622,7 @@ namespace ServoAnimator
         }
 
         /// <summary>Insert an additional audio file at the cursor: creates
-        /// a "Play" command (value = full path) whose clip then renders
+        /// a "Play" command (value = Config-relative path) whose clip then renders
         /// with peaks, name, and a drag handle.</summary>
         private void InsertAudioFileAtCursor()
         {
@@ -1681,13 +1633,14 @@ namespace ServoAnimator
                 InitialDirectory = _folders?.ProjectFolderOrDefault ?? "",
             };
             if (dlg.ShowDialog() != true) return;
+            if (!RequireConfigPath(dlg.FileName, "audio file")) return;
 
-            PushUndo();
+            PushUndo($"Insert audio {Path.GetFileName(dlg.FileName)} at {_cursorTime:F3} s");
             _doc.Commands.Add(new ServoCommand
             {
                 OffsetSeconds = ServoCommand.TimeKey(_cursorTime),
                 Servo = ServoNames.Play,
-                TextValue = dlg.FileName,
+                TextValue = ConfigPathService.ToRelative(ConfigRoot, dlg.FileName),
                 Speed = ServoSpeed.NoChange,
                 Reason = Path.GetFileName(dlg.FileName),
             });
@@ -2010,8 +1963,9 @@ namespace ServoAnimator
         /// hardware is connected, regardless of the Live Drive state.</summary>
         private void DisableAll_Click(object sender, RoutedEventArgs e)
         {
+            StopPlayback();
             if (_hw.Connected)
-                _hw.DisableAll();
+                _hardwarePlaybackQueue.EnqueueBarrier(_hw.DisableAll);
             else
                 Debug.WriteLine("DisableAll: hardware not connected");
         }
@@ -2598,7 +2552,7 @@ namespace ServoAnimator
                 ClearManualGridOverrides();
             _cursorTime = newTime;
 
-            if (_reader != null)
+            if (IsRunning || _reader != null)
             {
                 if (IsRunning)
                 {
@@ -2618,7 +2572,7 @@ namespace ServoAnimator
             }
 
             Waveform.CursorTime = _cursorTime;
-            Waveform.InvalidateVisual();
+            Waveform.InvalidateCursor();
             SyncSplineView();
             UpdateTimeText();
             UpdateServoGrid(_cursorTime);
@@ -2694,7 +2648,7 @@ namespace ServoAnimator
             var cmds = CommandsAt(_cursorTime);
             int i = CommandsAtPointList.SelectedIndex;
             if (i < 0 || i >= cmds.Count) return;
-            PushUndo();
+            PushUndo($"Delete {cmds[i].Servo} command at {_cursorTime:F3} s");
             _doc.Commands.Remove(cmds[i]);
             RefreshAfterEdit();
             ShowStatus("Selected command deleted");
@@ -2722,6 +2676,7 @@ namespace ServoAnimator
         /// from them for spline-checked servos.</summary>
         private void RefreshAfterEdit()
         {
+            MovieTimeline.RefreshBlockToolTip();
             // Collision warnings describe the exact command values that were
             // previously played. Any command modification invalidates them;
             // playback will repopulate red markers from the edited sequence.
@@ -2816,7 +2771,13 @@ namespace ServoAnimator
         /// per spec). Items appear/enable depending on whether commands exist
         /// at the cursor and whether the clipboard holds copied commands.
         /// </summary>
-        private void Waveform_RightClicked(double clickTime)
+        private void Waveform_RightClicked(double clickTime) =>
+            ShowCursorContextMenu(Waveform);
+
+        private void Spline_RightClicked(double clickTime) =>
+            ShowCursorContextMenu(Spline);
+
+        private void ShowCursorContextMenu(UIElement placementTarget)
         {
             if (_libraryPrompt == LibraryPrompt.InsertSequence)
             {
@@ -2872,7 +2833,7 @@ namespace ServoAnimator
             Item($"Generate commands from grid values at {_cursorTime:F3} s",
                  (_, _) => GenerateCommandsFromGrid());
 
-            menu.PlacementTarget = Waveform;
+            menu.PlacementTarget = placementTarget;
             menu.IsOpen = true;
         }
 
@@ -2880,7 +2841,7 @@ namespace ServoAnimator
         /// so its fields can be filled in.</summary>
         private void InsertNewCommand()
         {
-            PushUndo();
+            PushUndo($"Insert command at {_cursorTime:F3} s");
             var cmd = new ServoCommand
             {
                 OffsetSeconds = ServoCommand.TimeKey(_cursorTime),
@@ -2907,7 +2868,7 @@ namespace ServoAnimator
                 return;
             }
 
-            PushUndo();   // one undo step for the whole editor session
+            PushUndo($"Edit commands at {_cursorTime:F3} s");   // one undo step for the whole editor session
             var editor = new CommandEditorWindow(_doc, _cursorTime,
                                                  MoveServoNow,      // numeric variant
                                                  MoveServoNow,      // text variant (RGBCommand)
@@ -2935,7 +2896,7 @@ namespace ServoAnimator
         /// remaining commands.</summary>
         private void DeleteCommandsAtCursor()
         {
-            PushUndo();
+            PushUndo($"Delete commands at {_cursorTime:F3} s");
             foreach (var c in CommandsAt(_cursorTime))
                 _doc.Commands.Remove(c);
             RefreshAfterEdit();
@@ -2954,7 +2915,7 @@ namespace ServoAnimator
         /// get the cursor's time offset, and a '+' appears there.</summary>
         private void PasteClipboardAtCursor()
         {
-            PushUndo();
+            PushUndo($"Paste {_clipboard.Count} command(s) at {_cursorTime:F3} s");
             double t = ServoCommand.TimeKey(_cursorTime);
             foreach (var c in _clipboard)
             {
@@ -2993,7 +2954,7 @@ namespace ServoAnimator
                     return;
                 }
 
-                PushUndo();
+                PushUndo($"Insert Library Pose {Path.GetFileNameWithoutExtension(win.SelectedLibraryItem.FullPath)}");
                 double at = ServoCommand.TimeKey(_cursorTime);
                 foreach (var c in cmds)
                 {
@@ -3045,13 +3006,15 @@ namespace ServoAnimator
             {
                 Title = "Insert commands from JSON",
                 Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+                InitialDirectory = LibraryFolder(),
             };
             if (dlg.ShowDialog() != true) return;
+            if (!RequireConfigPath(dlg.FileName, "library item or sequence")) return;
 
             try
             {
                 var cmds = AnimationDocument.LoadCommandsOnly(dlg.FileName);
-                PushUndo();
+                PushUndo($"Insert commands from {Path.GetFileName(dlg.FileName)}");
                 foreach (var c in cmds)
                 {
                     c.OffsetSeconds = ServoCommand.TimeKey(c.OffsetSeconds + _cursorTime);
@@ -3180,7 +3143,7 @@ namespace ServoAnimator
             var commands = BuildCommandsFromPose(pose, t);
             string poseRgb = (pose.RgbCommand ?? string.Empty).Trim();
 
-            PushUndo();
+            PushUndo($"Insert URDF pose at {t:F3} s");
 
             // A pose is a complete numeric keyframe. Replace every existing
             // numeric command at this exact point. If the Pose draft contains an
@@ -3398,7 +3361,7 @@ namespace ServoAnimator
         /// (a "keyframe all").</summary>
         private void GenerateCommandsFromGrid()
         {
-            PushUndo();
+            PushUndo($"Generate commands from grid at {_cursorTime:F3} s");
             double t = ServoCommand.TimeKey(_cursorTime);
             foreach (var row in _rows)
             {
@@ -3467,7 +3430,7 @@ namespace ServoAnimator
         /// </summary>
         private void Spline_PointValueChanged(ServoNames servo, double timeKey, int value)
         {
-            if (!_dragUndoPushed) { PushUndo(); _dragUndoPushed = true; }
+            if (!_dragUndoPushed) { PushUndo($"Change {servo} spline value at {timeKey:F3} s"); _dragUndoPushed = true; }
             foreach (var c in _doc.Commands.Where(c =>
                          c.Servo == servo &&
                          ServoCommand.TimeKey(c.OffsetSeconds) == timeKey))
@@ -3485,7 +3448,7 @@ namespace ServoAnimator
         /// </summary>
         private void Spline_PointTimeChanged(ServoNames servo, double oldKey, double newKey)
         {
-            if (!_dragUndoPushed) { PushUndo(); _dragUndoPushed = true; }
+            if (!_dragUndoPushed) { PushUndo($"Move {servo} spline point at {oldKey:F3} s"); _dragUndoPushed = true; }
             foreach (var c in _doc.Commands.Where(c =>
                          c.Servo == servo &&
                          ServoCommand.TimeKey(c.OffsetSeconds) == oldKey).ToList())
@@ -3513,7 +3476,7 @@ namespace ServoAnimator
                     ServoCommand.TimeKey(c.OffsetSeconds) == timeKey);
             if (exists) return;
 
-            PushUndo();
+            PushUndo($"Add {servo} spline point at {timeKey:F3} s");
 
             _doc.Commands.Add(new ServoCommand
             {
@@ -3540,7 +3503,7 @@ namespace ServoAnimator
                 ServoCommand.TimeKey(c.OffsetSeconds) == timeKey).ToList();
             if (source.Count == 0) return;
 
-            PushUndo();
+            PushUndo($"Change spline point from {servo} to {target}");
 
             // A shared spline has one owner per time key. Remove any stale
             // command of the destination owner at the same key before moving
@@ -3563,7 +3526,7 @@ namespace ServoAnimator
         /// </summary>
         private void Spline_PointDeleted(ServoNames servo, double timeKey)
         {
-            PushUndo();
+            PushUndo($"Delete {servo} spline point at {timeKey:F3} s");
             foreach (var c in _doc.Commands.Where(c =>
                          c.Servo == servo &&
                          ServoCommand.TimeKey(c.OffsetSeconds) == timeKey).ToList())
@@ -3798,6 +3761,7 @@ namespace ServoAnimator
                 });
             }
             Spline.Curves = curves;
+            Spline.InvalidateVisual();
             _splineCurveIndex.Clear();
             foreach (SplineCurve curve in curves)
                 _splineCurveIndex[curve.Servo] = curve;
@@ -3813,7 +3777,7 @@ namespace ServoAnimator
             Spline.PixelsPerSecond = Waveform.PixelsPerSecond;
             Spline.CursorTime = _cursorTime;
             Spline.Duration = TimelineDuration;
-            Spline.InvalidateVisual();
+            Spline.InvalidateCursor();
         }
 
         /// <summary>
@@ -3928,8 +3892,7 @@ namespace ServoAnimator
         /// File > Load Project: reads a PROJECT JSON (audio file pathname,
         /// spline sample frequency, and the command control points - no
         /// interpolated spline samples). Also opens older exported animation
-        /// files, falling back to the audio filename next to the JSON when
-        /// no full pathname is stored.
+        /// files, resolving all persisted references relative to Config.
         /// </summary>
         private void LoadProject_Click(object sender, RoutedEventArgs e)
         {
@@ -3940,21 +3903,29 @@ namespace ServoAnimator
                 InitialDirectory = SequenceDialogFolder(),
             };
             if (dlg.ShowDialog() != true) return;
+            if (!RequireConfigPath(dlg.FileName, "sequence")) return;
             LoadSequenceFromPath(dlg.FileName, 0, fitTimeline: true, recordRecent: true, setActiveDocument: true);
         }
 
         /// <summary>Loads a sequence from a known pathname. Movie selection
-        /// uses the same path so every selection is a fresh disk reload and
-        /// therefore reflects edits made outside the movie editor as well.</summary>
+        /// uses the same path, checking file stamps so external edits invalidate
+        /// cached data while unchanged sequences reuse prepared assets.</summary>
         private bool LoadSequenceFromPath(string path, double initialCursor,
                                           bool fitTimeline,
                                           bool recordRecent = true,
                                           bool setActiveDocument = true,
-                                          bool preserveMoviePose = false)
+                                          bool preserveMoviePose = false,
+                                          bool preservePending = false)
         {
+            if (!RequireConfigPath(path, "sequence")) return false;
+            if (setActiveDocument && !ConfirmDocumentSwitch(replaceMovie: false)) return false;
             try
             {
-                StopPlayback();
+                StopPlayback(cancelPending: !preservePending);
+                // Prepare before replacing the editor document; a failed load
+                // leaves the current sequence and its undo history intact.
+                var prepared = LoadingWindow.Wait(this, _mediaCache.PrepareSequence(path, ConfigRoot),
+                    "Preparing sequence and audio…").Clone();
                 _reader?.Dispose();
                 _reader = null;
                 _audioPath = null;
@@ -3968,7 +3939,7 @@ namespace ServoAnimator
                     _rgbSimulator.SetInitialFrame(null);
                 }
 
-                _doc = AnimationDocument.Load(path);
+                _doc = prepared;
                 RebuildPlaybackIndexes();
                 _rgbSimulator.Invalidate();
                 _jsonPath = path;
@@ -4001,14 +3972,13 @@ namespace ServoAnimator
                 var missingClips = RefreshAudioClips();
                 bool hasMissingFiles = missingClips.Count > 0;
 
-                string candidate = _doc.AudioFilePath;
-                if (string.IsNullOrWhiteSpace(candidate) || !File.Exists(candidate))
-                    candidate = string.IsNullOrWhiteSpace(_doc.AudioFile) ? null
-                        : Path.Combine(Path.GetDirectoryName(path) ?? "", _doc.AudioFile);
+                string storedAudio = !string.IsNullOrWhiteSpace(_doc.AudioFilePath)
+                    ? _doc.AudioFilePath : _doc.AudioFile;
+                string candidate = ResolveSequenceAudioPath(_doc, path, storedAudio);
 
                 if (!string.IsNullOrWhiteSpace(candidate) && File.Exists(candidate))
                 {
-                    LoadAudio(candidate);
+                    LoadAudio(candidate, stopPlayback: false);
                 }
                 else if (!string.IsNullOrWhiteSpace(_doc.AudioFilePath) ||
                          !string.IsNullOrWhiteSpace(_doc.AudioFile))
@@ -4076,6 +4046,7 @@ namespace ServoAnimator
                 InitialDirectory = SequenceDialogFolder(),
             };
             if (dlg.ShowDialog() != true) return false;
+            if (!RequireConfigPath(dlg.FileName, "sequence")) return false;
             return SaveProjectTo(dlg.FileName);
         }
 
@@ -4099,7 +4070,7 @@ namespace ServoAnimator
             // the destination file. Choices persist with the sequence.
             var win = new ExportAnimationWindow(
                 SplineHzOptions, AnimateIndividual, _splineHz,
-                _doc.ScaleValues, defaultPath)
+                _doc.ScaleValues, defaultPath, ConfigRoot)
             { Owner = this };
             if (win.ShowDialog() != true) return;
 
@@ -4120,11 +4091,11 @@ namespace ServoAnimator
             _doc.SplineSampleHz = _splineHz;
             if (_primaryDuration > 0)
             {
-                _doc.AudioFilePath = _audioPath;                    // full pathname
+                _doc.AudioFilePath = ConfigPathService.ToRelative(ConfigRoot, _audioPath);
                 _doc.AudioFile = Path.GetFileName(_audioPath);
                 // Total timeline length = pre-roll offset + audio length.
                 _doc.DurationSeconds = Math.Round(
-                    _audioOffset + _reader.TotalTime.TotalSeconds, 2);
+                    _audioOffset + _primaryDuration, 2);
             }
         }
 
@@ -4149,12 +4120,14 @@ namespace ServoAnimator
 
         private bool SaveProjectTo(string path)
         {
+            if (!RequireConfigPath(path, "sequence")) return false;
             _doc.AudioFiles = BuildAudioFilesHeader();
             string oldPath = _jsonPath;
 
             try
             {
                 SyncDocMetadata();
+                ConfigPathService.MakeDocumentPathsRelative(_doc, ConfigRoot);
                 _doc.Save(path);          // _doc holds only control points
                 _jsonPath = path;
                 RememberSequencePath(path);
@@ -4193,9 +4166,11 @@ namespace ServoAnimator
         /// </summary>
         private void ExportAnimationTo(string path)
         {
+            if (!RequireConfigPath(path, "animation")) return;
             try
             {
                 SyncDocMetadata();
+                ConfigPathService.MakeDocumentPathsRelative(_doc, ConfigRoot);
 
                 var export = new AnimationDocument
                 {
@@ -4295,7 +4270,7 @@ namespace ServoAnimator
 
             if (answer != MessageBoxResult.Yes) return;
 
-            PushUndo();
+            PushUndo("Clear timeline");
             _doc.Commands.Clear();
             RefreshAfterEdit();
         }
@@ -4443,17 +4418,18 @@ namespace ServoAnimator
         /// <summary>Push the current command list onto the undo stack.
         /// Called BEFORE every mutating timeline operation. Any new edit
         /// invalidates the redo history.</summary>
-        private void PushUndo()
+        private void PushUndo(string description)
         {
-            _undoStack.Add(Snapshot());
+            _undoStack.Add(new UndoEntry(Snapshot(),
+                string.IsNullOrWhiteSpace(description) ? "Edit timeline" : description.Trim()));
             if (_undoStack.Count > UndoLimit) _undoStack.RemoveAt(0);
             _redoStack.Clear();
         }
 
-        private void RestoreSnapshot(List<ServoCommand> snap)
+        private void RestoreSnapshot(List<ServoCommand> snap, bool refresh = true)
         {
             _doc.Commands = snap.Select(c => c.Clone()).ToList();
-            RefreshAfterEdit();
+            if (refresh) RefreshAfterEdit();
         }
 
         private void Undo_CanExecute(object sender, System.Windows.Input.CanExecuteRoutedEventArgs e)
@@ -4466,21 +4442,77 @@ namespace ServoAnimator
         /// snapshot becomes the timeline.</summary>
         private void Undo_Executed(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
         {
-            if (_undoStack.Count == 0) return;
-            _redoStack.Add(Snapshot());
-            var snap = _undoStack[^1];
-            _undoStack.RemoveAt(_undoStack.Count - 1);
-            RestoreSnapshot(snap);
+            UndoSteps(1);
+        }
+
+        private void UndoSteps(int requestedSteps)
+        {
+            int steps = Math.Clamp(requestedSteps, 0, _undoStack.Count);
+            if (steps == 0) return;
+
+            string oldestDescription = _undoStack[^steps].Description;
+            for (int i = 0; i < steps; i++)
+            {
+                UndoEntry entry = _undoStack[^1];
+                _undoStack.RemoveAt(_undoStack.Count - 1);
+                _redoStack.Add(new UndoEntry(Snapshot(), entry.Description));
+                RestoreSnapshot(entry.Commands, refresh: false);
+            }
+
+            RefreshAfterEdit();
+            CommandManager.InvalidateRequerySuggested();
+            ShowStatus(steps == 1
+                ? $"Undid: {oldestDescription}"
+                : $"Undid {steps} actions through: {oldestDescription}");
+        }
+
+        private void UndoHistory_SubmenuOpened(object sender, RoutedEventArgs e)
+        {
+            UndoHistoryMenuItem.Items.Clear();
+            int count = Math.Min(10, _undoStack.Count);
+            if (count == 0)
+            {
+                UndoHistoryMenuItem.Items.Add(new MenuItem
+                {
+                    Header = "No actions to undo",
+                    IsEnabled = false,
+                });
+                return;
+            }
+
+            for (int steps = 1; steps <= count; steps++)
+            {
+                UndoEntry entry = _undoStack[^steps];
+                var item = new MenuItem
+                {
+                    Header = $"{steps}. {entry.Description.Replace("_", "__")}",
+                    ToolTip = steps == 1
+                        ? "Undo this action"
+                        : $"Undo this action and the {steps - 1} newer action(s)",
+                    Tag = steps,
+                };
+                item.Click += UndoHistoryItem_Click;
+                UndoHistoryMenuItem.Items.Add(item);
+            }
+        }
+
+        private void UndoHistoryItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem { Tag: int steps })
+                UndoSteps(steps);
         }
 
         /// <summary>Redo: puts the last undone change back.</summary>
         private void Redo_Executed(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
         {
             if (_redoStack.Count == 0) return;
-            _undoStack.Add(Snapshot());
-            var snap = _redoStack[^1];
+            UndoEntry entry = _redoStack[^1];
             _redoStack.RemoveAt(_redoStack.Count - 1);
-            RestoreSnapshot(snap);
+            _undoStack.Add(new UndoEntry(Snapshot(), entry.Description));
+            if (_undoStack.Count > UndoLimit) _undoStack.RemoveAt(0);
+            RestoreSnapshot(entry.Commands);
+            CommandManager.InvalidateRequerySuggested();
+            ShowStatus($"Redid: {entry.Description}");
         }
 
         #endregion
@@ -4494,6 +4526,7 @@ namespace ServoAnimator
         /// and undo history - after confirmation.</summary>
         private void FileNew_Click(object sender, RoutedEventArgs e)
         {
+            if (!ConfirmDocumentSwitch(replaceMovie: true)) return;
             var answer = MessageBox.Show(this,
                 "Start a new project? This clears the current Sequence, Movie, timeline and audio.",
                 "New project", MessageBoxButton.YesNo, MessageBoxImage.Question);
@@ -4537,7 +4570,7 @@ namespace ServoAnimator
             Waveform.PrimaryAudioName = "";
             _primaryDuration = 0;
             _activeSource = null;
-            _peakCache.Clear();
+            _mediaCache.Clear();
             _audioOffset = 0;
             _undoStack.Clear();
             _redoStack.Clear();
@@ -4724,6 +4757,7 @@ namespace ServoAnimator
             { Owner = this }.ShowDialog();
             if (ok == true)
             {
+                WatchMovieMetadata();
                 _recentFiles = RecentFilesSettings.Load(_folders.ConfigFolderOrDefault);
                 RefreshOpenRecentMenu();
                 TryAutoLoadServoConfig();
@@ -4998,7 +5032,7 @@ namespace ServoAnimator
 
         private void About_Click(object sender, RoutedEventArgs e) =>
             MessageBox.Show(this,
-                $"{AppDisplayName}\nVersion {AppVersion}   Date 2026-09-04\nDesigned by Mark Kovalcson\n\n" +
+                $"{AppDisplayName}\nVersion {AppVersion}   Date 2026-09-06\nDesigned by Mark Kovalcson\n\n" +
                 "Edits servo animation timelines against an audio waveform.\n" +
                 "Cubic Hermite spline interpolation, live drive, an animation\n" +
                 "library, and a movie timeline for ordered sequence projects.\n\n" +
@@ -5291,6 +5325,7 @@ namespace ServoAnimator
         private bool ConfirmSequenceSwitch()
         {
             if (!SequenceHasUnsavedChanges()) return true;
+            if (IsRunning) PausePlayback();
 
             var answer = MessageBox.Show(this,
                 "The current sequence has unsaved changes.\n\n" +
@@ -5309,6 +5344,21 @@ namespace ServoAnimator
                 : SaveProjectAsInteractive();
         }
 
+        private bool ConfirmDocumentSwitch(bool replaceMovie)
+        {
+            if (!ConfirmSequenceSwitch()) return false;
+            if (!replaceMovie || !MovieHasUnsavedChanges()) return true;
+            if (IsRunning) PausePlayback();
+            var answer = MessageBox.Show(this,
+                "The current movie has unsaved changes.\n\nSave them before continuing?",
+                "Unsaved movie changes", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+            if (answer == MessageBoxResult.Cancel) return false;
+            if (answer == MessageBoxResult.No) return true;
+            return string.IsNullOrWhiteSpace(_moviePath)
+                ? SaveMovieAsInteractive(saveSequence: false)
+                : SaveMovieToPath(_moviePath);
+        }
+
         private static bool PathsEqual(string a, string b)
         {
             if (string.IsNullOrWhiteSpace(a) || string.IsNullOrWhiteSpace(b)) return false;
@@ -5325,14 +5375,16 @@ namespace ServoAnimator
                                                 string stored)
         {
             if (string.IsNullOrWhiteSpace(stored)) return null;
-            if (File.Exists(stored)) return stored;
+            if (ConfigPathService.TryResolve(ConfigRoot, stored, out string resolved) &&
+                File.Exists(resolved))
+                return resolved;
 
             string seqDir = Path.GetDirectoryName(sequencePath) ?? "";
             string p = Path.Combine(seqDir, Path.GetFileName(stored));
-            if (File.Exists(p)) return p;
+            if (ConfigPathService.IsWithin(ConfigRoot, p) && File.Exists(p)) return p;
 
             p = Path.Combine(_folders?.ProjectFolderOrDefault ?? "", Path.GetFileName(stored));
-            if (File.Exists(p)) return p;
+            if (ConfigPathService.IsWithin(ConfigRoot, p) && File.Exists(p)) return p;
             return null;
         }
 
@@ -5408,7 +5460,7 @@ namespace ServoAnimator
             _repairWindowOpen = true;
             try
             {
-                var window = new MissingFileRepairWindow(missing) { Owner = this };
+                var window = new MissingFileRepairWindow(missing, ConfigRoot) { Owner = this };
                 if (window.ShowDialog() != true) return;
                 ApplyMissingFileRepairs(window.Files);
             }
@@ -5439,7 +5491,8 @@ namespace ServoAnimator
                     else
                     {
                         LoadAudio(repair.ReplacementPath);
-                        _doc.AudioFilePath = repair.ReplacementPath;
+                        _doc.AudioFilePath = ConfigPathService.ToRelative(
+                            ConfigRoot, repair.ReplacementPath);
                         _doc.AudioFile = Path.GetFileName(repair.ReplacementPath);
                     }
                 }
@@ -5448,7 +5501,8 @@ namespace ServoAnimator
                 {
                     sequenceChanged = true;
                     if (repair.Remove) _doc.Commands.Remove(command);
-                    else command.TextValue = repair.ReplacementPath;
+                    else command.TextValue = ConfigPathService.ToRelative(
+                        ConfigRoot, repair.ReplacementPath);
                 }
                 else if (repair.Kind == MissingFileKind.MovieSequence &&
                          repair.Owner is MovieSequenceItem item)
@@ -5491,32 +5545,74 @@ namespace ServoAnimator
         /// <summary>Determine the actual sequence length for a movie block.
         /// The saved duration and last command are considered, and available
         /// primary/Play audio files extend the block to their real end.</summary>
+        private readonly Dictionary<string, SequenceInfo> _movieMetadata = new(StringComparer.OrdinalIgnoreCase);
+
+        private void WatchMovieMetadata()
+        {
+            _movieMetadataWatcher?.Dispose();
+            _movieMetadataWatcher = null;
+            _movieMetadataRefreshTimer.Stop();
+            _changedMovieFiles.Clear();
+            if (!Directory.Exists(ConfigRoot)) return;
+            try
+            {
+                var watcher = new FileSystemWatcher(ConfigRoot, "*.json")
+                {
+                    IncludeSubdirectories = true,
+                    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName,
+                };
+                FileSystemEventHandler changed = (_, args) => Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (_movieMetadataWatcher != watcher ||
+                        !_movieItems.Any(i => PathsEqual(i.FilePath, args.FullPath))) return;
+                    _changedMovieFiles.Add(args.FullPath);
+                    _movieMetadataRefreshTimer.Stop();
+                    _movieMetadataRefreshTimer.Start();
+                }));
+                watcher.Changed += changed;
+                watcher.Created += changed;
+                watcher.Deleted += changed;
+                watcher.Renamed += (_, args) =>
+                {
+                    changed(watcher, new FileSystemEventArgs(WatcherChangeTypes.Deleted,
+                        Path.GetDirectoryName(args.OldFullPath), Path.GetFileName(args.OldFullPath)));
+                    changed(watcher, args);
+                };
+                _movieMetadataWatcher = watcher;
+                watcher.EnableRaisingEvents = true;
+            }
+            catch (Exception ex) { Debug.WriteLine("Movie metadata watcher: " + ex.Message); }
+        }
+
+        private async void RefreshChangedMovieMetadata(object sender, EventArgs e)
+        {
+            _movieMetadataRefreshTimer.Stop();
+            string root = ConfigRoot;
+            var paths = _changedMovieFiles.ToArray();
+            _changedMovieFiles.Clear();
+            foreach (string path in paths)
+            {
+                SequenceInfo info = null;
+                try { info = await _mediaCache.DescribeSequence(path, root); }
+                catch { /* Deleted or invalid files have no cached tooltip metadata. */ }
+                if (_movieMetadataWatcher == null || !PathsEqual(root, ConfigRoot)) return;
+                if (info == null) _movieMetadata.Remove(path);
+                else _movieMetadata[path] = info;
+                foreach (var item in _movieItems.Where(i => PathsEqual(i.FilePath, path)))
+                    if (!PathsEqual(_jsonPath, path)) item.Description = info?.Document.Description ?? "";
+            }
+            MovieTimeline.RefreshBlockToolTip();
+            MovieTimeline.InvalidateVisual();
+        }
+
         private double SequenceDurationFromPath(string path)
         {
             try
             {
-                var doc = AnimationDocument.Load(path);
-                double d = Math.Max(0, doc.DurationSeconds);
-                if (doc.Commands != null && doc.Commands.Count > 0)
-                    d = Math.Max(d, doc.Commands.Max(c => c.OffsetSeconds));
-
-                string primary = ResolveSequenceAudioPath(doc, path,
-                    !string.IsNullOrWhiteSpace(doc.AudioFilePath) ? doc.AudioFilePath : doc.AudioFile);
-                if (primary != null)
-                {
-                    using var r = new AudioFileReader(primary);
-                    d = Math.Max(d, Math.Max(0, doc.AudioStartOffsetSeconds) + r.TotalTime.TotalSeconds);
-                }
-
-                foreach (var c in doc.Commands?.Where(c => c.Servo == ServoNames.Play)
-                                              ?? Enumerable.Empty<ServoCommand>())
-                {
-                    string clip = ResolveSequenceAudioPath(doc, path, c.TextValue);
-                    if (clip == null) continue;
-                    using var r = new AudioFileReader(clip);
-                    d = Math.Max(d, c.OffsetSeconds + r.TotalTime.TotalSeconds);
-                }
-                return Math.Max(0.05, d);
+                var info = LoadingWindow.Wait(this, _mediaCache.DescribeSequence(path, ConfigRoot),
+                    "Reading sequence information…");
+                _movieMetadata[path] = info;
+                return info.Duration;
             }
             catch { return 1.0; }
         }
@@ -5535,10 +5631,14 @@ namespace ServoAnimator
             if (changed) RefreshMovieTimelineView();
         }
 
-        private static string SequenceDescriptionFromPath(string path)
+        private string SequenceDescriptionFromPath(string path)
         {
             if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return "";
-            try { return AnimationDocument.Load(path).Description ?? ""; }
+            try
+            {
+                return LoadingWindow.Wait(this, _mediaCache.Sequence(path),
+                    "Reading sequence information…").Description ?? "";
+            }
             catch { return ""; }
         }
 
@@ -5571,28 +5671,21 @@ namespace ServoAnimator
         private string MovieBlockToolTip(MovieSequenceItem item)
         {
             if (item == null) return "";
-            string description = "";
-            string audio = "";
-            try
+            string description = item.Description ?? "";
+            string audio = _movieMetadata.TryGetValue(item.FilePath ?? "", out var info)
+                ? info.AudioFiles : "";
+            bool current = PathsEqual(_jsonPath, item.FilePath);
+            if (current)
             {
-                var doc = AnimationDocument.Load(item.FilePath);
-                description = doc.Description ?? "";
-                var names = new List<string>();
-                if (!string.IsNullOrWhiteSpace(doc.AudioFile)) names.Add(Path.GetFileName(doc.AudioFile));
-                names.AddRange((doc.Commands ?? new List<ServoCommand>())
-                    .Where(c => c.Servo == ServoNames.Play)
-                    .Select(c => Path.GetFileName(c.TextValue ?? ""))
-                    .Where(n => !string.IsNullOrWhiteSpace(n)));
-                audio = string.Join(", ", names.Distinct(StringComparer.OrdinalIgnoreCase));
+                description = _doc?.Description ?? description;
+                audio = BuildAudioFilesHeader().Replace("|", ", ");
             }
-            catch { }
             string tip = $"{Path.GetFileName(item.FilePath)}\nDuration: {item.DurationSeconds:0.###} s";
             if (!string.IsNullOrWhiteSpace(description)) tip += $"\n{description}";
             if (!string.IsNullOrWhiteSpace(audio)) tip += $"\nAudio: {audio}";
-            if (!string.IsNullOrWhiteSpace(_jsonPath) && PathsEqual(_jsonPath, item.FilePath))
-                tip += SequenceHasUnsavedChanges() ? "\nCurrent sequence — unsaved edits" : "\nCurrent sequence";
-            tip += $"\n{item.FilePath}";
-            return tip;
+            if (current) tip += SequenceHasUnsavedChanges()
+                ? "\nCurrent sequence — unsaved edits" : "\nCurrent sequence";
+            return tip + $"\n{item.FilePath}";
         }
 
         private void SyncMovieScroll()
@@ -5614,28 +5707,23 @@ namespace ServoAnimator
 
         private string MovieStoredSequencePath(string fullPath)
         {
-            try
-            {
-                string root = Path.GetFullPath(ProjectsFolder())
-                                  .TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-                string full = Path.GetFullPath(fullPath);
-                if (full.StartsWith(root, StringComparison.OrdinalIgnoreCase))
-                    return Path.GetRelativePath(ProjectsFolder(), full);
-            }
-            catch { }
-            return fullPath;
+            return ConfigPathService.ToRelative(ConfigRoot, fullPath);
         }
 
         private string ResolveMovieSequencePath(string stored, string moviePath)
         {
             if (string.IsNullOrWhiteSpace(stored)) return stored;
-            if (Path.IsPathRooted(stored)) return stored;
+            if (ConfigPathService.TryResolve(ConfigRoot, stored, out string current) &&
+                File.Exists(current))
+                return current;
 
+            // Backward compatibility for older movies whose paths were relative
+            // to Projects rather than to the Configuration folder.
             string p = Path.Combine(ProjectsFolder(), stored);
-            if (File.Exists(p)) return p;
+            if (ConfigPathService.IsWithin(ConfigRoot, p) && File.Exists(p)) return p;
 
             p = Path.Combine(Path.GetDirectoryName(moviePath) ?? ProjectsFolder(), stored);
-            return p;
+            return ConfigPathService.IsWithin(ConfigRoot, p) ? Path.GetFullPath(p) : "";
         }
 
         private void LoadMovie_Click(object sender, RoutedEventArgs e)
@@ -5647,6 +5735,7 @@ namespace ServoAnimator
                 InitialDirectory = ProjectsFolder(),
             };
             if (dlg.ShowDialog() != true) return;
+            if (!RequireConfigPath(dlg.FileName, "movie")) return;
             LoadMovieFromPath(dlg.FileName, alreadyConfirmed: false);
         }
 
@@ -5654,9 +5743,21 @@ namespace ServoAnimator
         /// Movie, File > Open Recent and startup document restoration.</summary>
         private bool LoadMovieFromPath(string moviePath, bool alreadyConfirmed)
         {
+            if (!RequireConfigPath(moviePath, "movie")) return false;
             try
             {
                 var movie = MovieDocument.Load(moviePath);
+                if (!alreadyConfirmed && !ConfirmDocumentSwitch(replaceMovie: true)) return false;
+                StopPlayback();
+                string root = ConfigRoot;
+                var sequencePaths = movie.Sequences.Select(p => ResolveMovieSequencePath(p, moviePath))
+                    .Where(p => ConfigPathService.IsWithin(root, p) && File.Exists(p))
+                    .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+                LoadingWindow.Wait(this, Task.WhenAll(sequencePaths.Select(async p =>
+                {
+                    try { return await _mediaCache.DescribeSequence(p, root); }
+                    catch { return null; }
+                })), "Preparing movie sequences…");
                 var loaded = new List<MovieSequenceItem>();
                 var missing = new List<string>();
                 for (int i = 0; i < movie.Sequences.Count; i++)
@@ -5672,8 +5773,6 @@ namespace ServoAnimator
                         IsLooping = i < movie.SequenceLoops.Count && movie.SequenceLoops[i],
                     });
                 }
-
-                if (!alreadyConfirmed && !ConfirmSequenceSwitch()) return false;
 
                 StopPlayback();
                 _moviePlaybackActive = false;
@@ -5737,9 +5836,12 @@ namespace ServoAnimator
             SaveMovieToPath(_moviePath);
         }
 
-        private void SaveMovieAs_Click(object sender, RoutedEventArgs e)
+        private void SaveMovieAs_Click(object sender, RoutedEventArgs e) =>
+            SaveMovieAsInteractive();
+
+        private bool SaveMovieAsInteractive(bool saveSequence = true)
         {
-            if (!SaveModifiedSequenceBeforeMovie()) return;
+            if (saveSequence && !SaveModifiedSequenceBeforeMovie()) return false;
 
             var dlg = new SaveFileDialog
             {
@@ -5749,12 +5851,11 @@ namespace ServoAnimator
                 FileName = string.IsNullOrWhiteSpace(_moviePath)
                     ? "movie.json" : Path.GetFileName(_moviePath),
             };
-            if (dlg.ShowDialog() != true) return;
+            if (dlg.ShowDialog() != true) return false;
 
-            // Save As keeps movie projects in the configured Projects folder,
-            // matching the application's existing project organization.
-            string savePath = Path.Combine(ProjectsFolder(), Path.GetFileName(dlg.FileName));
-            SaveMovieToPath(savePath);
+            if (!RequireConfigPath(dlg.FileName, "movie")) return false;
+            string savePath = dlg.FileName;
+            return SaveMovieToPath(savePath);
         }
 
         /// <summary>Write the complete in-memory movie state to one pathname.
@@ -5762,6 +5863,7 @@ namespace ServoAnimator
         /// removed sequences and edited description text are all persisted.</summary>
         private bool SaveMovieToPath(string savePath)
         {
+            if (!RequireConfigPath(savePath, "movie")) return false;
             try
             {
                 _movieDescription = MovieDescriptionBox?.Text ?? _movieDescription ?? "";
@@ -5803,6 +5905,7 @@ namespace ServoAnimator
                 InitialDirectory = SequenceDialogFolder(),
             };
             if (dlg.ShowDialog() != true) return;
+            if (!RequireConfigPath(dlg.FileName, "sequence")) return;
 
             try
             {
@@ -5950,7 +6053,8 @@ namespace ServoAnimator
 
         private bool SelectMovieSequence(int index, double localTime,
                                          bool alreadyConfirmed = false,
-                                         bool preservePose = false)
+                                         bool preservePose = false,
+                                         bool preservePending = false)
         {
             if (index < 0 || index >= _movieItems.Count) return false;
             string path = _movieItems[index].FilePath;
@@ -5966,14 +6070,15 @@ namespace ServoAnimator
             if (preservePose)
                 CaptureMovieCarryPose();
 
-            StopPlayback();
+            StopPlayback(cancelPending: !preservePending);
             _moviePlaybackActive = false;
             _moviePlaybackIndex = -1;
             MoviePlayButton.Content = "▶ Movie";
 
             if (!LoadSequenceFromPath(path, localTime, fitTimeline: true,
                                       recordRecent: false, setActiveDocument: false,
-                                      preserveMoviePose: preservePose)) return false;
+                                      preserveMoviePose: preservePose,
+                                      preservePending: preservePending)) return false;
 
             _movieSelectedIndex = index;
             _movieItems[index].DurationSeconds = SequenceDurationFromPath(path);
@@ -5982,6 +6087,7 @@ namespace ServoAnimator
             MovieTimeline.CursorTime = MovieTimeline.StartOf(index) +
                                        Math.Clamp(localTime, 0, _movieItems[index].DurationSeconds);
             RefreshMovieTimelineView();
+            PrefetchNextMovieSequences();
             return true;
         }
 
@@ -6032,6 +6138,7 @@ namespace ServoAnimator
             _moviePlaybackIndex = index;
             MoviePlayButton.Content = "❚❚ Pause";
             StartPlaybackAt(local);
+            PrefetchNextMovieSequences();
         }
 
         private void MoviePrevious_Click(object sender, RoutedEventArgs e) =>
@@ -6062,6 +6169,7 @@ namespace ServoAnimator
             _moviePlaybackIndex = next;
             MoviePlayButton.Content = "❚❚ Pause";
             StartPlaybackAt(0);
+            PrefetchNextMovieSequences();
         }
 
         /// <summary>Movie cue policy at the end of a loaded sequence. A loop
@@ -6087,15 +6195,15 @@ namespace ServoAnimator
 
             if (target != _moviePlaybackIndex)
             {
-                if (!SelectMovieSequence(target, 0, alreadyConfirmed: true,
-                                         preservePose: true))
+                if (!SelectMovieSequence(target, 0,
+                                         preservePose: true, preservePending: true))
                     return false;
             }
             else
             {
                 CaptureMovieCarryPose();
                 DisposeAudioDevice();
-                SetCursor(0);
+                _cursorTime = 0;
                 MovieTimeline.CursorTime = MovieTimeline.StartOf(target);
                 MovieTimeline.SelectedIndex = target;
                 MovieTimeline.InvalidateVisual();
@@ -6105,8 +6213,26 @@ namespace ServoAnimator
             _moviePlaybackIndex = target;
             _movieSelectedIndex = target;
             MoviePlayButton.Content = "❚❚ Pause";
-            StartPlaybackAt(0);
+            StartPlaybackAt(0, preservePending: true);
+            PrefetchNextMovieSequences();
             return true;
+        }
+
+        private async void PrefetchNextMovieSequences()
+        {
+            string root = ConfigRoot;
+            var paths = _movieItems.Skip(Math.Max(0, _movieSelectedIndex + 1)).Take(2)
+                .Select(i => i.FilePath).ToList();
+            // A loop can skip adjacent looping blocks when Right is pressed.
+            var nextCue = _movieItems.Skip(Math.Max(0, _movieSelectedIndex + 1))
+                .FirstOrDefault(i => !i.IsLooping);
+            if (nextCue != null) paths.Add(nextCue.FilePath);
+            foreach (string path in paths.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                if (!ConfigPathService.IsWithin(root, path)) continue;
+                try { await _mediaCache.PrepareSequence(path, root); }
+                catch (Exception ex) { Debug.WriteLine("Cue preparation: " + ex.Message); }
+            }
         }
 
         #endregion
@@ -6206,8 +6332,48 @@ namespace ServoAnimator
                 return;
             }
 
-            if (Keyboard.Modifiers != ModifierKeys.None || IsTextEditingControl(Keyboard.FocusedElement))
+            if ((Keyboard.Modifiers == ModifierKeys.Control ||
+                 Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift)) &&
+                (e.Key == Key.S || e.Key == Key.O))
+            {
+                if (e.IsRepeat) { e.Handled = true; return; }
+                bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+                if (e.Key == Key.O)
+                {
+                    if (shift) LoadMovie_Click(this, new RoutedEventArgs());
+                    else LoadProject_Click(this, new RoutedEventArgs());
+                }
+                else if (_activeDocumentKind == ActiveDocumentKind.Movie)
+                {
+                    if (shift) SaveMovieAsInteractive();
+                    else SaveMovie_Click(this, new RoutedEventArgs());
+                }
+                else
+                {
+                    if (shift) SaveProjectAsInteractive();
+                    else SaveProject_Click(this, new RoutedEventArgs());
+                }
+                e.Handled = true;
                 return;
+            }
+
+            if (Keyboard.Modifiers != ModifierKeys.None ||
+                FocusNeedsNavigationKeys(Keyboard.FocusedElement as DependencyObject))
+                return;
+
+            if (e.Key == Key.Space && Keyboard.FocusedElement is not ButtonBase)
+            {
+                if (!e.IsRepeat) PlayPause_Click(PlayPauseBtn, new RoutedEventArgs());
+                e.Handled = true;
+                return;
+            }
+
+            // Movie transport owns arrows only in the movie area or during
+            // movie playback. Sliders, lists and text retain their native keys.
+            if (MovieTimelinePanel.Visibility != Visibility.Visible ||
+                (!MovieTimelinePanel.IsKeyboardFocusWithin && !_moviePlaybackActive)) return;
+            if (e.IsRepeat && (e.Key == Key.Up || e.Key == Key.Down || e.Key == Key.Left || e.Key == Key.Right))
+            { e.Handled = true; return; }
 
             if (e.Key == Key.Up)
             {
@@ -6368,6 +6534,20 @@ namespace ServoAnimator
             return focused is TextBox || focused is PasswordBox || focused is ComboBox;
         }
 
+        internal static bool FocusNeedsNavigationKeys(DependencyObject focused)
+        {
+            for (DependencyObject node = focused;
+                 node != null;)
+            {
+                if (node is TextBoxBase || node is PasswordBox || node is Selector ||
+                    node is RangeBase || node is MenuBase || node is TreeView) return true;
+                node = node is System.Windows.Media.Visual || node is System.Windows.Media.Media3D.Visual3D
+                    ? System.Windows.Media.VisualTreeHelper.GetParent(node)
+                    : LogicalTreeHelper.GetParent(node);
+            }
+            return false;
+        }
+
         /// <summary>Hide arrows, close the movable create prompt, and clear
         /// any pending selected Library Sequence.</summary>
         private void EndArrowPrompt()
@@ -6391,6 +6571,21 @@ namespace ServoAnimator
             {
                 _endingLibraryOperation = false;
             }
+        }
+
+        private string ConfigRoot =>
+            _folders?.ConfigFolderOrDefault ?? AppContext.BaseDirectory;
+
+        /// <summary>Reject a file chosen outside the active Configuration
+        /// folder. This keeps every portable document reference deployable.</summary>
+        private bool RequireConfigPath(string path, string itemName)
+        {
+            if (ConfigPathService.TryResolve(ConfigRoot, path, out _)) return true;
+            MessageBox.Show(this,
+                $"The {itemName} must be inside the Configuration folder or one of its child folders:\n\n{ConfigRoot}",
+                "File outside Configuration folder", MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return false;
         }
 
         /// <summary>Library Sequences live in Library\Animation
@@ -6480,7 +6675,7 @@ namespace ServoAnimator
             _recentFiles ??= new RecentFilesSettings();
             _recentFiles.Touch(path,
                 kind == ActiveDocumentKind.Movie ? "Movie" : "Sequence",
-                setActive);
+                setActive, ConfigRoot);
             SaveRecentFiles();
             RefreshOpenRecentMenu();
         }
@@ -6504,7 +6699,7 @@ namespace ServoAnimator
             else
                 _recentFiles.Touch(path,
                     _activeDocumentKind == ActiveDocumentKind.Movie ? "Movie" : "Sequence",
-                    setActive: true);
+                    setActive: true, configFolder: ConfigRoot);
 
             SaveRecentFiles();
         }
@@ -6627,6 +6822,7 @@ namespace ServoAnimator
                 InitialDirectory = LibraryFolder(),
             };
             if (dlg.ShowDialog() != true) return;
+            if (!RequireConfigPath(dlg.FileName, "Library Sequence")) return;
 
             // Audio referenced by the Library Sequence travels WITH the library.
             var libWarnings = new List<string>();
@@ -6645,7 +6841,7 @@ namespace ServoAnimator
                     if (!string.Equals(srcPath, dest,
                                        StringComparison.OrdinalIgnoreCase))
                         File.Copy(srcPath, dest, overwrite: true);
-                    play.TextValue = dest;
+                    play.TextValue = ConfigPathService.ToRelative(ConfigRoot, dest);
                 }
                 catch (Exception ex)
                 {
@@ -6714,7 +6910,8 @@ namespace ServoAnimator
                     }
 
                     string srcPath =
-                        File.Exists(play.TextValue) ? play.TextValue
+                        (ConfigPathService.TryResolve(ConfigRoot, play.TextValue,
+                            out string storedAudio) && File.Exists(storedAudio)) ? storedAudio
                         : File.Exists(Path.Combine(LibraryAudioFolder(), name))
                             ? Path.Combine(LibraryAudioFolder(), name)
                             : ResolveAudioPath(play.TextValue);
@@ -6730,7 +6927,7 @@ namespace ServoAnimator
                             File.Copy(srcPath, dest);
 
                         if (File.Exists(dest))
-                            play.TextValue = dest;
+                            play.TextValue = ConfigPathService.ToRelative(ConfigRoot, dest);
                         else
                             insWarnings.Add(name);
                     }
@@ -6740,7 +6937,7 @@ namespace ServoAnimator
                     }
                 }
 
-                PushUndo();
+                PushUndo($"Insert Library Sequence {Path.GetFileNameWithoutExtension(fileName)}");
                 foreach (var c in cmds)
                 {
                     c.OffsetSeconds = ServoCommand.TimeKey(c.OffsetSeconds + at);
@@ -6884,8 +7081,11 @@ namespace ServoAnimator
             {
                 // Commands are immutable for the device worker even if the
                 // editor is modified while an output batch is pending.
-                ServoCommand[] batch = commandsAtOffset.Select(c => c.Clone()).ToArray();
-                _hardwarePlaybackQueue.Enqueue(() => DispatchHardwareBatch(batch));
+                foreach (var command in commandsAtOffset)
+                {
+                    var copy = command.Clone();
+                    _hardwarePlaybackQueue.Enqueue(() => DispatchHardwareBatch(new[] { copy }));
+                }
             }
 
             Debug.WriteLine($"PlayBackServoValues @ {commandsAtOffset[0].OffsetSeconds:F3}s:");

@@ -2,7 +2,9 @@
 
 ## Configuration folder
 
-The application uses an `animatorConfig` folder for persistent configuration when available. On first run it looks for that folder beside the ServoAnimator project/deployment folder before prompting for paths.
+The deployed application uses the `Config` folder beside `AnimationEditorPlayer.exe`. The live development build retains the existing layout and discovers `animatorConfig` beside the `ServoAnimator` project folder. If neither layout is available, the application prompts for a Configuration folder.
+
+Movie, Sequence, exported animation, Audio, and Library selections are limited to the active Configuration folder and its child folders. References saved in JSON are relative to that folder, so the complete configuration can be moved or deployed without rewriting drive-specific paths. Older absolute references inside the active Configuration folder remain readable and are converted when saved.
 
 Common persistent files include:
 
@@ -30,7 +32,9 @@ When a loaded Sequence or Movie refers to unavailable audio or sequence files, t
 
 ## Saving
 
-Save Sequence and Save Movie write to the current source file. The corresponding Save As command chooses a new path. Save Movie falls through to Save Movie As when a new movie has no path yet.
+Opening another Sequence, loading another Movie, or starting a new workspace checks for unsaved documents before replacing them. Choose Save, Discard (No), or Cancel; a canceled or failed save leaves the current document available. Closing the editor retains the existing recovery-snapshot behavior.
+
+Save Sequence and Save Movie write to the current source file. The corresponding Save As command chooses a new path within the active Configuration folder. Save Movie falls through to Save Movie As when a new movie has no path yet.
 
 The status bar continuously summarizes whether the Sequence, Movie, and configuration have unsaved changes; description edits are included in their document status.
 

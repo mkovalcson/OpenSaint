@@ -2,7 +2,7 @@
   "description": "",
   "audioFiles": "LightningRound.mp3",
   "audioFile": "LightningRound.mp3",
-  "audioFilePath": "X:\\Johnny5\\Software\\animatorConfig\\Projects\\MyProject\\LightningRound.mp3",
+  "audioFilePath": "Projects\\MyProject\\LightningRound.mp3",
   "durationSeconds": 13.34,
   "audioStartOffsetSeconds": 0.058,
   "splineServos": [

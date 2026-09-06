@@ -42,8 +42,15 @@ namespace ServoAnimator
         {
             string path = PathFor(configFolder);
             if (!File.Exists(path)) return null;
-            return JsonSerializer.Deserialize<EditorRecoverySnapshot>(
+            var snapshot = JsonSerializer.Deserialize<EditorRecoverySnapshot>(
                 File.ReadAllText(path), Options);
+            if (snapshot == null) return null;
+            snapshot.SequencePath = ResolveOrEmpty(configFolder, snapshot.SequencePath);
+            snapshot.MoviePath = ResolveOrEmpty(configFolder, snapshot.MoviePath);
+            ConfigPathService.ResolveDocumentPaths(snapshot.Sequence, configFolder);
+            foreach (var item in snapshot.MovieItems ?? new List<MovieSequenceItem>())
+                item.FilePath = ResolveOrEmpty(configFolder, item.FilePath);
+            return snapshot;
         }
 
         public void Save(string configFolder)
@@ -51,8 +58,63 @@ namespace ServoAnimator
             string path = PathFor(configFolder);
             Directory.CreateDirectory(Path.GetDirectoryName(path) ?? AppContext.BaseDirectory);
             string temporary = path + ".tmp";
-            File.WriteAllText(temporary, JsonSerializer.Serialize(this, Options));
+            var persisted = new EditorRecoverySnapshot
+            {
+                SavedUtc = SavedUtc,
+                SequencePath = RelativeOrEmpty(configFolder, SequencePath),
+                Sequence = CloneSequenceForStorage(configFolder),
+                MoviePath = RelativeOrEmpty(configFolder, MoviePath),
+                MovieDescription = MovieDescription,
+                MovieCreatedDate = MovieCreatedDate,
+                MovieItems = (MovieItems ?? new List<MovieSequenceItem>())
+                    .Where(i => ConfigPathService.IsWithin(configFolder, i.FilePath))
+                    .Select(i => new MovieSequenceItem
+                    {
+                        FilePath = ConfigPathService.ToRelative(configFolder, i.FilePath),
+                        DurationSeconds = i.DurationSeconds,
+                        Description = i.Description,
+                        IsLooping = i.IsLooping,
+                    }).ToList(),
+                MovieSelectedIndex = MovieSelectedIndex,
+                SequenceCursorTime = SequenceCursorTime,
+                MovieCursorTime = MovieCursorTime,
+                ActiveDocumentKind = ActiveDocumentKind,
+                SequenceWasDirty = SequenceWasDirty,
+                MovieWasDirty = MovieWasDirty,
+                ConfigurationWasDirty = ConfigurationWasDirty,
+                ServoConfiguration = ServoConfiguration,
+                UrdfConfiguration = UrdfConfiguration,
+            };
+            File.WriteAllText(temporary, JsonSerializer.Serialize(persisted, Options));
             File.Move(temporary, path, overwrite: true);
+        }
+
+        private static string ResolveOrEmpty(string configFolder, string storedPath) =>
+            ConfigPathService.TryResolve(configFolder, storedPath, out string full)
+                ? full : "";
+
+        private static string RelativeOrEmpty(string configFolder, string fullPath) =>
+            string.IsNullOrWhiteSpace(fullPath) ? "" :
+                ConfigPathService.ToRelative(configFolder, fullPath);
+
+        private AnimationDocument CloneSequenceForStorage(string configFolder)
+        {
+            if (Sequence == null) return null;
+            var clone = new AnimationDocument
+            {
+                Description = Sequence.Description,
+                AudioFiles = Sequence.AudioFiles,
+                AudioFile = Sequence.AudioFile,
+                AudioFilePath = Sequence.AudioFilePath,
+                DurationSeconds = Sequence.DurationSeconds,
+                AudioStartOffsetSeconds = Sequence.AudioStartOffsetSeconds,
+                SplineServos = Sequence.SplineServos?.ToList() ?? new(),
+                SplineSampleHz = Sequence.SplineSampleHz,
+                AnimateMode = Sequence.AnimateMode,
+                ScaleValues = Sequence.ScaleValues,
+                Commands = Sequence.Commands?.Select(c => c.Clone()).ToList() ?? new(),
+            };
+            return ConfigPathService.MakeDocumentPathsRelative(clone, configFolder);
         }
 
         public static void Delete(string configFolder)
