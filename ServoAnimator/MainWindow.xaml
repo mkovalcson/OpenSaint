@@ -15,285 +15,7 @@
     </Window.CommandBindings>
 
 
-    <Window.Resources>
-        <local:HalfHeightConverter x:Key="HalfHeightConverter"/>
 
-        <!-- ==============================================================
-             Shared template for one servo row (used by BOTH grid columns).
-             Columns: ServoName | Offset | Speed | Value | slider-or-text
-             (the separate numeric "Type" entry column has been removed -
-             the slider is the value editor for numeric servos).
-             A 2px bottom border appears on rows flagged DividerBelow=True,
-             drawing the group separator lines inside each column.
-             ============================================================== -->
-        <DataTemplate x:Key="ServoRowTemplate">
-            <Border BorderBrush="{DynamicResource ControlBorder}">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="BorderThickness" Value="0"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding DividerBelow}" Value="True">
-                                <Setter Property="BorderThickness" Value="0,0,0,2"/>
-                                <Setter Property="Margin" Value="0,0,0,3"/>
-                                <Setter Property="Padding" Value="0,0,0,2"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding SubDividerBelow}" Value="True">
-                                <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                                <Setter Property="Margin" Value="0,0,0,1"/>
-                                <Setter Property="Padding" Value="0,0,0,1"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-
-                <StackPanel>
-                    <Border Background="{DynamicResource ElevatedPanelBackground}" Padding="6,1" Margin="0,1,0,1"
-                            BorderBrush="{DynamicResource ControlBorder}" BorderThickness="0,0,0,1"
-                            CornerRadius="{StaticResource SmallCornerRadius}">
-                        <Border.Style>
-                            <Style TargetType="Border">
-                                <Setter Property="Visibility" Value="Visible"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding GroupHeader}" Value="">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <DockPanel>
-                            <ToggleButton DockPanel.Dock="Right" Width="20" Height="16" MinHeight="0" Padding="0"
-                                          FontSize="10" ToolTip="Collapse or expand this servo group"
-                                          Click="ServoGroupToggle_Click">
-                                <ToggleButton.Style>
-                                    <Style TargetType="ToggleButton" BasedOn="{StaticResource {x:Type ToggleButton}}">
-                                        <Setter Property="Content" Value="▾"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding GroupCollapsed}" Value="True">
-                                                <Setter Property="Content" Value="▸"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ToggleButton.Style>
-                            </ToggleButton>
-                            <TextBlock Text="{Binding GroupHeader}" Foreground="{DynamicResource HeaderText}"
-                                       FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center"/>
-                        </DockPanel>
-                    </Border>
-                <Grid Margin="0,1" Visibility="{Binding RowVisibility}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="44"/>
-                        <ColumnDefinition Width="160"/>
-                        <ColumnDefinition Width="70"/>
-                        <ColumnDefinition Width="92"/>
-                        <ColumnDefinition Width="48"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- "Spline" checkbox: when ticked this servo's command
-                         points are Hermite-interpolated and drawn in the
-                         spline area below the waveform; saving generates
-                         sampled commands along the curve. Hidden for
-                         text-valued servos (RGBCommand). -->
-                    <CheckBox Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center"
-                              IsChecked="{Binding SplineEnabled, Mode=TwoWay}"
-                              Click="SplineCheck_Click">
-                        <CheckBox.Style>
-                            <Style TargetType="CheckBox">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsTextRow}" Value="True">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </CheckBox.Style>
-                    </CheckBox>
-
-                    <!-- ServoName with a [+/-] expander that exposes the
-                         ganged RobotControls sub-rows beneath the row. -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <ToggleButton Width="17" Height="17" Margin="0,0,4,0"
-                                      FontWeight="Bold" Padding="0"
-                                      IsChecked="{Binding IsExpanded, Mode=TwoWay}">
-                            <ToggleButton.Style>
-                                <Style TargetType="ToggleButton" BasedOn="{StaticResource {x:Type ToggleButton}}">
-                                    <Setter Property="Content" Value="+"/>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsChecked" Value="True">
-                                            <Setter Property="Content" Value="−"/>
-                                        </Trigger>
-                                        <DataTrigger Binding="{Binding HasChildren}" Value="False">
-                                            <Setter Property="Visibility" Value="Hidden"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ToggleButton.Style>
-                        </ToggleButton>
-                        <TextBlock Text="{Binding ServoName}" Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center"/>
-                    </StackPanel>
-                    <TextBlock Grid.Column="2" Text="{Binding OffsetText}" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
-                    <!-- Speed column: a picklist (Default, Fast, Slow,
-                         Crawl) selectable in Live Drive - changing it pushes
-                         the speed/accel pair (indexed by the enum) to every
-                         servo in the row's gang. Hidden for RGBCommand and
-                         the eye pops, which have no speed concept. -->
-                    <ComboBox Grid.Column="3" Margin="0,0,6,0" VerticalAlignment="Center" MinWidth="90"
-                              ItemsSource="{Binding SpeedOptions}"
-                              SelectedItem="{Binding Speed, Mode=TwoWay}"
-                              IsEnabled="{Binding SpeedEnabled}"
-                              SelectionChanged="RowSpeed_Changed">
-                        <ComboBox.Style>
-                            <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ShowSpeed}" Value="False">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ComboBox.Style>
-                    </ComboBox>
-                    <!-- Value column: the number for numeric servos; for
-                         the RGBCommand row, a small box filled with the
-                         selected palette color instead of a number. -->
-                    <TextBlock Grid.Column="4" Text="{Binding ValueText}"  Foreground="{DynamicResource WarningText}" VerticalAlignment="Center"
-                               TextTrimming="CharacterEllipsis">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsTextRow}" Value="True">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                    <Border Grid.Column="4" Width="26" Height="13"
-                            HorizontalAlignment="Left" VerticalAlignment="Center"
-                            Background="{Binding ColorBrush}"
-                            BorderBrush="{DynamicResource HeaderText}" BorderThickness="1"
-                            Visibility="Collapsed">
-                        <Border.Style>
-                            <Style TargetType="Border">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsTextRow}" Value="True">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                    </Border>
-
-                    <!-- NUMERIC servos: slider (range per servo). Editable in
-                         Live Drive; user moves call MoveServoNow(). -->
-                    <Slider Grid.Column="5"
-                            Minimum="{Binding Min}" Maximum="{Binding Max}"
-                            Margin="6,0" VerticalAlignment="Center"
-                            IsEnabled="{Binding SliderEnabled}"
-                            Value="{Binding Value, Mode=TwoWay}"
-                            ValueChanged="RowSlider_ValueChanged"
-                            GotKeyboardFocus="RowEditor_GotFocus"
-                            LostKeyboardFocus="RowEditor_LostFocus">
-                        <Slider.Style>
-                            <Style TargetType="Slider">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsTextRow}" Value="True">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Slider.Style>
-                    </Slider>
-
-                    <!-- TEXT-valued servo (RGBCommand): shows/edits the last
-                         command text used (editable in Live Drive). -->
-                    <TextBox Grid.Column="5"
-                             Margin="6,0" VerticalAlignment="Center"
-                             IsEnabled="{Binding SliderEnabled}"
-                             Text="{Binding TextValue, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                             KeyDown="RowRgbBox_KeyDown"
-                             LostFocus="RowRgbBox_LostFocus"
-                             GotKeyboardFocus="RowEditor_GotFocus"
-                             LostKeyboardFocus="RowEditor_LostFocus">
-                        <TextBox.Style>
-                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsTextRow}" Value="True">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBox.Style>
-                    </TextBox>
-                </Grid>
-
-                <!-- Expanded RobotControls sub-rows: control name + a PWM
-                     verify slider (range from the servo configuration).
-                     Sliders are enabled in Live Drive and call
-                     MoveRobotControlNow(). Timeline rule: an individual
-                     control's command overrides the gang for that servo
-                     until the next ganged command. -->
-                <ItemsControl ItemsSource="{Binding Children}">
-                    <ItemsControl.Style>
-                        <Style TargetType="ItemsControl">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsExpanded}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ItemsControl.Style>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Margin="0,1">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="66"/>
-                                    <ColumnDefinition Width="195"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="75"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="1" Text="{Binding Name}"
-                                           Foreground="{DynamicResource HeaderText}" VerticalAlignment="Center"/>
-                                <!-- Same range as the PARENT ganged servo
-                                     (-100..100 or 0..100); Live Drive moves
-                                     drive just this servo through
-                                     MapDeltatoServo. -->
-                                <Slider Grid.Column="2" Margin="6,0" VerticalAlignment="Center"
-                                        Minimum="{Binding Min}" Maximum="{Binding Max}"
-                                        IsEnabled="{Binding SliderEnabled}"
-                                        Value="{Binding Value, Mode=TwoWay}"
-                                        ValueChanged="ChildSlider_ValueChanged"/>
-                                <TextBlock Grid.Column="3" Text="{Binding Value, StringFormat=F0}"
-                                           Foreground="{DynamicResource WarningText}" VerticalAlignment="Center"/>
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-                </StackPanel>
-            </Border>
-        </DataTemplate>
-
-        <!-- Column header shared by both grid columns -->
-        <DataTemplate x:Key="ServoHeaderTemplate">
-            <Grid Margin="0,2">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="44"/>
-                    <ColumnDefinition Width="160"/>
-                    <ColumnDefinition Width="70"/>
-                    <ColumnDefinition Width="92"/>
-                    <ColumnDefinition Width="48"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Spline"    Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
-                <TextBlock Grid.Column="1" Text="ServoName" Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
-                <TextBlock Grid.Column="2" Text="Offset"    Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
-                <TextBlock Grid.Column="3" Text="Speed"     Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
-                <TextBlock Grid.Column="4" Text="Value"     Foreground="{DynamicResource HeaderText}" FontWeight="Bold"/>
-                <TextBlock Grid.Column="5" Text="Value (slider / text)" Foreground="{DynamicResource HeaderText}" FontWeight="Bold" Margin="6,0"/>
-            </Grid>
-        </DataTemplate>
-    </Window.Resources>
 
 
     <!-- ==================================================================
@@ -306,11 +28,194 @@
            6. Commands list  - all commands at the selected cursor position
          ================================================================== -->
     <DockPanel>
+        <!-- ============ MOVIE TIMELINE ============ -->
+        <Border DockPanel.Dock="Bottom" x:Name="MovieTimelinePanel"
+                Background="{DynamicResource MoviePanelBackground}" BorderBrush="{DynamicResource MovieAccent}" BorderThickness="1"
+                Margin="6,4,6,0" CornerRadius="{StaticResource PanelCornerRadius}" Padding="8,6">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="80"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-        <!-- ============ 1. MENU BAR ============
+                <Grid Grid.Row="0">
+                    <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="14"/></Grid.RowDefinitions>
+                    <AdornerDecorator Grid.Row="0">
+                        <local:MovieTimelineView x:Name="MovieTimeline" Margin="0,0,0,2" Focusable="True"/>
+                    </AdornerDecorator>
+                    <Border x:Name="MovieEmptyStatePanel" Grid.Row="0" Panel.ZIndex="5"
+                            Background="{DynamicResource MoviePanelBackground}" BorderBrush="{DynamicResource DividerBrush}"
+                            BorderThickness="1" CornerRadius="4" Margin="1,1,1,3">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="Build a movie timeline" Foreground="{DynamicResource PrimaryText}"
+                                       FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Content="Load Movie…" Padding="10,4" Margin="0,0,5,0" Click="EmptyLoadMovie_Click"/>
+                                <Button Content="Insert First Sequence…" Padding="10,4" Click="EmptyInsertFirstSequence_Click"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <ScrollBar x:Name="MovieScroll" Grid.Row="1" Orientation="Horizontal" Height="14" Scroll="MovieScroll_Scroll"/>
+                </Grid>
+                <Grid Grid.Row="1" Margin="0,6,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,2,14,2" VerticalAlignment="Center">
+                        <Button Content="−" Width="30" Height="30" Margin="5,0,2,0" ToolTip="Zoom movie timeline out" Click="MovieZoomOut_Click"/>
+                        <Button Content="+" Width="30" Height="30" Margin="2,0" ToolTip="Zoom movie timeline in" Click="MovieZoomIn_Click"/>
+                        <Button Content="Fit" Width="42" Height="30" Margin="2,0" ToolTip="Fit complete movie" Click="MovieZoomFit_Click"/>
+                    </StackPanel>
+                    <Border Grid.Column="1" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1,0,0,0"
+                            Padding="13,0,0,0" Margin="0,2,14,2" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Height="{Binding ActualHeight, ElementName=PlayPauseBtn}">
+                        <Button x:Name="MoviePreviousButton" Content="|◀" Width="36" Margin="0,0,4,0" Style="{StaticResource StudioTransportButton}"
+                                ToolTip="Restart current sequence; if already at its start, move to previous sequence — Left Arrow"
+                                Click="MoviePrevious_Click"/>
+                        <Button x:Name="MoviePlayButton" Content="▶ Movie" Margin="0,0,4,0" Style="{StaticResource StudioPlayButton}"
+                                ToolTip="Play/Pause movie sequence — Up Arrow" Click="MoviePlay_Click"/>
+                        <Button x:Name="MovieNextButton" Content="▶|" Width="36" Style="{StaticResource StudioTransportButton}"
+                                ToolTip="Play next sequence — Right Arrow" Click="MovieNext_Click"/>
+                    </StackPanel>
+                    </Border>
+                    <Grid Grid.Column="2" Margin="8,0,0,0" VerticalAlignment="Center">
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" x:Name="MovieFileText"
+                                   Text="(unsaved)* — 0 s" Foreground="{DynamicResource WarningText}"
+                                   VerticalAlignment="Center" FontFamily="Consolas" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Row="1" x:Name="MovieDescriptionText" Foreground="{DynamicResource PrimaryText}"
+                                   TextWrapping="Wrap" VerticalAlignment="Center"><Run x:Name="MovieDescriptionRun"/><Run Text="  "/><Hyperlink
+                                x:Name="MovieDescriptionEditButton" FontSize="11" FontWeight="Bold" TextDecorations="{x:Null}"
+                                Foreground="{DynamicResource PrimaryText}" ToolTip="Edit the movie description"
+                                Click="MovieDescriptionEdit_Click">edit</Hyperlink></TextBlock>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- ============ SEQUENCE TRANSPORT ============ -->
+        <Border DockPanel.Dock="Bottom" Background="{DynamicResource SequencePanelBackground}"
+                BorderBrush="{DynamicResource SequenceAccent}" BorderThickness="1" Padding="8,6"
+                Margin="6,4,6,0" CornerRadius="{StaticResource PanelCornerRadius}">
+            <WrapPanel Orientation="Horizontal">
+                <StackPanel Orientation="Horizontal" Margin="0,2,14,2" VerticalAlignment="Center">
+                    <Button Content="−" Width="30" Height="30" Margin="5,0,2,0" ToolTip="Zoom out around the cursor" Click="ZoomOut_Click"/>
+                    <Button Content="+" Width="30" Height="30" Margin="2,0" ToolTip="Zoom in around the cursor" Click="ZoomIn_Click"/>
+                    <Button Content="Fit" Width="42" Height="30" Margin="2,0" ToolTip="Fit the whole sequence" Click="ZoomFit_Click"/>
+                </StackPanel>
+                <Border BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1,0,0,0" Padding="13,0,0,0" Margin="0,2,14,2">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="|◀" Style="{StaticResource StudioTransportButton}" Width="34" Margin="0,0,4,0" ToolTip="Move sequence cursor to beginning" Click="SequenceRestart_Click"/>
+                        <Button x:Name="PlayPauseBtn" Content="▶ Sequence" Style="{StaticResource StudioPlayButton}" ToolTip="Play/pause sequence — Space (timeline or background focus)" Click="PlayPause_Click"/>
+                        <Button Content="■" Style="{StaticResource StudioTransportButton}" Width="34" Margin="4,0,9,0" ToolTip="Stop sequence playback" Click="SequenceStop_Click"/>
+                        <Border Background="{DynamicResource InputBackground}" CornerRadius="5" Padding="9,2">
+                            <TextBlock x:Name="TimeText" Text="0.000 s" Foreground="{DynamicResource PrimaryText}" FontFamily="Consolas" FontSize="16" VerticalAlignment="Center" Width="112" TextAlignment="Right"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <Border BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1,0,0,0" Padding="13,0,0,0" Margin="0,2,14,2">
+                    <StackPanel Orientation="Horizontal" Height="30">
+                        <TextBlock Text="VOLUME" Style="{StaticResource SectionCaption}" Margin="0,0,6,0"/>
+                        <Slider x:Name="VolumeSlider" Width="90" Minimum="0" Maximum="100" Value="100"
+                                TickFrequency="10" IsSnapToTickEnabled="False" VerticalAlignment="Center"
+                                ToolTip="Audio playback volume" ValueChanged="PlaybackVolume_Changed"/>
+                        <TextBlock x:Name="VolumeText" Text="100%" Foreground="{DynamicResource SecondaryText}" FontFamily="Consolas"
+                                   Width="39" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                    </StackPanel>
+                </Border>
+                <StackPanel Orientation="Horizontal" Margin="0,2,0,2">
+                    <ComboBox x:Name="TimelineLayoutPicker" Width="132" Height="30" SelectedIndex="2"
+                              ToolTip="Timeline layout" SelectionChanged="TimelineLayout_Changed">
+                        <ComboBoxItem Content="Waveform top"/>
+                        <ComboBoxItem Content="Spline top"/>
+                        <ComboBoxItem Content="Combined"/>
+                    </ComboBox>
+                    <Button Content="?" Width="30" Height="30" Margin="6,0,0,0" ToolTip="Controls and hotkeys • wheel zoom • middle-drag pan • right-click actions" Click="HelpControls_Click"/>
+                </StackPanel>
+            </WrapPanel>
+        </Border>
+
+        <!-- ============ 4. SCROLLBAR ============ -->
+        <ScrollBar DockPanel.Dock="Bottom" x:Name="HScroll" Orientation="Horizontal"
+                   Height="16" Scroll="HScroll_Scroll"/>
+
+        <!-- Commands and docked URDF share the top pane above the resizable timelines. -->
+        <Grid x:Name="EditorTimelineGrid">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="CommandsEditorColumn" Width="*" MinWidth="280"/>
+                <ColumnDefinition x:Name="UrdfSplitterColumn" Width="8"/>
+                <ColumnDefinition x:Name="UrdfEditorColumn" Width="*" MinWidth="260"/>
+                <ColumnDefinition Width="140"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition x:Name="TopEditorRow" Height="250" MinHeight="80"/> <!-- grid + URDF -->
+                <RowDefinition Height="Auto"/>                                      <!-- editor/audio splitter -->
+                <RowDefinition x:Name="AudioTimelineRow" Height="*" MinHeight="120"/> <!-- audio -->
+                <RowDefinition Height="Auto"/>                                      <!-- audio/spline splitter -->
+                <RowDefinition x:Name="SplineTimelineRow" Height="0"/>              <!-- spline -->
+            </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Grid.RowSpan="3" Grid.Column="3" Background="{DynamicResource MenuBackground}"
+                BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1,0,0,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <!-- Hardware labels are always visible. Status circles stay hidden
+                     until Live Drive has made its first USB connection attempt. -->
+                <StackPanel x:Name="LiveControlsPanel" Orientation="Vertical" VerticalAlignment="Top"
+                            Margin="6,8">
+                    <TextBlock Text="HARDWARE" Style="{StaticResource SectionCaption}" HorizontalAlignment="Center" Margin="0,0,0,9"/>
+                    <ToggleButton x:Name="LiveDriveBtn" Height="30" MinHeight="0" Padding="8,0" Margin="0,0,0,8" Style="{StaticResource StudioLiveDriveToggle}"
+                                  VerticalAlignment="Center" Checked="LiveDrive_Changed" Unchecked="LiveDrive_Changed">
+                        <TextBlock><Run Text="● Drive HW: "/><Run x:Name="LiveDriveState" Text="Off" FontWeight="Bold"/></TextBlock>
+                    </ToggleButton>
+                    <Separator Margin="3,3,3,9"/>
+                    <Button Content="Disable Servos" Height="28" Foreground="{DynamicResource WarningText}" MinHeight="0" Padding="8,0"
+                            Margin="0,0,0,8" VerticalAlignment="Center"
+                            ToolTip="Disable PWM on every Maestro servo channel (servos go limp)"
+                            Click="DisableAll_Click"/>
+                    <Button Content="Default Positions" Height="28" MinHeight="0" Padding="8,0"
+                            Margin="0,0,0,8" VerticalAlignment="Center"
+                            ToolTip="Move Maestro servos to configured Default PWM, set both Eye Pops to 0, and send ClearAll to the Arduino"
+                            Click="ResetAll_Click"/>
+                    <Separator Margin="3,3,3,9"/>
+                    <Border CornerRadius="7" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
+                            Background="{DynamicResource PanelBackground}" Padding="7,9">
+                        <StackPanel HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,8">
+                        <Ellipse x:Name="MaestroStatusDot" Width="10" Height="10" Margin="0,0,5,0"
+                                 VerticalAlignment="Center" Visibility="Collapsed"/>
+                        <TextBlock Text="Maestro" Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,8">
+                        <Ellipse x:Name="ArduinoStatusDot" Width="10" Height="10" Margin="0,0,5,0"
+                                 VerticalAlignment="Center" Visibility="Collapsed"/>
+                        <TextBlock Text="Arduino" Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,8">
+                        <Ellipse x:Name="LeftTicStatusDot" Width="10" Height="10" Margin="0,0,5,0"
+                                 VerticalAlignment="Center" Visibility="Collapsed"/>
+                        <TextBlock Text="Left Tic 249" Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse x:Name="RightTicStatusDot" Width="10" Height="10" Margin="0,0,5,0"
+                                 VerticalAlignment="Center" Visibility="Collapsed"/>
+                        <TextBlock Text="Right Tic 249" Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+
+
+                    <!-- ============ 1. MENU BAR ============
              Replaces the old button toolbar. Live Drive and the animation
              name are stateful controls so they live in a slim bar below. -->
-        <Border DockPanel.Dock="Top" Background="{DynamicResource MenuBackground}"
+        <Border x:Name="MainMenuPanel" Grid.Row="0" Grid.Column="0" Background="{DynamicResource MenuBackground}"
                 BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -319,6 +224,7 @@
                 </Grid.ColumnDefinitions>
 
         <Menu Grid.Column="0" Background="{DynamicResource MenuBackground}" Padding="4,2">
+            <Menu.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></Menu.ItemsPanel>
             <Menu.Resources>
                 <!-- Individual menu commands use whitespace only. Visible lines
                      come exclusively from explicit Separator elements, which
@@ -392,31 +298,6 @@
                 <MenuItem Header="_Manage Library Sequences…" Click="LibraryManage_Click"/>
                 <MenuItem Header="Manage Library _Poses…" Click="LibraryCommandsManage_Click"/>
             </MenuItem>
-            <MenuItem Header="_View" Style="{StaticResource TopLevelMenuItem}">
-                <MenuItem x:Name="ViewMovieTimelineMenuItem" Header="_Movie Timeline" IsCheckable="True"
-                          Click="ViewMovieTimeline_Click"/>
-                <Separator/>
-                <MenuItem Header="Color _Theme">
-                    <MenuItem x:Name="ThemeGraphiteMenuItem" Header="Graphite (Default)" IsCheckable="True"
-                              Tag="Graphite" Click="ThemeMenuItem_Click"/>
-                    <MenuItem x:Name="ThemeSteelBlueMenuItem" Header="Steel Blue" IsCheckable="True"
-                              Tag="Steel Blue" Click="ThemeMenuItem_Click"/>
-                    <MenuItem x:Name="ThemeTealMenuItem" Header="Teal" IsCheckable="True"
-                              Tag="Teal" Click="ThemeMenuItem_Click"/>
-                    <MenuItem x:Name="ThemeVioletMenuItem" Header="Violet" IsCheckable="True"
-                              Tag="Violet" Click="ThemeMenuItem_Click"/>
-                    <Separator/>
-                    <MenuItem x:Name="ThemeSlateMidMenuItem" Header="Slate Mid" IsCheckable="True"
-                              Tag="Slate Mid" Click="ThemeMenuItem_Click"/>
-                    <MenuItem x:Name="ThemeSandstoneMidMenuItem" Header="Sandstone Mid" IsCheckable="True"
-                              Tag="Sandstone Mid" Click="ThemeMenuItem_Click"/>
-                    <Separator/>
-                    <MenuItem x:Name="ThemeMistLightMenuItem" Header="Mist Light" IsCheckable="True"
-                              Tag="Mist Light" Click="ThemeMenuItem_Click"/>
-                    <MenuItem x:Name="ThemeWarmPaperMenuItem" Header="Warm Paper" IsCheckable="True"
-                              Tag="Warm Paper" Click="ThemeMenuItem_Click"/>
-                </MenuItem>
-            </MenuItem>
             <MenuItem x:Name="HelpMenuItem" Header="_Help" Style="{StaticResource TopLevelMenuItem}">
                 <MenuItem x:Name="HelpContentsMenuItem" Header="_Contents &amp; Search…" Click="HelpContents_Click"/>
                 <MenuItem x:Name="HelpContextMenuItem" Header="_Context Help" InputGestureText="F1" Click="HelpContext_Click"/>
@@ -426,308 +307,103 @@
             </MenuItem>
         </Menu>
 
-                <!-- Hardware labels are always visible. Status circles stay hidden
-                     until Live Drive has made its first USB connection attempt. -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"
-                            Margin="10,0,10,0">
-                    <ToggleButton x:Name="LiveDriveBtn" Height="20" MinHeight="0" Padding="8,0" Margin="0,0,8,0"
-                                  VerticalAlignment="Center" Checked="LiveDrive_Changed" Unchecked="LiveDrive_Changed">
-                        <TextBlock><Run Text="● Live Drive: "/><Run x:Name="LiveDriveState" Text="Off" FontWeight="Bold"/></TextBlock>
-                    </ToggleButton>
-                    <Button Content="Disable Servos" Height="20" Foreground="{DynamicResource WarningText}" MinHeight="0" Padding="8,0"
-                            Margin="0,0,6,0" VerticalAlignment="Center"
-                            ToolTip="Disable PWM on every Maestro servo channel (servos go limp)"
-                            Click="DisableAll_Click"/>
-                    <Button Content="Reset" Height="20" MinHeight="0" Padding="8,0"
-                            Margin="0,0,14,0" VerticalAlignment="Center"
-                            ToolTip="Move Maestro servos to configured Default PWM, set both Eye Pops to 0, and send ClearAll to the Arduino"
-                            Click="ResetAll_Click"/>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0">
-                        <Ellipse x:Name="MaestroStatusDot" Width="10" Height="10" Margin="0,0,5,0"
-                                 VerticalAlignment="Center" Visibility="Collapsed"/>
-                        <TextBlock Text="Maestro" Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0">
-                        <Ellipse x:Name="ArduinoStatusDot" Width="10" Height="10" Margin="0,0,5,0"
-                                 VerticalAlignment="Center" Visibility="Collapsed"/>
-                        <TextBlock Text="Arduino" Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0">
-                        <Ellipse x:Name="LeftTicStatusDot" Width="10" Height="10" Margin="0,0,5,0"
-                                 VerticalAlignment="Center" Visibility="Collapsed"/>
-                        <TextBlock Text="Left Tic 249" Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Ellipse x:Name="RightTicStatusDot" Width="10" Height="10" Margin="0,0,5,0"
-                                 VerticalAlignment="Center" Visibility="Collapsed"/>
-                        <TextBlock Text="Right Tic 249" Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </StackPanel>
             </Grid>
         </Border>
 
-        <!-- Sequence work area header and one-line description. -->
-        <Border x:Name="SequenceDescriptionPanel" DockPanel.Dock="Top" Background="{DynamicResource SequencePanelBackground}" Padding="8,6"
+        <!-- Sequence name/status followed by its read-only description. -->
+        <Border x:Name="SequenceDescriptionPanel" Grid.Row="1" Grid.Column="0" Background="{DynamicResource SequencePanelBackground}" Padding="8,6"
                 Margin="6,5,6,0" CornerRadius="{StaticResource PanelCornerRadius}"
                 BorderBrush="{DynamicResource SequenceAccent}" BorderThickness="1">
             <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" Background="{DynamicResource SequenceBadgeBackground}" CornerRadius="{StaticResource ControlCornerRadius}"
+                <Border Grid.RowSpan="2" Grid.Column="0" Background="{DynamicResource SequenceBadgeBackground}" CornerRadius="{StaticResource ControlCornerRadius}"
                         Height="18" Padding="8,0" Margin="0,0,8,0" VerticalAlignment="Center">
                     <TextBlock Text="SEQUENCE" Foreground="#DCEBFA" FontWeight="SemiBold"
                                VerticalAlignment="Center" TextAlignment="Center"/>
                 </Border>
-                <TextBlock Grid.Column="1" Text="Description:" Foreground="{DynamicResource SecondaryText}"
-                           VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <TextBox Grid.Column="2" x:Name="DescriptionBox" MinWidth="240" Height="34"
-                         VerticalAlignment="Center" AcceptsReturn="False" TextWrapping="NoWrap"
-                         VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden"
-                         TextChanged="DescriptionBox_TextChanged"/>
-                <Button Grid.Column="3" x:Name="DescriptionExpandButton" Content="Expand" Height="18" MinHeight="0"
-                        Padding="8,0" Margin="6,0,8,0" VerticalAlignment="Center" ToolTip="Expand the sequence description over the servo grid"
-                        Click="DescriptionExpand_Click"/>
-                <TextBlock Grid.Column="4" x:Name="SequenceFileText" Text="Sequence: (unsaved) *"
+                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="SequenceFileText" Text="Sequence: (unsaved)* — 0 s"
                            Foreground="{DynamicResource WarningText}" FontFamily="Consolas" VerticalAlignment="Center"
-                           MaxWidth="240" TextTrimming="CharacterEllipsis"
+                           TextTrimming="CharacterEllipsis"
                            ToolTip="Current sequence file; * means unsaved changes"/>
-            </Grid>
-        </Border>
-
-
-        <!-- Compact non-modal status line for successful operations. -->
-        <Border DockPanel.Dock="Bottom" Background="{DynamicResource StatusBackground}" Height="26"
-                Margin="6,2,6,5" CornerRadius="{StaticResource ControlCornerRadius}"
-                BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1">
-            <DockPanel LastChildFill="True">
-                <TextBlock x:Name="DirtySummaryText" DockPanel.Dock="Right"
-                           Text="Sequence: Saved  |  Movie: Saved  |  Config: Saved"
-                           Foreground="{DynamicResource SecondaryText}" FontFamily="Consolas"
-                           VerticalAlignment="Center" Margin="12,0,8,0"/>
-                <TextBlock x:Name="StatusText" Text="Ready" Foreground="{DynamicResource SecondaryText}"
-                           VerticalAlignment="Center" Margin="8,0" TextTrimming="CharacterEllipsis"/>
-            </DockPanel>
-        </Border>
-
-
-        <!-- ============ MOVIE TIMELINE ============ -->
-        <Border DockPanel.Dock="Bottom" x:Name="MovieTimelinePanel" Visibility="Collapsed" Height="132"
-                Background="{DynamicResource MoviePanelBackground}" BorderBrush="{DynamicResource MovieAccent}" BorderThickness="1"
-                Margin="6,4,6,0" CornerRadius="{StaticResource PanelCornerRadius}" Padding="8,6">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition x:Name="MovieDescriptionExpandedRow" Height="0"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="40"/>
-                </Grid.RowDefinitions>
-
-                <!-- Expanded movie description is part of the bottom movie area.
-                     Increasing MovieTimelinePanel.Height makes this grow upward. -->
-                <Border x:Name="MovieDescriptionExpandedPanel" Grid.Row="0" Visibility="Collapsed"
-                        Margin="0,0,0,6" Background="{DynamicResource PanelBackground}"
-                        BorderBrush="{DynamicResource FocusBorder}" BorderThickness="1" Padding="10"
-                        CornerRadius="{StaticResource PanelCornerRadius}">
-                    <Grid>
-                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-                        <DockPanel Grid.Row="0" Margin="0,0,0,6" LastChildFill="False">
-                            <TextBlock Text="Movie Description" Foreground="{DynamicResource PrimaryText}" FontWeight="Bold" VerticalAlignment="Center"/>
-                            <Button DockPanel.Dock="Right" Content="Collapse" Padding="8,3" Click="MovieDescriptionCollapse_Click"/>
-                        </DockPanel>
-                        <TextBox Grid.Row="1" x:Name="MovieDescriptionExpandedBox" AcceptsReturn="True" TextWrapping="Wrap"
-                                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                                 Background="{DynamicResource AppBackground}" Foreground="{DynamicResource PrimaryText}"
-                                 BorderBrush="{DynamicResource DividerBrush}" Padding="8"
-                                 TextChanged="MovieDescriptionExpandedBox_TextChanged"/>
-                    </Grid>
-                </Border>
-
-                <Grid Grid.Row="1">
-                    <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="14"/></Grid.RowDefinitions>
-                    <local:MovieTimelineView x:Name="MovieTimeline" Grid.Row="0" Margin="0,0,0,2" Focusable="True"/>
-                    <Border x:Name="MovieEmptyStatePanel" Grid.Row="0" Panel.ZIndex="5"
-                            Background="{DynamicResource MoviePanelBackground}" BorderBrush="{DynamicResource DividerBrush}"
-                            BorderThickness="1" CornerRadius="4" Margin="1,1,1,3">
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <TextBlock Text="Build a movie timeline" Foreground="{DynamicResource PrimaryText}"
-                                       FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,6"/>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <Button Content="Load Movie…" Padding="10,4" Margin="0,0,5,0" Click="EmptyLoadMovie_Click"/>
-                                <Button Content="Insert First Sequence…" Padding="10,4" Click="EmptyInsertFirstSequence_Click"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-                    <ScrollBar x:Name="MovieScroll" Grid.Row="1" Orientation="Horizontal" Height="14" Scroll="MovieScroll_Scroll"/>
-                </Grid>
-                <Grid Grid.Row="2">
+                <Grid Grid.Row="1" Grid.Column="1" Margin="0,3,0,0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Border Grid.Column="0" Background="{DynamicResource MovieBadgeBackground}" CornerRadius="{StaticResource ControlCornerRadius}" Padding="8,3" Margin="0,2,8,2">
-                        <TextBlock Text="MOVIE" Foreground="#FFF1D8" FontWeight="SemiBold"/>
-                    </Border>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <Button x:Name="MoviePreviousButton" Content="|◀" Width="42" Margin="0,0,4,0"
-                                ToolTip="Restart current sequence; if already at its start, move to previous sequence — Left Arrow"
-                                Click="MoviePrevious_Click"/>
-                        <Button x:Name="MoviePlayButton" Content="▶ Movie" Width="82" Margin="0,0,4,0"
-                                ToolTip="Play/Pause movie sequence — Up Arrow" Click="MoviePlay_Click"/>
-                        <Button x:Name="MovieNextButton" Content="▶|" Width="42"
-                                ToolTip="Play next sequence — Right Arrow" Click="MovieNext_Click"/>
-                        <Button Content="−" Width="30" Margin="5,0,2,0" ToolTip="Zoom movie timeline out" Click="MovieZoomOut_Click"/>
-                        <Button Content="+" Width="30" Margin="2,0" ToolTip="Zoom movie timeline in" Click="MovieZoomIn_Click"/>
-                        <Button Content="Fit" Width="42" Margin="2,0" ToolTip="Fit complete movie" Click="MovieZoomFit_Click"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0,0,0">
-                        <TextBlock Text="Movie: " Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="MovieFileText" Text="(unsaved) *" Foreground="{DynamicResource WarningText}"
-                                   VerticalAlignment="Center" FontFamily="Consolas" MaxWidth="155" TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
-                    <TextBlock Grid.Column="3" x:Name="MovieCreatedText" Text="Created:" Foreground="{DynamicResource HeaderText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                    <TextBlock Grid.Column="4" Text="  Description:" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,4,0"/>
-                    <TextBox Grid.Column="5" x:Name="MovieDescriptionBox" MinWidth="180" Height="32" VerticalAlignment="Center"
-                             AcceptsReturn="False" TextWrapping="NoWrap" HorizontalScrollBarVisibility="Hidden"
-                             VerticalScrollBarVisibility="Hidden" TextChanged="MovieDescriptionBox_TextChanged"/>
-                    <Button Grid.Column="6" x:Name="MovieDescriptionExpandButton" Content="Expand" Padding="8,3" Margin="6,0,0,0"
-                            ToolTip="Expand the movie description upward from the movie area" Click="MovieDescriptionExpand_Click"/>
+                    <TextBlock Grid.Column="0" Text="Description:" Foreground="{DynamicResource SecondaryText}"
+                               VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <TextBlock Grid.Column="1" x:Name="SequenceDescriptionText" Foreground="{DynamicResource PrimaryText}"
+                               TextWrapping="Wrap" VerticalAlignment="Center"><Run x:Name="SequenceDescriptionRun"/><Run Text="  "/><Hyperlink
+                            x:Name="SequenceDescriptionEditButton" FontSize="11" FontWeight="Bold" TextDecorations="{x:Null}"
+                            Foreground="{DynamicResource PrimaryText}" ToolTip="Edit the sequence description"
+                            Click="SequenceDescriptionEdit_Click">edit</Hyperlink></TextBlock>
                 </Grid>
             </Grid>
         </Border>
 
-        <!-- ============ SEQUENCE TRANSPORT ============ -->
-        <Border DockPanel.Dock="Bottom" Background="{DynamicResource SequencePanelBackground}"
-                BorderBrush="{DynamicResource SequenceAccent}" BorderThickness="1" Padding="8,6"
-                Margin="6,4,6,0" CornerRadius="{StaticResource PanelCornerRadius}">
-            <StackPanel Orientation="Horizontal">
-                <Button Content="|◀" Width="42" Margin="0,0,4,0" ToolTip="Move sequence cursor to beginning" Click="SequenceRestart_Click"/>
-                <Button x:Name="PlayPauseBtn" Content="▶ Sequence" Width="100" ToolTip="Play/pause sequence — Space (timeline or background focus)" Click="PlayPause_Click"/>
-                <Button Content="■" Width="42" Margin="4,0,0,0" ToolTip="Stop sequence playback" Click="SequenceStop_Click"/>
-                <TextBlock Text="  Time: " Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
-                <TextBlock x:Name="TimeText" Text="0.000 s" Foreground="{DynamicResource WarningText}" FontFamily="Consolas" FontSize="16" VerticalAlignment="Center" Width="110"/>
-                <TextBlock Text="Volume:" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="4,0,5,0"/>
-                <Slider x:Name="VolumeSlider" Width="105" Minimum="0" Maximum="100" Value="100"
-                        TickFrequency="10" IsSnapToTickEnabled="False" VerticalAlignment="Center"
-                        ToolTip="Audio playback volume" ValueChanged="PlaybackVolume_Changed"/>
-                <TextBlock x:Name="VolumeText" Text="100%" Foreground="{DynamicResource SecondaryText}"
-                           Width="42" VerticalAlignment="Center" Margin="5,0,0,0"/>
-                <Separator Width="14" Background="Transparent"/>
-                <Button Content="Zoom −" Padding="8,2" Margin="2,0" Click="ZoomOut_Click"/>
-                <Button Content="Zoom +" Padding="8,2" Margin="2,0" Click="ZoomIn_Click"/>
-                <Button Content="Fit" Padding="8,2" Margin="2,0" Click="ZoomFit_Click"/>
-                <ToggleButton x:Name="MovieTimelineToggle" Content="Movie Timeline" Padding="8,2" Margin="10,0,2,0"
-                              IsChecked="False" ToolTip="Show or hide the movie timeline"
-                              Checked="MovieTimelineToggle_Changed" Unchecked="MovieTimelineToggle_Changed"/>
-                <ToggleButton x:Name="CommandsListToggle" Content="Hide Commands" Padding="8,2" Margin="4,0,2,0"
-                              IsChecked="True" ToolTip="Show or hide the Commands view below the spline"
-                              Checked="CommandsListToggle_Changed" Unchecked="CommandsListToggle_Changed"/>
-                <Button Content="?" Width="30" Margin="6,0,0,0" ToolTip="Controls and hotkeys" Click="HelpControls_Click"/>
-                <TextBlock Text="   wheel zoom • middle-drag pan • right-click actions" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
-            </StackPanel>
-        </Border>
 
-        <!-- ============ 4. SCROLLBAR ============ -->
-        <ScrollBar DockPanel.Dock="Bottom" x:Name="HScroll" Orientation="Horizontal"
-                   Height="16" Scroll="HScroll_Scroll"/>
 
-        <!-- ==================================================================
-             CENTER AREA: servo status grid over the waveform, separated by a
-             draggable GridSplitter handle. Dragging the handle down gives the
-             servo grid more height (more rows visible) and shrinks the
-             waveform; dragging up does the opposite. Min heights keep both
-             panes usable.
-             ================================================================== -->
-        <Grid x:Name="EditorTimelineGrid">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition x:Name="ServoEditorColumn" Width="*" MinWidth="280"/>
-                <ColumnDefinition x:Name="UrdfSplitterColumn" Width="8"/>
-                <ColumnDefinition x:Name="UrdfEditorColumn" Width="*" MinWidth="260"/>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition x:Name="TopEditorRow" Height="250" MinHeight="80"/> <!-- grid + URDF -->
-                <RowDefinition Height="Auto"/>                                      <!-- editor/audio splitter -->
-                <RowDefinition x:Name="AudioTimelineRow" Height="*" MinHeight="120"/> <!-- audio -->
-                <RowDefinition Height="Auto"/>                                      <!-- audio/spline splitter -->
-                <RowDefinition x:Name="SplineTimelineRow" Height="0"/>              <!-- spline -->
-                <RowDefinition x:Name="CommandsTimelineRow" Height="Auto"/>         <!-- commands -->
-            </Grid.RowDefinitions>
-
-            <!-- LEFT: servo grid. While the URDF is docked this is the familiar
-                 single-column editor. When the URDF is undocked, code expands this
-                 border across the former URDF columns and switches to a two-column
-                 section layout: Eye Flaps through Neck on the left, then Lighting &
-                 Vents through Headtop Controls on the right. -->
-            <Border x:Name="ServoGridBorder" Grid.Row="0" Grid.Column="0" Margin="6,5,0,0"
-                    Background="{DynamicResource PanelBackground}" Padding="8,5"
+            <Border x:Name="CommandsAtPointPanel" Grid.Row="2" Grid.Column="0"
+                    Background="{DynamicResource PanelBackground}" Margin="6,5,0,0"
                     CornerRadius="{StaticResource PanelCornerRadius}"
                     BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1">
-                <Grid>
-                    <ScrollViewer x:Name="DockedServoGridScroll"
-                                  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                        <StackPanel>
-                            <ContentPresenter ContentTemplate="{StaticResource ServoHeaderTemplate}" Content="{x:Null}" Margin="0,0,0,2"/>
-                            <ItemsControl x:Name="ServoGridEyeFlaps" ItemTemplate="{StaticResource ServoRowTemplate}"/>
-                            <ItemsControl x:Name="ServoGridNose" ItemTemplate="{StaticResource ServoRowTemplate}"/>
-                            <ItemsControl x:Name="ServoGridEyes" ItemTemplate="{StaticResource ServoRowTemplate}"/>
-                            <ItemsControl x:Name="ServoGridNeck" ItemTemplate="{StaticResource ServoRowTemplate}"/>
-                            <ItemsControl x:Name="ServoGridLightingVents" ItemTemplate="{StaticResource ServoRowTemplate}"/>
-                            <ItemsControl x:Name="ServoGridEyePop" ItemTemplate="{StaticResource ServoRowTemplate}"/>
-                            <ItemsControl x:Name="ServoGridHeadtop" ItemTemplate="{StaticResource ServoRowTemplate}"/>
-                        </StackPanel>
-                    </ScrollViewer>
-
-                    <Grid x:Name="UndockedServoGridColumns" Visibility="Collapsed">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition x:Name="UndockedServoLeftColumn" Width="*" MinWidth="300"/>
-                            <ColumnDefinition Width="8"/>
-                            <ColumnDefinition x:Name="UndockedServoRightColumn" Width="*" MinWidth="300"/>
-                        </Grid.ColumnDefinitions>
-                        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,4,0">
-                            <StackPanel>
-                                <ContentPresenter ContentTemplate="{StaticResource ServoHeaderTemplate}" Content="{x:Null}" Margin="0,0,0,2"/>
-                                <ItemsControl x:Name="UndockedServoGridEyeFlaps" ItemTemplate="{StaticResource ServoRowTemplate}"/>
-                                <ItemsControl x:Name="UndockedServoGridNose" ItemTemplate="{StaticResource ServoRowTemplate}"/>
-                                <ItemsControl x:Name="UndockedServoGridEyes" ItemTemplate="{StaticResource ServoRowTemplate}"/>
-                                <ItemsControl x:Name="UndockedServoGridNeck" ItemTemplate="{StaticResource ServoRowTemplate}"/>
-                            </StackPanel>
-                        </ScrollViewer>
-                        <GridSplitter Grid.Column="1" Width="7" HorizontalAlignment="Center" VerticalAlignment="Stretch"
-                                      Background="{DynamicResource DividerBrush}" ShowsPreview="False"
-                                      ResizeBehavior="PreviousAndNext" ResizeDirection="Columns"
-                                      ToolTip="Drag to resize the two servo-section columns"/>
-                        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="4,0,0,0">
-                            <StackPanel>
-                                <ContentPresenter ContentTemplate="{StaticResource ServoHeaderTemplate}" Content="{x:Null}" Margin="0,0,0,2"/>
-                                <ItemsControl x:Name="UndockedServoGridLightingVents" ItemTemplate="{StaticResource ServoRowTemplate}"/>
-                                <ItemsControl x:Name="UndockedServoGridEyePop" ItemTemplate="{StaticResource ServoRowTemplate}"/>
-                                <ItemsControl x:Name="UndockedServoGridHeadtop" ItemTemplate="{StaticResource ServoRowTemplate}"/>
-                                <Button x:Name="DockUrdfFromGridButton" Content="Dock"
-                                        HorizontalAlignment="Left" Margin="0,8,0,0" Padding="8,3"
-                                        ToolTip="Dock the URDF model back into the editor"
-                                        Click="DockUrdfFromGrid_Click"/>
-                            </StackPanel>
-                        </ScrollViewer>
+                <DockPanel>
+                    <Grid DockPanel.Dock="Top" Margin="8,4,8,2">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="3" x:Name="CommandsAtPointHeader" Text="Commands at cursor: (none)"
+                                   Foreground="{DynamicResource HeaderText}" FontWeight="Bold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="8,0,0,0"/>
+                        <Button Grid.Column="0" Content="+ Add" Margin="4,0" Click="CommandsAtPointAdd_Click"/>
+                        <Button x:Name="CommandsAtPointEditButton" Grid.Column="1" Content="Edit" Margin="4,0" Click="CommandsAtPointEdit_Click"/>
+                        <Button x:Name="CommandsAtPointDeleteButton" Grid.Column="2" Content="Delete" Margin="4,0,0,0" Click="CommandsAtPointDelete_Click"/>
+                        <Button x:Name="DockUrdfButton" Grid.Column="4" Content="Dock URDF" Margin="6,0,0,0"
+                                Visibility="Collapsed" ToolTip="Dock the detached URDF beside Commands" Click="DockUrdf_Click"/>
                     </Grid>
-                </Grid>
+                    <Grid DockPanel.Dock="Top" Margin="19,7,23,3">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="30*"/><ColumnDefinition Width="50*"/><ColumnDefinition Width="9*"/><ColumnDefinition Width="11*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="CONTROL" Style="{StaticResource SectionCaption}"/>
+                        <TextBlock Grid.Column="1" Text="VALUE" Style="{StaticResource SectionCaption}"/>
+                        <TextBlock Grid.Column="2" Text="SPEED" Style="{StaticResource SectionCaption}"/>
+                        <TextBlock Grid.Column="3" Text="TIME (s)" Style="{StaticResource SectionCaption}" TextAlignment="Right"/>
+                    </Grid>
+                    <ListBox x:Name="CommandsAtPointList" Margin="8,2,8,6" SelectionMode="Single"
+                             SelectionChanged="CommandsAtPointList_SelectionChanged"
+                             MouseDoubleClick="CommandsAtPointList_MouseDoubleClick"
+                             PreviewKeyDown="CommandsAtPointList_PreviewKeyDown"
+                             ToolTip="Double-click to edit; Delete removes the selected command" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+
+                        <ListBox.ItemTemplate><DataTemplate>
+                            <Grid ToolTip="{Binding Details}" MinHeight="23">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="30*"/><ColumnDefinition Width="50*"/><ColumnDefinition Width="9*"/><ColumnDefinition Width="11*"/></Grid.ColumnDefinitions>
+                                <Border Width="3" CornerRadius="1.5" Height="17" Background="{Binding AccentBrush}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="0" Text="{Binding NameText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" FontWeight="SemiBold" Margin="12,0,7,0"/>
+                                <TextBlock Grid.Column="1" Text="{Binding ValueText}" TextWrapping="Wrap" FontFamily="Consolas" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <TextBlock Grid.Column="2" Text="{Binding SpeedText}" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" Text="{Binding TimeText}" TextTrimming="CharacterEllipsis" FontFamily="Consolas" Foreground="{DynamicResource SecondaryText}" TextAlignment="Right" VerticalAlignment="Center"/>
+                            </Grid>
+                        </DataTemplate></ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
             </Border>
 
-            <!-- Relative width splitter between the servo grid and embedded URDF. -->
-            <GridSplitter x:Name="UrdfColumnSplitter" Grid.Row="0" Grid.Column="1" Width="7"
+            <GridSplitter x:Name="UrdfColumnSplitter" Grid.Row="0" Grid.RowSpan="3" Grid.Column="1" Width="7"
                           HorizontalAlignment="Center" VerticalAlignment="Stretch"
                           Background="{DynamicResource DividerBrush}"
                           ShowsPreview="False" ResizeBehavior="PreviousAndNext"
                           ResizeDirection="Columns"
-                          ToolTip="Drag to resize the servo grid / URDF model"/>
+                          ToolTip="Drag to resize Commands / URDF model"/>
 
             <!-- RIGHT: embedded URDF. While docked it spans the editor/audio/spline
                  rows and its visible height is continuously controlled by the
                  bottom-center drag handle inside RobotHeadView. -->
             <Border x:Name="RobotHeadEmbeddedBorder" Grid.Row="0" Grid.Column="2"
-                    Margin="0,5,6,0" Panel.ZIndex="30"
+                    Margin="0,5,6,0" Panel.ZIndex="30" VerticalAlignment="Top"
                     Background="{DynamicResource PanelBackground}"
                     CornerRadius="{StaticResource PanelCornerRadius}"
                     BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
@@ -735,38 +411,19 @@
                 <local:RobotHeadView x:Name="EmbeddedHeadView"/>
             </Border>
 
-            <!-- Expanded sequence description occupies the left editor pane. -->
-            <Border x:Name="DescriptionOverlay" Grid.Row="0" Grid.Column="0" Panel.ZIndex="40"
-                    Margin="6,5,0,0" Visibility="Collapsed" VerticalAlignment="Top"
-                    Height="{Binding ActualHeight, ElementName=ServoGridBorder, Converter={StaticResource HalfHeightConverter}}"
-                    Background="{DynamicResource PanelBackground}"
-                    BorderBrush="{DynamicResource FocusBorder}" BorderThickness="1" Padding="10"
-                    CornerRadius="{StaticResource PanelCornerRadius}">
-                <Grid>
-                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-                    <DockPanel Grid.Row="0" Margin="0,0,0,6" LastChildFill="False">
-                        <TextBlock Text="Description" Foreground="{DynamicResource PrimaryText}" FontWeight="Bold" VerticalAlignment="Center"/>
-                        <Button DockPanel.Dock="Right" Content="Collapse" Padding="8,3" Click="DescriptionCollapse_Click"/>
-                    </DockPanel>
-                    <TextBox Grid.Row="1" x:Name="DescriptionExpandedBox" AcceptsReturn="True" TextWrapping="Wrap"
-                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                             Background="{DynamicResource AppBackground}" Foreground="{DynamicResource PrimaryText}"
-                             BorderBrush="{DynamicResource DividerBrush}" Padding="8"
-                             TextChanged="DescriptionExpandedBox_TextChanged"/>
-                </Grid>
-            </Border>
-
-
             <!-- Relative height splitter between editor and audio timeline. -->
-            <GridSplitter Grid.Row="1" Grid.ColumnSpan="3" Height="7"
+            <GridSplitter x:Name="CommandsTimelineSplitter" Grid.Row="3" Grid.ColumnSpan="4" Height="7"
                           HorizontalAlignment="Stretch" VerticalAlignment="Center"
                           Background="{DynamicResource DividerBrush}"
                           ShowsPreview="False" ResizeBehavior="PreviousAndNext"
                           ResizeDirection="Rows"
-                          ToolTip="Drag to resize the editor / audio timeline"/>
+                          ToolTip="Drag to resize Commands / audio timeline"/>
 
             <!-- Audio waveform timeline. -->
-            <Grid Grid.Row="2" Grid.ColumnSpan="3">
+            <Grid x:Name="AudioTimelineArea" Grid.Row="4" Grid.ColumnSpan="4">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                <AdornerDecorator Grid.Row="1">
+                <Grid x:Name="AudioPlotHost">
                 <local:WaveformView x:Name="Waveform"/>
                 <Border x:Name="SequenceEmptyStatePanel" Panel.ZIndex="5"
                         HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -782,10 +439,12 @@
                         </StackPanel>
                     </StackPanel>
                 </Border>
+                </Grid>
+                </AdornerDecorator>
             </Grid>
 
             <!-- Relative height splitter between audio and spline timelines. -->
-            <GridSplitter x:Name="AudioSplineSplitter" Grid.Row="3" Grid.ColumnSpan="3" Height="7"
+            <GridSplitter x:Name="AudioSplineSplitter" Grid.Row="5" Grid.ColumnSpan="4" Height="7"
                           HorizontalAlignment="Stretch" VerticalAlignment="Center"
                           Background="{DynamicResource DividerBrush}"
                           ShowsPreview="False" ResizeBehavior="PreviousAndNext"
@@ -793,66 +452,62 @@
                           Visibility="{Binding Visibility, ElementName=SplineArea}"
                           ToolTip="Drag to resize the audio / spline timelines"/>
 
-            <Border x:Name="SplineArea" Grid.Row="4" Grid.ColumnSpan="3" MinHeight="80"
+            <Border x:Name="SplineArea" Grid.Row="6" Grid.ColumnSpan="4" MinHeight="80"
                     Visibility="Collapsed" Margin="0,4,0,0"
                     Background="{DynamicResource PanelBackground}"
                     CornerRadius="{StaticResource PanelCornerRadius}"
                     BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0">
-                <Grid>
-                    <local:SplineView x:Name="Spline"/>
+                <Grid x:Name="SplineAreaGrid">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <AdornerDecorator Grid.Row="1">
+                        <Grid x:Name="SplinePlotHost"><local:SplineView x:Name="Spline"/></Grid>
+                    </AdornerDecorator>
 
-                    <DockPanel VerticalAlignment="Top" Margin="8,4">
-                        <!-- Sample-rate picklist (upper right) -->
-                        <TextBlock DockPanel.Dock="Right" x:Name="SplineInspectorText"
-                                   Text="Hover a spline for exact time/value" Foreground="{DynamicResource SecondaryText}"
-                                   Background="{DynamicResource InspectorBackground}" Padding="6,2" Margin="12,0,0,0"/>
+                    <Grid x:Name="SplineLegendStrip" Grid.Row="0" Margin="8,4">
                         <!-- Legend: colored square + name + show/hide box -->
                         <ItemsControl x:Name="SplineLegend">
+                            <ItemsControl.ItemsSource>
+                                <CompositeCollection>
+                                    <CollectionContainer/>
+                                    <Button x:Name="SplineShowAllButton" Content="show all"
+                                            Visibility="Collapsed" FontSize="11" Height="25" MinHeight="0" Padding="7,0" Margin="0,2"
+                                            ToolTip="Show every enabled spline line" Click="SplineShowAll_Click"/>
+                                </CompositeCollection>
+                            </ItemsControl.ItemsSource>
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel Orientation="Horizontal"/>
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,14,0">
-                                        <CheckBox VerticalAlignment="Center"
-                                                  IsChecked="{Binding Visible, Mode=TwoWay}"
-                                                  Click="LegendToggle_Click"/>
-                                        <Rectangle Width="12" Height="12" Margin="4,0"
-                                                   Fill="{Binding Brush}" VerticalAlignment="Center"/>
-                                        <TextBlock Text="{Binding Name}"
-                                                   Foreground="{Binding Brush}"
-                                                   VerticalAlignment="Center"/>
-                                    </StackPanel>
+                            <ItemsControl.Resources>
+                                <DataTemplate DataType="{x:Type local:SplineLegendItem}">
+                                    <Border CornerRadius="11" BorderThickness="1" Padding="7,3" Margin="0,2,6,2">
+                                        <Border.Style><Style TargetType="Border">
+                                            <Setter Property="Background" Value="{DynamicResource ElevatedPanelBackground}"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource FocusBorder}"/></Trigger>
+                                                <DataTrigger Binding="{Binding Visible}" Value="False">
+                                                    <DataTrigger.EnterActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="Opacity" To="0.48" Duration="0:0:0.12"/></Storyboard></BeginStoryboard></DataTrigger.EnterActions>
+                                                    <DataTrigger.ExitActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12"/></Storyboard></BeginStoryboard></DataTrigger.ExitActions>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style></Border.Style>
+                                        <CheckBox IsChecked="{Binding Visible, Mode=TwoWay}" Click="LegendToggle_Click" VerticalContentAlignment="Center"
+                                                  ToolTip="Show or hide this spline curve">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Rectangle Width="13" Height="13" Margin="4,0,5,0" Fill="{Binding Brush}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding Name}" Foreground="{DynamicResource PrimaryText}" FontSize="11" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </CheckBox>
+                                    </Border>
                                 </DataTemplate>
-                            </ItemsControl.ItemTemplate>
+                            </ItemsControl.Resources>
                         </ItemsControl>
-                    </DockPanel>
+                    </Grid>
                 </Grid>
             </Border>
 
-            <!-- Commands inspector sits directly below the spline (or below the
-                 audio timeline when no splines are enabled), above the movie area. -->
-            <Border x:Name="CommandsAtPointPanel" Grid.Row="5" Grid.ColumnSpan="3"
-                    Background="{DynamicResource PanelBackground}" Margin="6,4,6,0"
-                    CornerRadius="{StaticResource PanelCornerRadius}"
-                    BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1">
-                <DockPanel>
-                    <Grid DockPanel.Dock="Top" Margin="8,4,8,2">
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" x:Name="CommandsAtPointHeader" Text="Commands at cursor: (none)"
-                                   Foreground="{DynamicResource HeaderText}" FontWeight="Bold" VerticalAlignment="Center"/>
-                        <Button Grid.Column="1" Content="+ Add" Margin="4,0" Click="CommandsAtPointAdd_Click"/>
-                        <Button Grid.Column="2" Content="Edit" Margin="4,0" Click="CommandsAtPointEdit_Click"/>
-                        <Button Grid.Column="3" Content="Delete" Margin="4,0,0,0" Click="CommandsAtPointDelete_Click"/>
-                    </Grid>
-                    <ListBox x:Name="CommandsAtPointList" Height="72" Margin="8,2,8,6" SelectionMode="Single"
-                             MouseDoubleClick="CommandsAtPointList_MouseDoubleClick"
-                             PreviewKeyDown="CommandsAtPointList_PreviewKeyDown"
-                             ToolTip="Double-click to edit; Delete removes the selected command"/>
-                </DockPanel>
-            </Border>
         </Grid>
 
     </DockPanel>

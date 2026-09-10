@@ -14,11 +14,19 @@
         "workflow"
       ],
       "related": [
+        "step-by-step",
         "interface",
         "sequence-editor",
         "servo-grid",
         "controls-hotkeys"
       ]
+    },
+    {
+      "id": "step-by-step",
+      "title": "Step-by-Step Tutorials",
+      "file": "StepByStep.md",
+      "keywords": ["tutorial", "walkthrough", "step by step", "instructions", "beginner", "sequence", "spline", "movie", "loop", "pose", "save"],
+      "related": ["getting-started", "commands", "spline-editor", "movie-timeline", "urdf-viewer", "animation-library", "files-configuration", "live-drive-hardware"]
     },
     {
       "id": "interface",
@@ -66,7 +74,7 @@
     },
     {
       "id": "servo-grid",
-      "title": "Servo Grid",
+      "title": "Servo Editing (replaces Grid)",
       "file": "ServoGrid.md",
       "keywords": [
         "grid",

@@ -51,7 +51,7 @@ Positive-only controls begin at their Zero point and travel toward the appropria
 
 ## Zero Flaps
 
-After setting NoseBody and NoseBasket from the main Grid, Zero Flaps calculates flap zero values intended to make the flap surfaces horizontal for the current nose pose.
+After selecting a timeline pose with the desired NoseBody and NoseBasket values, Zero Flaps calculates flap zero values intended to make the flap surfaces horizontal for the current nose pose.
 
 ## Audio LED Gain
 

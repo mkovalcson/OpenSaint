@@ -23,8 +23,7 @@
 //                                 command; a '+' appears on the waveform)
 //   * LEFT-click a point, then press DELETE -> delete that point (the
 //                                 selected point is drawn with a white ring)
-//   * MIDDLE-click an already-selected shared NeckNodUp/NeckTiltRight point
-//                                 -> toggle which neck mode owns that point
+//   * MIDDLE-drag anywhere (including points) -> pan the timeline
 // The view raises events; MainWindow mutates the underlying ServoCommand
 // objects and rebuilds the curves, so edits flow through the whole app.
 //
@@ -126,8 +125,10 @@ namespace ServoAnimator
     public class SplineView : SKElement
     {
         private readonly TimelineDrawingCache _drawingCache = new();
-        public new void InvalidateVisual() { _drawingCache.Invalidate(); base.InvalidateVisual(); }
-        public void InvalidateCursor() => base.InvalidateVisual();
+        public new void InvalidateVisual() { _drawingCache.Invalidate(); _cursorPresenter?.Update(); base.InvalidateVisual(); }
+        private readonly TimelineCursorPresenter _cursorPresenter;
+        public void InvalidateCursor() { if (_cursorPresenter?.Update() != true) base.InvalidateVisual(); }
+        public bool CombinedMode { get; set; }
         private static SKColor ThemeSk(string key, SKColor fallback)
         {
             var c = ThemeManager.GetColor(key,
@@ -141,7 +142,12 @@ namespace ServoAnimator
         public double Duration { get; set; }
 
         /// <summary>Curves to draw (rebuilt by MainWindow after any edit).</summary>
-        public List<SplineCurve> Curves { get; set; } = new();
+        private List<SplineCurve> _curves = new();
+        public List<SplineCurve> Curves
+        {
+            get => _curves;
+            set { _curves = value ?? new(); InvalidateVisual(); }
+        }
 
         /// <summary>The waveform to forward zoom/pan gestures to, keeping the
         /// two areas driving each other.</summary>
@@ -151,6 +157,7 @@ namespace ServoAnimator
         public event Action<double> TimeClicked;
         /// <summary>Right click on the cursor: open the shared cursor menu.</summary>
         public event Action<double> RightClicked;
+        public event Action<double> CommandsEditRequested;
 
         // ---- point-editing events (MainWindow mutates the commands) ----
         /// <summary>Left-drag: (servo, point time key, new value).</summary>
@@ -160,15 +167,34 @@ namespace ServoAnimator
         /// <summary>Ctrl+left-click or double-left-click on a line:
         /// (servo, time key, value).</summary>
         public event Action<ServoNames, double, int> PointAdded;
-        /// <summary>Middle-click a selected shared-neck point: toggle it
-        /// between NeckNodUp and NeckTiltRight.</summary>
-        public event Action<ServoNames, double> PointServoToggled;
         /// <summary>A point drag finished (MainWindow does a full refresh).</summary>
         public event Action DragCompleted;
         /// <summary>Delete pressed with a point selected: (servo, time key).</summary>
         public event Action<ServoNames, double> PointDeleted;
-        /// <summary>Exact hover/selection information for the small spline inspector.</summary>
-        public event Action<string> InfoChanged;
+        private readonly System.Windows.Controls.ToolTip _pointInfo = new()
+        {
+            Placement = System.Windows.Controls.Primitives.PlacementMode.RelativePoint,
+            IsHitTestVisible = false,
+            StaysOpen = true,
+        };
+
+        private void ShowPointInfo(string text)
+        {
+            if (!IsMouseOver) { HidePointInfo(); return; }
+            var p = Mouse.GetPosition(this);
+            _pointInfo.Content = text;
+            _pointInfo.HorizontalOffset = p.X + 14;
+            _pointInfo.VerticalOffset = p.Y;
+            _pointInfo.IsOpen = true;
+        }
+
+        private void HidePointInfo() => _pointInfo.IsOpen = false;
+
+        protected override void OnMouseLeave(MouseEventArgs e)
+        {
+            base.OnMouseLeave(e);
+            HidePointInfo();
+        }
 
         // ---- selection (left-click a point, then Delete removes it) ----
         private bool _hasSelection;
@@ -177,7 +203,10 @@ namespace ServoAnimator
 
         public SplineView()
         {
-            Unloaded += (_, _) => _drawingCache.Dispose();
+            _cursorPresenter = new TimelineCursorPresenter(this, () => XAtTime(CursorTime),
+                System.Windows.Media.Color.FromRgb(255, 80, 80), visible: () => !CombinedMode);
+            _pointInfo.PlacementTarget = this;
+            Unloaded += (_, _) => { HidePointInfo(); _drawingCache.Dispose(); };
             // Needed so the view can receive the Delete key after a point is
             // selected with the left mouse button.
             Focusable = true;
@@ -196,8 +225,8 @@ namespace ServoAnimator
         private double _panStartView;
         private bool _panning;
 
-        public double TimeAtX(double x) => ViewStart + x / PixelsPerSecond;
-        public float XAtTime(double t) => (float)((t - ViewStart) * PixelsPerSecond);
+        public double TimeAtX(double x) => ViewStart + (x - WaveformView.TimelineLeftInset) / PixelsPerSecond;
+        public float XAtTime(double t) => WaveformView.TimelineLeftInset + (float)((t - ViewStart) * PixelsPerSecond);
 
         // ==================== rendering ====================
 
@@ -205,7 +234,7 @@ namespace ServoAnimator
         {
             base.OnPaintSurface(e);
             var canvas = e.Surface.Canvas;
-            canvas.Clear(ThemeSk("PanelBackground", new SKColor(27, 30, 35)));
+            canvas.Clear(CombinedMode ? SKColors.Transparent : ThemeSk("PanelBackground", new SKColor(27, 30, 35)));
             if (ActualWidth <= 0 || ActualHeight <= 0) return;
 
             float scale = (float)(e.Info.Width / Math.Max(1.0, ActualWidth));
@@ -215,19 +244,19 @@ namespace ServoAnimator
             float pad = Pad;   // vertical padding inside the strip
 
             _drawingCache.Draw(canvas, e.Info,
-                (e.Info.Width, e.Info.Height, w, h, ViewStart, PixelsPerSecond, ThemeManager.CurrentTheme),
+                (e.Info.Width, e.Info.Height, w, h, ViewStart, PixelsPerSecond, ThemeManager.CurrentTheme, CombinedMode),
                 background =>
                 {
-                    background.Clear(ThemeSk("PanelBackground", new SKColor(27, 30, 35)));
+                    background.Clear(CombinedMode ? SKColors.Transparent : ThemeSk("PanelBackground", new SKColor(27, 30, 35)));
                     background.Scale(scale);
-                    DrawTimeGrid(background, w, h);
-                    using var mid = new SKPaint { Color = ThemeSk("DividerBrush", new SKColor(70, 74, 82, 120)), StrokeWidth = 1 };
-                    background.DrawLine(0, h / 2, w, h / 2, mid);
+                    if (!CombinedMode) DrawTimeGrid(background, w, h);
+                    DrawValueGrid(background, w, h);
                     foreach (var c in Curves.Where(c => c.Visible)) DrawCurve(background, c, w, h, pad);
                 });
             canvas.Scale(scale);
 
             // Playback / selection cursor, matching the waveform's.
+            if (!CombinedMode && !_cursorPresenter.IsAttached)
             using (var cur = new SKPaint { Color = new SKColor(255, 80, 80), StrokeWidth = 2 })
             {
                 float cx = XAtTime(CursorTime);
@@ -247,14 +276,38 @@ namespace ServoAnimator
             foreach (double n in nice)
                 if (n * PixelsPerSecond >= 70) { interval = n; break; }
 
-            double visible = w / Math.Max(1e-9, PixelsPerSecond);
+            double visible = Math.Max(1, w - WaveformView.TimelineLeftInset) / Math.Max(1e-9, PixelsPerSecond);
             double first = Math.Floor(ViewStart / interval) * interval;
             for (double t = first; t <= ViewStart + visible + interval; t += interval)
             {
                 if (t < 0) continue;
                 float x = XAtTime(t);
-                if (x < -2 || x > w + 2) continue;
+                if (x < WaveformView.TimelineLeftInset || x > w + 2) continue;
+                bool major = Math.Abs(t - Math.Round(t)) < 1e-6;
+                grid.Color = ThemeSk("SecondaryText", new SKColor(150, 165, 185)).WithAlpha(major ? (byte)65 : (byte)27);
                 canvas.DrawLine(x, 0, x, h, grid);
+            }
+        }
+
+        internal static float StandardValueY(double value, float height) =>
+            (float)(height - Pad - (value + 100) / 200 * (height - 2 * Pad));
+
+        /// <summary>Reference lines for the usual -100..100 range. Other ranges
+        /// still normalize to the same graph height; their exact values are shown on hover.</summary>
+        private void DrawValueGrid(SKCanvas canvas, float width, float height)
+        {
+            using var line = new SKPaint { Color = ThemeSk("DividerBrush", new SKColor(70, 74, 82)), StrokeWidth = 1 };
+            using var label = new SKPaint { Color = ThemeSk("SecondaryText", new SKColor(170, 175, 185)), TextSize = 9, IsAntialias = true };
+            for (int value = -100; value <= 100; value += 25)
+            {
+                float y = StandardValueY(value, height);
+                line.StrokeWidth = value == 0 ? 1.5f : 1;
+                line.Color = ThemeSk("SecondaryText", new SKColor(170, 175, 185)).WithAlpha(value == 0 ? (byte)140 : (byte)48);
+                canvas.DrawLine(0, y, width, y, line);
+                // At small graph heights, retain every line but reduce label density.
+                if (height >= 120 || value % 50 == 0)
+                    canvas.DrawText(value > 0 ? $"+{value}" : value.ToString(), 4,
+                        Math.Clamp(y - 2, 9, Math.Max(9, height - 2)), label);
             }
         }
 
@@ -309,7 +362,7 @@ namespace ServoAnimator
                         line.Color = c.PointColors[seg];
                         using var path = new SKPath();
                         bool started = false;
-                        int x0 = Math.Max(0, (int)XAtTime(c.T[seg]));
+                        int x0 = Math.Max((int)WaveformView.TimelineLeftInset, (int)XAtTime(c.T[seg]));
                         int x1 = Math.Min((int)w, (int)XAtTime(c.T[seg + 1]) + 1);
                         for (int x = x0; x <= x1; x++)
                         {
@@ -329,7 +382,7 @@ namespace ServoAnimator
                     using var path = new SKPath();
                     bool started = false;
 
-                    int x0 = Math.Max(0, (int)XAtTime(tFirst));
+                    int x0 = Math.Max((int)WaveformView.TimelineLeftInset, (int)XAtTime(tFirst));
                     int x1 = Math.Min((int)w, (int)XAtTime(tLast) + 1);
                     for (int x = x0; x <= x1; x++)
                     {
@@ -348,7 +401,7 @@ namespace ServoAnimator
             // (press Delete to remove it).
             using var sel = new SKPaint
             {
-                Color = SKColors.White, StrokeWidth = 2,
+                Color = ThemeSk("PrimaryText", SKColors.White), StrokeWidth = 2.5f,
                 Style = SKPaintStyle.Stroke, IsAntialias = true,
             };
             for (int i = 0; i < c.T.Length; i++)
@@ -454,11 +507,40 @@ namespace ServoAnimator
 
         // ==================== mouse interaction ====================
 
+        protected override System.Windows.Media.HitTestResult HitTestCore(System.Windows.Media.PointHitTestParameters parameters)
+        {
+            if (CombinedMode && !WantsCombinedInput(parameters.HitPoint)) return null;
+            return base.HitTestCore(parameters);
+        }
+
+        internal bool WantsCombinedInput(System.Windows.Point point)
+        {
+            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)) return false;
+            if (SyncTarget != null && System.Windows.Media.VisualTreeHelper.GetParent(this) is System.Windows.DependencyObject parent &&
+                ReferenceEquals(parent, System.Windows.Media.VisualTreeHelper.GetParent(SyncTarget)) &&
+                SyncTarget.ClipHandleAt(TranslatePoint(point, SyncTarget)) != null) return false;
+            return HitPoint(point, out _) != null || HitLine(point, out _, out _) != null;
+        }
+
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
             base.OnMouseWheel(e);
             // Zoom the shared timeline; MainWindow mirrors the change back here.
-            SyncTarget?.ZoomBy(e.Delta > 0 ? 1.25 : 1 / 1.25, e.GetPosition(this).X);
+            SyncTarget?.ZoomBy(e.Delta > 0 ? 1.25 : 1 / 1.25);
+            e.Handled = true;
+        }
+
+        internal bool TryEditSelectedPoint(System.Windows.Point point, int clickCount)
+        {
+            if (clickCount != 2 || !_hasSelection) return false;
+            var curve = HitPoint(point, out int index);
+            if (curve == null || OwnerAt(curve, index) != _selServo ||
+                ServoCommand.TimeKey(curve.T[index]) != _selKey) return false;
+            _drag = DragKind.None;
+            if (IsMouseCaptured) ReleaseMouseCapture();
+            HidePointInfo();
+            CommandsEditRequested?.Invoke(_selKey);
+            return true;
         }
 
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
@@ -470,6 +552,12 @@ namespace ServoAnimator
             // double-clicking an existing point from accidentally trying to add
             // another point at the same time.
             var pc = HitPoint(p, out int idx);
+
+            if (TryEditSelectedPoint(p, e.ClickCount))
+            {
+                e.Handled = true;
+                return;
+            }
 
             // CTRL + left click OR a double-left-click on a spline line creates
             // a new control point on the curve.  On the shared neck curve the
@@ -492,7 +580,7 @@ namespace ServoAnimator
                     _selServo = owner;
                     _selKey = key;
                     Focus();
-                    InfoChanged?.Invoke($"{owner}: {lv:0} @ {key:F3} s (selected)");
+                    ShowPointInfo($"{owner}: {lv:0} @ {key:F3} s (selected)");
                     InvalidateVisual();
                     e.Handled = true;
                 }
@@ -519,7 +607,7 @@ namespace ServoAnimator
 
                 Focus();               // receive the Delete key
                 CaptureMouse();
-                InfoChanged?.Invoke($"{_dragServo}: {pc.V[idx]:0} @ {pc.T[idx]:F3} s (selected)");
+                ShowPointInfo($"{_dragServo}: {pc.V[idx]:0} @ {pc.T[idx]:F3} s (selected)");
                 InvalidateVisual();    // show the selection ring
                 return;
             }
@@ -527,7 +615,7 @@ namespace ServoAnimator
             // Plain click on empty space: clear any selection and move the
             // cursor (as on the waveform).
             _hasSelection = false;
-            InfoChanged?.Invoke("Hover a spline for exact time/value");
+            HidePointInfo();
             InvalidateVisual();
             TimeClicked?.Invoke(Math.Clamp(TimeAtX(p.X), 0, Math.Max(0, Duration)));
         }
@@ -554,34 +642,18 @@ namespace ServoAnimator
             if (e.ChangedButton == MouseButton.Middle)
             {
                 var p = e.GetPosition(this);
-                var pc = HitPoint(p, out int idx);
-                if (pc != null)
-                {
-                    ServoNames owner = OwnerAt(pc, idx);
-                    double key = ServoCommand.TimeKey(pc.T[idx]);
-
-                    // A middle click on the ALREADY SELECTED shared-neck point
-                    // changes which logical ganged control owns that point.
-                    // Middle-drag everywhere else retains normal timeline pan.
-                    if (pc.IsSharedNeck && IsSharedNeckServo(owner) &&
-                        _hasSelection && _selServo == owner && _selKey == key)
-                    {
-                        ServoNames next = owner == ServoNames.NeckNodUp
-                            ? ServoNames.NeckTiltRight : ServoNames.NeckNodUp;
-                        PointServoToggled?.Invoke(owner, key);
-                        _selServo = next;
-                        InfoChanged?.Invoke($"{next}: {pc.V[idx]:0} @ {key:F3} s (selected)");
-                        InvalidateVisual();
-                        e.Handled = true;
-                        return;
-                    }
-                }
-
                 _panning = true;
                 _panStart = p;
                 _panStartView = ViewStart;
                 CaptureMouse();
+                e.Handled = true;
             }
+        }
+
+        protected override void OnLostMouseCapture(MouseEventArgs e)
+        {
+            _panning = false;
+            base.OnLostMouseCapture(e);
         }
 
         protected override void OnMouseMove(MouseEventArgs e)
@@ -599,13 +671,14 @@ namespace ServoAnimator
                 {
                     int value = (int)Math.Round(VOf(c, p.Y));
                     PointValueChanged?.Invoke(_dragServo, _dragKey, value);
-                    InfoChanged?.Invoke($"{_dragServo}: {value} @ {_dragKey:F3} s (selected)");
+                    ShowPointInfo($"{_dragServo}: {value} @ {_dragKey:F3} s (selected)");
                 }
                 return;
             }
 
             if (_drag == DragKind.Time)
             {
+                if (_pointInfo.IsOpen) ShowPointInfo(_pointInfo.Content as string);
                 // Dragging left/right moves the point's time offset. Skip
                 // moves that would land exactly on another point of the same
                 // servo (two control points can't share a time).
@@ -624,12 +697,13 @@ namespace ServoAnimator
                 var moved = CurveOf(_dragServo);
                 int movedIndex = moved == null ? -1 : Array.FindIndex(moved.T, tt => ServoCommand.TimeKey(tt) == newKey);
                 double movedValue = movedIndex >= 0 ? moved.V[movedIndex] : 0;
-                InfoChanged?.Invoke($"{_dragServo}: {movedValue:0} @ {newKey:F3} s (selected)");
+                ShowPointInfo($"{_dragServo}: {movedValue:0} @ {newKey:F3} s (selected)");
                 return;
             }
 
             if (_panning)
             {
+                HidePointInfo();
                 double dx = p.X - _panStart.X;
                 SyncTarget?.SetViewStart(_panStartView - dx / PixelsPerSecond);
                 return;
@@ -641,16 +715,15 @@ namespace ServoAnimator
             {
                 Cursor = Cursors.Hand;
                 ServoNames owner = OwnerAt(hp, hi);
-                InfoChanged?.Invoke($"{owner}: {hp.V[hi]:0} @ {hp.T[hi]:F3} s" +
+                ShowPointInfo($"{owner}: {hp.V[hi]:0} @ {hp.T[hi]:F3} s" +
                     (_hasSelection && _selServo == owner && _selKey == ServoCommand.TimeKey(hp.T[hi]) ? " (selected)" : ""));
             }
             else
             {
                 var hl = HitLine(p, out double ht, out double hv);
                 Cursor = hl != null ? Cursors.Cross : Cursors.Arrow;
-                InfoChanged?.Invoke(hl != null
-                    ? $"{OwnerAtTime(hl, ht)}: {hv:0.##} @ {ht:F3} s"
-                    : (_hasSelection ? $"{_selServo} @ {_selKey:F3} s (selected)" : "Hover a spline for exact time/value"));
+                if (hl != null) ShowPointInfo($"{OwnerAtTime(hl, ht)}: {hv:0.##} @ {ht:F3} s");
+                else HidePointInfo();
             }
         }
 
@@ -665,7 +738,7 @@ namespace ServoAnimator
 
             PointDeleted?.Invoke(_selServo, _selKey);
             _hasSelection = false;
-            InfoChanged?.Invoke("Hover a spline for exact time/value");
+            HidePointInfo();
             InvalidateVisual();
             e.Handled = true;
         }
@@ -687,7 +760,7 @@ namespace ServoAnimator
             // but let a right click elsewhere on the vertical cursor open the
             // same cursor actions that are available from the waveform.
             if (e.ChangedButton == MouseButton.Right &&
-                Math.Abs(e.GetPosition(this).X - XAtTime(CursorTime)) <= CursorHitRadius)
+                (CombinedMode || Math.Abs(e.GetPosition(this).X - XAtTime(CursorTime)) <= CursorHitRadius))
             {
                 RightClicked?.Invoke(CursorTime);
                 e.Handled = true;

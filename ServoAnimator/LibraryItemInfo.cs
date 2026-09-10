@@ -15,6 +15,12 @@ namespace ServoAnimator
     public class LibraryItemInfo : INotifyPropertyChanged
     {
         private string _description = "";
+        private string _category = "none";
+        public string Category
+        {
+            get => _category;
+            set { _category = LibraryCategories.Normalize(value); OnPropertyChanged(); }
+        }
         private DateTime _modified;
 
         public string FullPath { get; init; } = "";
@@ -111,6 +117,7 @@ namespace ServoAnimator
                         FileName = Path.GetFileName(relative),
                         Modified = File.GetLastWriteTime(path),
                         Description = item.Description ?? "",
+                        Category = item.Category,
                         AudioFiles = audio,
                         ImagePath = imagePath,
                         ImageSource = LoadImage(imagePath),
@@ -134,7 +141,9 @@ namespace ServoAnimator
             }
 
             return results
-                .OrderBy(i => i.RelativePath, StringComparer.OrdinalIgnoreCase)
+                .OrderBy(i => i.Category, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(i => i.FileName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(i => i.Folder, StringComparer.OrdinalIgnoreCase)
                 .ToList();
         }
 

@@ -111,7 +111,7 @@ namespace ServoAnimator
         private readonly Button _driveToggleButton = new();
         private readonly Button _collisionToggleButton = new();
         private readonly Button _dockToggleButton = new();
-        private readonly StackPanel _cameraRow = new();
+        private readonly Grid _cameraRow = new();
         private readonly Thumb _verticalResizeHandle = new();
 
         // Pose editor overlay.  Controls are ordinary 2-D WPF chrome projected
@@ -282,8 +282,8 @@ namespace ServoAnimator
                 RefreshCollisionState();
             };
 
-            // Light-blue neutral background requested for the URDF preview.
-            Background = new SolidColorBrush(Color.FromRgb(0xC0, 0xED, 0xFC));
+            // Neutral studio backdrop preserves contrast with the model's dark details.
+            SetResourceReference(BackgroundProperty, "ViewportBackground");
 
             _camera.FieldOfView = 38;
             _viewport.Camera = _camera;
@@ -352,7 +352,15 @@ namespace ServoAnimator
             _bottomControls.Children.Add(_dockToggleButton);
 
             // Camera turn/recenter row: left 90°, Recenter, right 90°.
-            _cameraRow.Orientation = Orientation.Horizontal;
+            // Stretch Recenter so the final arrow shares the UnDock right edge.
+            _cameraRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            _cameraRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            _cameraRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            _cameraRow.SetBinding(WidthProperty, new System.Windows.Data.Binding(nameof(ActualWidth))
+            {
+                Source = _dockToggleButton
+            });
+            _cameraRow.SizeChanged += (_, _) => UpdatePoseOverlayLayout();
             _cameraRow.Margin = new Thickness(0, 0, 0, 3);
 
             _cameraMinus90Button.Content = "←";
@@ -367,12 +375,14 @@ namespace ServoAnimator
             _recenterButton.Margin = new Thickness(0, 0, 3, 0);
             _recenterButton.ToolTip = "Set camera yaw and pitch to 0° while preserving zoom";
             _recenterButton.Click += (_, _) => RecenterCamera();
+            Grid.SetColumn(_recenterButton, 1);
             _cameraRow.Children.Add(_recenterButton);
 
             _cameraPlus90Button.Content = "→";
             _cameraPlus90Button.Padding = new Thickness(5, 2, 5, 2);
             _cameraPlus90Button.ToolTip = "Turn the camera 90° to the right";
             _cameraPlus90Button.Click += (_, _) => TurnCameraDegrees(90.0);
+            Grid.SetColumn(_cameraPlus90Button, 2);
             _cameraRow.Children.Add(_cameraPlus90Button);
             _bottomControls.Children.Add(_cameraRow);
             Children.Add(_bottomControls);
@@ -773,9 +783,8 @@ namespace ServoAnimator
             AddPoseSliderResetButton(_leftEyePopSlider, "Reset left Eye Pop", () => _pose.LeftEyePop = 0);
             AddPoseSliderResetButton(_rightEyePopSlider, "Reset right Eye Pop", () => _pose.RightEyePop = 0);
 
-            // Top-of-screen accessory controls. Their horizontal positions follow
-            // the corresponding URDF hardware while their vertical positions stay
-            // pinned to the top of the display so extended antennas remain usable.
+            // Accessory controls are anchored to viewport edges rather than
+            // moving projected hardware, keeping them reachable while orbiting.
             ConfigurePoseSlider(_whipRaiseLowerSlider, "Whip antenna up/down", 0, 100,
                 Orientation.Vertical, 28, 118);
             _whipRaiseLowerSlider.ValueChanged += (_, e) =>
@@ -981,6 +990,7 @@ namespace ServoAnimator
 
         private void ConfigureIrisSlider(Slider slider, string toolTip)
         {
+            slider.SetResourceReference(StyleProperty, "UrdfPoseSlider");
             slider.Minimum = -100;
             slider.Maximum = 100;
             slider.Width = 86;
@@ -992,6 +1002,7 @@ namespace ServoAnimator
         private static void ConfigurePoseSlider(Slider slider, string toolTip,
             double minimum, double maximum, Orientation orientation, double width, double height)
         {
+            slider.SetResourceReference(StyleProperty, "UrdfPoseSlider");
             slider.Minimum = minimum;
             slider.Maximum = maximum;
             slider.Orientation = orientation;
@@ -1723,10 +1734,9 @@ namespace ServoAnimator
         private void UpdatePoseModeButtons()
         {
             _poseButton.Content = _poseEditEnabled ? "Pose: On" : "Pose";
-            _poseButton.Background = new SolidColorBrush(_poseEditEnabled
-                ? Color.FromRgb(0xC9, 0xED, 0xC5)
-                : Color.FromRgb(0xDD, 0xDD, 0xDD));
-            _poseButton.Foreground = Brushes.Black;
+            _poseButton.SetResourceReference(Button.BackgroundProperty, _poseEditEnabled ? "SequenceAccentSurface" : "ControlBackground");
+            _poseButton.SetResourceReference(Button.BorderBrushProperty, _poseEditEnabled ? "SequenceAccent" : "ControlBorder");
+            _poseButton.SetResourceReference(Button.ForegroundProperty, "PrimaryText");
             _lrModeButton.Content = _lrJoined ? "LR Joined" : "LR Split";
             _lrModeButton.Visibility = _poseEditEnabled ? Visibility.Visible : Visibility.Collapsed;
             _poseRgbCommandBox.Visibility = _poseEditEnabled ? Visibility.Visible : Visibility.Collapsed;
@@ -1927,9 +1937,6 @@ namespace ServoAnimator
         {
             if (ActualWidth < 2 || ActualHeight < 2) return;
 
-            // Pose button: true geometric midpoint between the camera's right
-            // arrow and the bottom-center resize-handle location. This remains
-            // meaningful in the detached view, where the handle itself is hidden.
             Point arrowCenter;
             try
             {
@@ -1939,9 +1946,8 @@ namespace ServoAnimator
             }
             catch { arrowCenter = new Point(150, ActualHeight - 22); }
             var bottomHandleCenter = new Point(ActualWidth / 2.0, ActualHeight - 6.0);
-            Point poseButtonCenter =
-                new((arrowCenter.X + bottomHandleCenter.X) / 2.0,
-                    (arrowCenter.Y + bottomHandleCenter.Y) / 2.0);
+            Point poseButtonCenter = new((arrowCenter.X + bottomHandleCenter.X) / 2.0,
+                                        (arrowCenter.Y + bottomHandleCenter.Y) / 2.0);
             SetCanvasCenter(_poseButton, poseButtonCenter);
             double poseWidth = Math.Max(52.0, _poseButton.ActualWidth);
             double faceWidth = Math.Max(72.0, _faceResetButton.ActualWidth);
@@ -2104,6 +2110,8 @@ namespace ServoAnimator
             double eyePopCenterY = mouthTop.Y - _joinedEyePopSlider.Height * .5;
             eyePopRobotLeft.Y = eyePopCenterY;
             eyePopRobotRight.Y = eyePopCenterY;
+            eyePopRobotLeft.X -= 50.0;
+            eyePopRobotRight.X -= 50.0;
 
             _joinedEyePopSlider.Visibility = _lrJoined ? Visibility.Visible : Visibility.Collapsed;
             _leftEyePopSlider.Visibility = !_lrJoined ? Visibility.Visible : Visibility.Collapsed;
@@ -2115,79 +2123,48 @@ namespace ServoAnimator
             PlaceSliderResetButton(_leftEyePopSlider);
             PlaceSliderResetButton(_rightEyePopSlider);
 
-            // Whip/MFRC/Microphone vertical controls stay at the top of the URDF
-            // display while their X positions follow the projected hardware.
-            const double headTopZ = 0.059182;
-            Point whipOutside = TryProjectLinkPoint("head_link",
-                new Point3D(0.070442, -0.134747 - 0.030, headTopZ), out Point projectedWhipOutside)
-                ? projectedWhipOutside : new Point(ActualWidth * .78, 0);
-            Point mfrOutside = TryProjectLinkPoint("head_link",
-                new Point3D(0.023325, 0.061341 + 0.050, headTopZ), out Point projectedMfrOutside)
-                ? projectedMfrOutside : new Point(ActualWidth * .22, 0);
-            Point microphoneTop = TryProjectLinkPoint("microphone_link",
-                new Point3D(0.0002, 0, 0.007112), out Point projectedMicrophoneTop)
-                ? projectedMicrophoneTop : new Point(ActualWidth * .68, 0);
+            // Antenna groups remain pinned to the top edge at every viewport size.
+            const double edgeInset = 8.0;
+            const double controlGap = 8.0;
+            double whipX = edgeInset + _whipRotateDial.Width + controlGap + _whipRaiseLowerSlider.Width * .5;
+            double mfrX = ActualWidth - edgeInset - _mfrRotateDial.Width - controlGap - _mfrUpDownSlider.Width * .5;
+            double micX = Math.Max(18.0, rgbLeft - 12.0 - _microphoneRaiseLowerSlider.Width * .5);
+            const double antennaTop = 8.0;
 
-            double whipX = Math.Clamp(whipOutside.X, 18.0, ActualWidth - 18.0);
-            double mfrX = Math.Clamp(mfrOutside.X, 18.0, ActualWidth - 18.0);
-            double micX = Math.Clamp(microphoneTop.X, 18.0, ActualWidth - 18.0);
             _whipRaiseLowerSlider.Visibility = Visibility.Visible;
             _mfrUpDownSlider.Visibility = Visibility.Visible;
             _microphoneRaiseLowerSlider.Visibility = Visibility.Visible;
             SetCanvasCenter(_whipRaiseLowerSlider,
-                new Point(whipX, 8.0 + _whipRaiseLowerSlider.Height * .5));
+                new Point(whipX, antennaTop + _whipRaiseLowerSlider.Height * .5));
             SetCanvasCenter(_mfrUpDownSlider,
-                new Point(mfrX, 8.0 + _mfrUpDownSlider.Height * .5));
+                new Point(mfrX, antennaTop + _mfrUpDownSlider.Height * .5));
             SetCanvasCenter(_microphoneRaiseLowerSlider,
                 new Point(micX, 8.0 + _microphoneRaiseLowerSlider.Height * .5));
-            PlaceSliderResetButton(_whipRaiseLowerSlider);
-            PlaceSliderResetButton(_mfrUpDownSlider);
             PlaceSliderResetButton(_microphoneRaiseLowerSlider);
 
-            // MFRC rotation dial is always immediately to the RIGHT of the MFRC
-            // vertical Up/Down slider, as requested.
-            Point mfrDialCenter = new(
-                mfrX + _mfrUpDownSlider.Width * .5 + _mfrRotateDial.Width * .5 + 8.0,
-                6.0 + _mfrRotateDial.Height * .5);
-            mfrDialCenter.X = Math.Clamp(mfrDialCenter.X, _mfrRotateDial.Width * .5 + 4.0,
-                                         ActualWidth - _mfrRotateDial.Width * .5 - 4.0);
+            Point whipDialCenter = new(edgeInset + _whipRotateDial.Width * .5,
+                                       antennaTop + _whipRotateDial.Height * .5);
+            _whipRotateDial.Visibility = Visibility.Visible;
+            UpdateWhipRotateDial();
+            SetCanvasCenter(_whipRotateDial, whipDialCenter);
+
+            Point mfrDialCenter = new(ActualWidth - edgeInset - _mfrRotateDial.Width * .5,
+                                      antennaTop + _mfrRotateDial.Height * .5);
             _mfrRotateDial.Visibility = Visibility.Visible;
             UpdateMfrRotateDial();
             SetCanvasCenter(_mfrRotateDial, mfrDialCenter);
 
-            // Keep the MFRC height reset outside the combined slider+dial group.
-            if (_poseSliderResetButtons.TryGetValue(_mfrUpDownSlider, out Button mfrHeightReset))
+            // Keep height resets below their sliders, inside the viewport edges
+            // and clear of the adjacent rotation dials.
+            void PlaceAntennaReset(Slider slider)
             {
-                Point mfrResetCenter = new(
-                    mfrDialCenter.X + _mfrRotateDial.Width * .5 + mfrHeightReset.Width * .5 + 4.0,
-                    8.0 + _mfrUpDownSlider.Height * .5);
-                mfrResetCenter.X = Math.Clamp(mfrResetCenter.X, mfrHeightReset.Width * .5 + 2.0,
-                                               ActualWidth - mfrHeightReset.Width * .5 - 2.0);
-                SetCanvasCenter(mfrHeightReset, mfrResetCenter);
+                if (!_poseSliderResetButtons.TryGetValue(slider, out Button reset)) return;
+                reset.Visibility = Visibility.Visible;
+                SetCanvasCenter(reset, new Point(Canvas.GetLeft(slider) + slider.Width * .5,
+                    Canvas.GetTop(slider) + slider.Height + reset.Height * .5 + 4.0));
             }
-
-            // Whip rotation dial sits just farther outside the head than the whip
-            // height slider and follows that slider horizontally.
-            double whipOutwardSign = whipX < ActualWidth * .5 ? -1.0 : 1.0;
-            Point whipDialCenter = new(
-                whipX + whipOutwardSign * (_whipRaiseLowerSlider.Width * .5 + _whipRotateDial.Width * .5 + 8.0),
-                6.0 + _whipRotateDial.Height * .5);
-            whipDialCenter.X = Math.Clamp(whipDialCenter.X, _whipRotateDial.Width * .5 + 4.0,
-                                          ActualWidth - _whipRotateDial.Width * .5 - 4.0);
-            _whipRotateDial.Visibility = Visibility.Visible;
-            UpdateWhipRotateDial();
-            SetCanvasCenter(_whipRotateDial, whipDialCenter);
-            // Keep the Whip height reset outside BOTH the slider and its adjacent
-            // rotation dial so the three controls do not overlap.
-            if (_poseSliderResetButtons.TryGetValue(_whipRaiseLowerSlider, out Button whipHeightReset))
-            {
-                Point resetCenter = new(
-                    whipDialCenter.X + whipOutwardSign * (_whipRotateDial.Width * .5 + whipHeightReset.Width * .5 + 4.0),
-                    8.0 + _whipRaiseLowerSlider.Height * .5);
-                resetCenter.X = Math.Clamp(resetCenter.X, whipHeightReset.Width * .5 + 2.0,
-                                            ActualWidth - whipHeightReset.Width * .5 - 2.0);
-                SetCanvasCenter(whipHeightReset, resetCenter);
-            }
+            PlaceAntennaReset(_whipRaiseLowerSlider);
+            PlaceAntennaReset(_mfrUpDownSlider);
 
             // Neck controls are anchored to the physical Fabco neck assembly.
             // Tilt follows the centerline of the robot-left cylinder. Nod sits at
@@ -2225,7 +2202,7 @@ namespace ServoAnimator
             }
             const double dialTowardLegend = 0.75;
             Point dialCenter = new(
-                resizeCenter.X + (legendCenter.X - resizeCenter.X) * dialTowardLegend,
+                resizeCenter.X + (legendCenter.X - resizeCenter.X) * dialTowardLegend - 50.0,
                 resizeCenter.Y + (legendCenter.Y - resizeCenter.Y) * dialTowardLegend);
             dialCenter.X = Math.Clamp(dialCenter.X, _neckTurnDial.Width * .5 + 4,
                                       ActualWidth - _neckTurnDial.Width * .5 - 4);
@@ -3372,11 +3349,22 @@ namespace ServoAnimator
         /// method returns.
         /// </summary>
         public void SaveCenteredLibraryPoseImage(string destinationPath)
+            => SaveLibraryPoseBitmap(CaptureCenteredLibraryPoseImage(), destinationPath);
+
+        internal static void SaveLibraryPoseBitmap(BitmapSource image, string destinationPath)
+        {
+            string fullPath = Path.GetFullPath(destinationPath);
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath) ?? AppContext.BaseDirectory);
+            using var stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None);
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(image));
+            encoder.Save(stream);
+        }
+
+        internal BitmapSource CaptureCenteredLibraryPoseImage()
         {
             if (_scene == null)
                 throw new InvalidOperationException("The URDF model is not loaded.");
-            if (string.IsNullOrWhiteSpace(destinationPath))
-                throw new ArgumentException("An image destination is required.", nameof(destinationPath));
             if (ActualWidth <= 2.0 || ActualHeight <= 2.0)
                 throw new InvalidOperationException("The URDF display is not large enough to capture an image.");
 
@@ -3484,13 +3472,8 @@ namespace ServoAnimator
                 int w = Math.Clamp((int)Math.Ceiling(cropRight) - x, 1, pixelWidth - x);
                 int h = Math.Clamp((int)Math.Ceiling(cropBottom) - y, 1, pixelHeight - y);
                 var cropped = new CroppedBitmap(rendered, new Int32Rect(x, y, w, h));
-
-                string fullPath = Path.GetFullPath(destinationPath);
-                Directory.CreateDirectory(Path.GetDirectoryName(fullPath) ?? AppContext.BaseDirectory);
-                using var stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                var encoder = new PngBitmapEncoder();
-                encoder.Frames.Add(BitmapFrame.Create(cropped));
-                encoder.Save(stream);
+                cropped.Freeze();
+                return cropped;
             }
             finally
             {

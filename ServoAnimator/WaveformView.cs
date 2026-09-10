@@ -44,8 +44,15 @@ namespace ServoAnimator
         // zoom level and any file length.
         private float[] _peakMin = Array.Empty<float>();
         private readonly TimelineDrawingCache _drawingCache = new();
-        public new void InvalidateVisual() { _drawingCache.Invalidate(); base.InvalidateVisual(); }
-        public void InvalidateCursor() => base.InvalidateVisual();
+        private bool _combinedPresentation;
+        public bool CombinedPresentation
+        {
+            get => _combinedPresentation;
+            set { if (_combinedPresentation == value) return; _combinedPresentation = value; InvalidateVisual(); }
+        }
+        public new void InvalidateVisual() { _drawingCache.Invalidate(); _cursorPresenter?.Update(); base.InvalidateVisual(); }
+        private readonly TimelineCursorPresenter _cursorPresenter;
+        public void InvalidateCursor() { if (_cursorPresenter?.Update() != true) base.InvalidateVisual(); }
         private float[] _peakMax = Array.Empty<float>();
         private double _bucketDuration = 0.001;    // seconds represented by one bucket
 
@@ -81,6 +88,9 @@ namespace ServoAnimator
         public event Action AudioOffsetDragEnded;
         private bool _draggingOffset;
         private const float HandleWidth = 14f;             // grab-handle size (DIU)
+        // Always reserve room for the handle plus a gap before a zero-time triangle.
+        public const float TimelineLeftInset = HandleWidth + 10f;
+        private double _offsetGrabDeltaX;
         private const float OffsetHandleHeight = 18f;       // independent of staggered marker-lane height
 
         // ---------------- Animation Library selection arrows ----------------
@@ -119,23 +129,20 @@ namespace ServoAnimator
             return (start, end);
         }
 
-        /// <summary>Start Create-Library-Item selection with both arrows
-        /// already visible in the current viewport. On a normally zoomed
-        /// timeline they begin three seconds in from the left/right edges;
-        /// tighter views use a proportional inset.</summary>
+        /// <summary>Default Library range includes the first through last command.</summary>
         public void BeginRangeSelect()
         {
             ArrowMode = SelectionMode.Range;
-            var (start, end) = VisibleTimelineWindow();
-            double span = Math.Max(0, end - start);
-            double inset = Math.Min(3.0, span * 0.15);
+            RangeStart = Markers.Count == 0 ? 0 : Markers.Min();
+            RangeEnd = Markers.Count == 0 ? 0 : Markers.Max();
+            InvalidateVisual();
+        }
 
-            RangeStart = start + inset;
-            RangeEnd = end - inset;
-
-            if (RangeEnd < RangeStart)
-                RangeStart = RangeEnd = start + span / 2.0;
-
+        internal void MoveRangeArrow(int arrow, double time)
+        {
+            double snapped = Markers.Count == 0 ? 0 : Markers.OrderBy(m => Math.Abs(m - time)).ThenBy(m => m).First();
+            if (arrow == 1) RangeStart = Math.Min(snapped, RangeEnd);
+            if (arrow == 2) RangeEnd = Math.Max(snapped, RangeStart);
             InvalidateVisual();
         }
 
@@ -161,7 +168,12 @@ namespace ServoAnimator
         public double CursorTime { get; set; }             // current cursor position (s)
 
         /// <summary>Unique command offsets that get a downward triangle marker.</summary>
-        public IReadOnlyList<double> Markers { get; set; } = Array.Empty<double>();
+        private IReadOnlyList<double> _markers = Array.Empty<double>();
+        public IReadOnlyList<double> Markers
+        {
+            get => _markers;
+            set { _markers = value ?? Array.Empty<double>(); HideMarkerToolTip(); }
+        }
 
         /// <summary>Command offsets whose command group introduced a URDF
         /// collision during playback. These markers are rendered bright red
@@ -173,6 +185,44 @@ namespace ServoAnimator
 
         /// <summary>Optional formatter supplied by MainWindow for rich marker hover text.</summary>
         public Func<double, string> MarkerToolTipProvider { get; set; }
+        private readonly ToolTip _markerToolTip = new()
+        {
+            Placement = System.Windows.Controls.Primitives.PlacementMode.RelativePoint,
+            IsHitTestVisible = false,
+            StaysOpen = true,
+            MaxWidth = 640,
+        };
+        private double? _hoverMarker;
+
+        private void HideMarkerToolTip()
+        {
+            _hoverMarker = null;
+            _markerToolTip.IsOpen = false;
+        }
+
+        private void UpdateMarkerToolTip(Point point)
+        {
+            if (!TryHitMarker(point, out double marker)) { HideMarkerToolTip(); return; }
+            if (_hoverMarker != marker)
+            {
+                _hoverMarker = marker;
+                _markerToolTip.Content = new TextBlock
+                {
+                    Text = MarkerToolTipProvider?.Invoke(marker) ?? $"Commands at {marker:F3} s",
+                    TextWrapping = TextWrapping.Wrap,
+                };
+            }
+            _markerToolTip.HorizontalOffset = point.X + 14;
+            _markerToolTip.VerticalOffset = point.Y + 12;
+            // Explicitly reopen on every re-entry, without ToolTipService's per-control timeout.
+            _markerToolTip.IsOpen = true;
+        }
+
+        protected override void OnMouseLeave(MouseEventArgs e)
+        {
+            base.OnMouseLeave(e);
+            HideMarkerToolTip();
+        }
 
         // ---------------- additional audio clips ----------------
         // Each additional audio file on the timeline is backed by a "Play"
@@ -208,8 +258,66 @@ namespace ServoAnimator
         /// <summary>A grabbed marker moved: (old time key, new time key).
         /// MainWindow moves the commands and refreshes the marker list.</summary>
         public event Action<double, double> MarkerDragged;
+        public event Action<double> CommandsEditRequested;
         /// <summary>The marker drag was released at the given final key.</summary>
         public event Action<double> MarkerDragCompleted;
+        public event Action<double> SelectedMarkersMoved;
+        public event Action MarkerSelectionChanged;
+        public HashSet<double> HighlightedControlMarkers { get; } = new();
+        private readonly HashSet<double> _selectedMarkers = new();
+        public IReadOnlyCollection<double> SelectedMarkers => _selectedMarkers;
+        private double? _selectionAnchor;
+        private double _groupDragOffset;
+
+        public void SetMarkerSelection(IEnumerable<double> times)
+        {
+            var keys = times.Select(ServoCommand.TimeKey).ToArray();
+            _selectedMarkers.Clear();
+            _selectedMarkers.UnionWith(keys);
+            if (_selectedMarkers.Count == 0) _selectionAnchor = null;
+            else if (!_selectionAnchor.HasValue || !_selectedMarkers.Contains(_selectionAnchor.Value))
+                _selectionAnchor = _selectedMarkers.Min();
+            InvalidateVisual();
+            MarkerSelectionChanged?.Invoke();
+        }
+
+        internal void SelectMarker(double time, bool control, bool shift)
+        {
+            time = ServoCommand.TimeKey(time);
+            if (shift)
+            {
+                double anchor = _selectionAnchor ?? (Markers.Count == 0 ? time : Markers.OrderBy(m => Math.Abs(m - CursorTime)).First());
+                _selectionAnchor = anchor;
+                _selectedMarkers.UnionWith(Markers.Where(m => m >= Math.Min(anchor, time) && m <= Math.Max(anchor, time)));
+            }
+            else if (control)
+            {
+                if (_selectedMarkers.Remove(time))
+                {
+                    if (_selectionAnchor == time)
+                        _selectionAnchor = _selectedMarkers.Count == 0 ? null : _selectedMarkers.OrderBy(m => Math.Abs(m - time)).First();
+                }
+                else
+                {
+                    _selectedMarkers.Add(time);
+                    _selectionAnchor = time;
+                }
+            }
+            else
+            {
+                _selectedMarkers.Add(time);
+                _selectionAnchor = time;
+            }
+            InvalidateVisual();
+            MarkerSelectionChanged?.Invoke();
+        }
+
+        internal void PreviewSelectedMarkerMove(double offset)
+        {
+            if (_selectedMarkers.Count == 0) return;
+            _groupDragOffset = ServoCommand.TimeKey(Math.Clamp(offset, -_selectedMarkers.Min(), Math.Max(0, Duration - _selectedMarkers.Max())));
+            InvalidateVisual();
+        }
 
         private bool _markerPressPending;   // pressed a marker, not yet dragging
         private bool _draggingMarker;
@@ -248,9 +356,9 @@ namespace ServoAnimator
             float[] lastX = Enumerable.Repeat(float.NegativeInfinity, laneCount).ToArray();
             var result = new List<MarkerVisual>();
 
-            foreach (double time in Markers.OrderBy(m => m))
+            foreach (double time in Markers.OrderBy(m => m + (_selectedMarkers.Contains(m) ? _groupDragOffset : 0)))
             {
-                float x = XAtTime(time);
+                float x = XAtTime(time + (_selectedMarkers.Contains(time) ? _groupDragOffset : 0));
                 if (x < -12 || x > width + 12) continue;
 
                 int lane = -1;
@@ -305,17 +413,29 @@ namespace ServoAnimator
             return true;
         }
 
+        internal bool TryEditMarker(Point point, int clickCount)
+        {
+            if (clickCount != 2 || !TryHitMarker(point, out double time)) return false;
+            _markerPressPending = false;
+            _draggingMarker = false;
+            if (IsMouseCaptured) ReleaseMouseCapture();
+            HideMarkerToolTip();
+            CommandsEditRequested?.Invoke(time);
+            return true;
+        }
+
         private Point _panStart;
         private double _panStartView;
         private bool _panning;
 
         public WaveformView()
         {
+            _cursorPresenter = new TimelineCursorPresenter(this, () => XAtTime(CursorTime),
+                System.Windows.Media.Color.FromRgb(255, 80, 80), AxisHeight);
             Focusable = true;
-            Unloaded += (_, _) => _drawingCache.Dispose();
+            _markerToolTip.PlacementTarget = this;
+            Unloaded += (_, _) => { HideMarkerToolTip(); _drawingCache.Dispose(); };
             SnapsToDevicePixels = true;
-            ToolTipService.SetInitialShowDelay(this, 200);
-            ToolTipService.SetShowDuration(this, 10000);
         }
 
         // ==================== public API ====================
@@ -350,37 +470,40 @@ namespace ServoAnimator
         }
 
         /// <summary>Convert a pixel X coordinate to a time in seconds.</summary>
-        public double TimeAtX(double x) => ViewStart + x / PixelsPerSecond;
+        public double TimeAtX(double x) => ViewStart + (x - TimelineLeftInset) / PixelsPerSecond;
 
         /// <summary>Convert a time in seconds to a pixel X coordinate.</summary>
-        public float XAtTime(double t) => (float)((t - ViewStart) * PixelsPerSecond);
+        public float XAtTime(double t) => TimelineLeftInset + (float)((t - ViewStart) * PixelsPerSecond);
 
         /// <summary>Seconds of audio currently visible.</summary>
-        public double VisibleSeconds => Math.Max(0.001, ActualWidth) / PixelsPerSecond;
+        public double PlotWidth => Math.Max(1.0, ActualWidth - TimelineLeftInset);
+        public double VisibleSeconds => PlotWidth / PixelsPerSecond;
 
         public void ZoomToFit()
         {
             double fit = ContentDuration > 0 ? ContentDuration : Duration;
             if (fit <= 0 || ActualWidth <= 0) return;
-            PixelsPerSecond = Math.Max(1.0, ActualWidth / fit);
+            PixelsPerSecond = Math.Max(1.0, PlotWidth / fit);
             SetViewStart(0);
             InvalidateVisual();
         }
 
-        public void ZoomBy(double factor, double? pivotPixelX = null)
+        public void ZoomBy(double factor)
         {
-            double px = pivotPixelX ?? ActualWidth / 2;
-            double pivotTime = TimeAtX(px);
+            if (!double.IsFinite(factor) || factor <= 0 || ActualWidth <= 0) return;
+            double cursorX = (CursorTime - ViewStart) * PixelsPerSecond;
 
             PixelsPerSecond = Math.Clamp(PixelsPerSecond * factor, 1.0, 20000.0);
 
-            // Keep the time under the pivot (mouse) stationary while zooming.
-            SetViewStart(pivotTime - px / PixelsPerSecond);
+            // Anchor wheel and button zoom to the timeline cursor, not the mouse
+            // or viewport center. Normal timeline bounds still apply on zoom-out.
+            SetViewStart(CursorTime - cursorX / PixelsPerSecond);
             InvalidateVisual();
         }
 
         public void SetViewStart(double seconds)
         {
+            HideMarkerToolTip();
             double maxStart = Math.Max(0, Duration - VisibleSeconds);
             ViewStart = Math.Clamp(seconds, 0, maxStart);
             ViewChanged?.Invoke();
@@ -431,14 +554,14 @@ namespace ServoAnimator
                 });
             canvas.Scale(scale);
             DrawSelectionArrows(canvas, h);
-            DrawCursor(canvas, h);
+            if (!_cursorPresenter.IsAttached) DrawCursor(canvas, h);
         }
 
         private void DrawWaveform(SKCanvas canvas, float width, float midY, float half)
         {
             using var wavePaint = new SKPaint
             {
-                Color = ThemeSk("SequenceAccent", new SKColor(90, 190, 255)),
+                Color = ThemeSk("SequenceAccent", new SKColor(90, 190, 255)).WithAlpha(CombinedPresentation ? (byte)90 : (byte)220),
                 StrokeWidth = 1,
                 IsAntialias = false,
             };
@@ -448,14 +571,14 @@ namespace ServoAnimator
                 StrokeWidth = 1,
             };
 
-            canvas.DrawLine(0, midY, width, midY, centerPaint);
+            canvas.DrawLine(TimelineLeftInset, midY, width, midY, centerPaint);
             if (_peakMin.Length == 0) return;
 
             // One vertical line per pixel column: aggregate the min/max of all
             // peak buckets that fall inside that pixel's time span. The audio
             // is shifted right by AudioOffset, so convert timeline time to
             // audio-relative time before indexing into the peak buckets.
-            for (int x = 0; x < (int)width; x++)
+            for (int x = (int)TimelineLeftInset; x < (int)width; x++)
             {
                 double t0 = TimeAtX(x) - _audioOffset;      // audio-relative
                 double t1 = TimeAtX(x + 1) - _audioOffset;
@@ -486,7 +609,7 @@ namespace ServoAnimator
         {
             using var clipPaint = new SKPaint
             {
-                Color = new SKColor(235, 170, 70, 150), StrokeWidth = 1,
+                Color = new SKColor(235, 170, 70, CombinedPresentation ? (byte)75 : (byte)150), StrokeWidth = 1,
                 IsAntialias = false,
             };
             using var handleFill = new SKPaint
@@ -507,7 +630,7 @@ namespace ServoAnimator
                 // Envelope (only when the file was found and scanned).
                 if (clip.PeakMin != null && clip.Duration > 0)
                 {
-                    float sx = Math.Max(0, XAtTime(clip.Start));
+                    float sx = Math.Max(TimelineLeftInset, XAtTime(clip.Start));
                     float ex = Math.Min(width, XAtTime(clip.Start + clip.Duration));
                     for (int x = (int)sx; x < (int)ex; x++)
                     {
@@ -654,7 +777,7 @@ namespace ServoAnimator
         /// <summary>Screen rectangle of the offset handle (in DIU).</summary>
         private SKRect OffsetHandleRect()
         {
-            float x = XAtTime(_audioOffset);
+            float x = XAtTime(_audioOffset) - TimelineLeftInset;
             return new SKRect(x, 1, x + HandleWidth, 1 + OffsetHandleHeight);
         }
 
@@ -674,7 +797,7 @@ namespace ServoAnimator
             using var gridPaint = new SKPaint { Color = ThemeSk("DividerBrush", new SKColor(46, 50, 58)), StrokeWidth = 1 };
             using var textPaint = new SKPaint
             {
-                Color = new SKColor(190, 195, 205),
+                Color = ThemeSk("SecondaryText", new SKColor(190, 195, 205)),
                 IsAntialias = true,
                 TextSize = 11,
             };
@@ -693,9 +816,11 @@ namespace ServoAnimator
             {
                 if (t < 0) continue;
                 float x = XAtTime(t);
-                if (x < -50 || x > width + 50) continue;
+                if (x < TimelineLeftInset || x > width + 50) continue;
 
-                canvas.DrawLine(x, 0, x, axisTop, gridPaint);           // faint grid line
+                bool major = Math.Abs(t - Math.Round(t)) < 1e-6;
+                gridPaint.Color = ThemeSk("SecondaryText", new SKColor(150, 165, 185)).WithAlpha(major ? (byte)65 : (byte)27);
+                canvas.DrawLine(x, 0, x, axisTop, gridPaint);
                 canvas.DrawLine(x, axisTop, x, axisTop + 6, tickPaint); // tick
                 canvas.DrawText(t.ToString("F" + decimals) + "s",
                                 x + 3, axisTop + 18, textPaint);
@@ -748,12 +873,17 @@ namespace ServoAnimator
                 ? new HashSet<double>()
                 : CollisionMarkers.Select(ServoCommand.TimeKey).ToHashSet();
 
+            using var selectedOutline = new SKPaint { Color = new SKColor(70, 210, 255), Style = SKPaintStyle.Stroke, StrokeWidth = 3, IsAntialias = true };
+            using var purpleFill = new SKPaint { Color = new SKColor(175, 95, 245), IsAntialias = true };
+            using var purpleOutline = new SKPaint { Color = new SKColor(225, 180, 255), Style = SKPaintStyle.Stroke, StrokeWidth = 3, IsAntialias = true };
+
             const float halfWidth = 6f;
             foreach (var mv in BuildMarkerVisuals(width))
             {
                 bool collision = collisionTimes.Contains(ServoCommand.TimeKey(mv.Time));
-                var fill = collision ? collisionPaint : normalPaint;
-                var outline = collision ? collisionOutline : normalOutline;
+                bool highlighted = HighlightedControlMarkers.Contains(mv.Time);
+                var fill = highlighted ? purpleFill : collision ? collisionPaint : normalPaint;
+                var outline = highlighted ? purpleOutline : _selectedMarkers.Contains(mv.Time) ? selectedOutline : collision ? collisionOutline : normalOutline;
                 var stem = collision ? collisionStem : normalStem;
 
                 using var path = new SKPath();
@@ -783,6 +913,19 @@ namespace ServoAnimator
 
         // ==================== mouse interaction ====================
 
+        protected override void OnLostMouseCapture(MouseEventArgs e)
+        {
+            _panning = false;
+            base.OnLostMouseCapture(e);
+            if (!_markerPressPending && !_draggingMarker) return;
+            // Aborted drags only discard their visual preview; document commands
+            // are not changed until a normal left-button release.
+            _markerPressPending = _draggingMarker = false;
+            _groupDragOffset = 0;
+            Cursor = Cursors.Arrow;
+            InvalidateVisual();
+        }
+
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             base.OnMouseLeftButtonDown(e);
@@ -807,7 +950,32 @@ namespace ServoAnimator
                 pos.Y >= hr.Top && pos.Y <= hr.Bottom)
             {
                 _draggingOffset = true;
+                _offsetGrabDeltaX = pos.X - XAtTime(_audioOffset);
                 CaptureMouse();
+                return;
+            }
+
+            bool control = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+            bool shift = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
+            if (shift && Markers.Count > 0)
+            {
+                double nearest = Markers.OrderBy(m => Math.Abs(XAtTime(m) - pos.X)).First();
+                SelectMarker(nearest, control, shift: true);
+                TimeClicked?.Invoke(nearest);
+                e.Handled = true;
+                return;
+            }
+            if (control && TryHitMarker(pos, out double toggled))
+            {
+                SelectMarker(toggled, control: true, shift: false);
+                TimeClicked?.Invoke(toggled);
+                e.Handled = true;
+                return;
+            }
+
+            if (TryEditMarker(pos, e.ClickCount))
+            {
+                e.Handled = true;
                 return;
             }
 
@@ -830,6 +998,15 @@ namespace ServoAnimator
             // individually selectable.
             if (pos.Y <= MarkerLane + 4 && TryHitMarker(pos, out double hitKey))
             {
+                if (_selectedMarkers.Count == 0) SelectMarker(hitKey, false, false);
+                if (!_selectedMarkers.Contains(hitKey))
+                {
+                    TimeClicked?.Invoke(hitKey);
+                    e.Handled = true;
+                    return;
+                }
+                _selectionAnchor = hitKey;
+                _groupDragOffset = 0;
                 _markerPressPending = true;
                 _markerKey = hitKey;
                 _markerPressX = px;
@@ -864,6 +1041,13 @@ namespace ServoAnimator
                 return;
             }
 
+            if (_selectedMarkers.Count > 0)
+            {
+                RightClicked?.Invoke(TimeAtX(e.GetPosition(this).X));
+                e.Handled = true;
+                return;
+            }
+
             var clipUnder = ClipHandleAt(e.GetPosition(this));
             if (clipUnder != null)
             {
@@ -881,19 +1065,22 @@ namespace ServoAnimator
         {
             base.OnMouseWheel(e);
             double factor = e.Delta > 0 ? 1.25 : 1 / 1.25;
-            ZoomBy(factor, e.GetPosition(this).X);
+            ZoomBy(factor);
+            e.Handled = true;
         }
 
         // Middle-button drag pans the view.
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
             base.OnMouseDown(e);
+            HideMarkerToolTip();
             if (e.ChangedButton == MouseButton.Middle)
             {
                 _panning = true;
                 _panStart = e.GetPosition(this);
                 _panStartView = ViewStart;
                 CaptureMouse();
+                e.Handled = true;
             }
         }
 
@@ -921,6 +1108,12 @@ namespace ServoAnimator
             }
             if (_draggingMarker)
             {
+                if (_selectedMarkers.Count > 0)
+                {
+                    double offset = (e.GetPosition(this).X - _markerPressX) / PixelsPerSecond;
+                    PreviewSelectedMarkerMove(offset);
+                    return;
+                }
                 double newKey = Math.Round(Math.Clamp(
                     TimeAtX(e.GetPosition(this).X), 0, Math.Max(0, Duration)), 3);
 
@@ -944,8 +1137,8 @@ namespace ServoAnimator
                     TimeAtX(e.GetPosition(this).X), 0, Math.Max(0, Duration)), 3);
                 switch (_dragArrow)
                 {
-                    case 1: RangeStart = Math.Min(t, RangeEnd); break;
-                    case 2: RangeEnd = Math.Max(t, RangeStart); break;
+                    case 1: MoveRangeArrow(1, t); break;
+                    case 2: MoveRangeArrow(2, t); break;
                     case 3: InsertTime = t; break;
                 }
                 InvalidateVisual();
@@ -955,7 +1148,7 @@ namespace ServoAnimator
             if (_draggingOffset)
             {
                 // Drag the audio to a new start offset (snapped to the ms).
-                double t = Math.Max(0, TimeAtX(e.GetPosition(this).X));
+                double t = Math.Max(0, TimeAtX(e.GetPosition(this).X - _offsetGrabDeltaX));
                 AudioOffset = Math.Round(t, 3);
                 AudioOffsetChanged?.Invoke(AudioOffset);
                 return;
@@ -970,16 +1163,10 @@ namespace ServoAnimator
             // Rich hover information follows the actual staggered triangle
             // hit target, so closely spaced markers expose the intended group.
             var hover = e.GetPosition(this);
-            if (!_panning && hover.Y <= MarkerLane + 5 &&
-                TryHitMarker(hover, out double hoverMarker))
-            {
-                ToolTip = MarkerToolTipProvider?.Invoke(hoverMarker)
-                          ?? $"Commands at {hoverMarker:F3} s";
-            }
-            else if (!_panning)
-            {
-                ToolTip = null;
-            }
+            if (!_panning && e.LeftButton == MouseButtonState.Released &&
+                e.RightButton == MouseButtonState.Released && hover.Y <= MarkerLane + 5)
+                UpdateMarkerToolTip(hover);
+            else HideMarkerToolTip();
 
             // Show a horizontal-resize cursor when hovering the handle.
             var hr = OffsetHandleRect();
@@ -1011,7 +1198,14 @@ namespace ServoAnimator
                 ReleaseMouseCapture();
                 Cursor = System.Windows.Input.Cursors.Arrow;
 
-                if (wasDrag)
+                if (wasDrag && _selectedMarkers.Count > 0)
+                {
+                    double offset = _groupDragOffset;
+                    _groupDragOffset = 0;
+                    if (offset != 0) SelectedMarkersMoved?.Invoke(offset);
+                    InvalidateVisual();
+                }
+                else if (wasDrag)
                     MarkerDragCompleted?.Invoke(_markerKey);   // group moved
                 else
                     TimeClicked?.Invoke(_markerKey);           // plain select

@@ -11,6 +11,7 @@ namespace ServoAnimator
     {
         public DateTime SavedUtc { get; set; }
         public string SequencePath { get; set; } = "";
+        public string PendingMovieSequenceName { get; set; } = "";
         public AnimationDocument Sequence { get; set; }
         public string MoviePath { get; set; } = "";
         public string MovieDescription { get; set; } = "";
@@ -62,6 +63,7 @@ namespace ServoAnimator
             {
                 SavedUtc = SavedUtc,
                 SequencePath = RelativeOrEmpty(configFolder, SequencePath),
+                PendingMovieSequenceName = PendingMovieSequenceName,
                 Sequence = CloneSequenceForStorage(configFolder),
                 MoviePath = RelativeOrEmpty(configFolder, MoviePath),
                 MovieDescription = MovieDescription,

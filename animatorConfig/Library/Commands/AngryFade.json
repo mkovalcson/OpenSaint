@@ -1,41 +1,126 @@
 {
-  "description": "Angry Fade to red",
+  "description": "This is an Angry Face with eyes fading to red",
+  "image": "AngryFade_image.png",
   "commands": [
     {
       "offsetSeconds": 0,
-      "servo": "NoseBody",
-      "value": -100,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
       "speed": "N/C",
-      "reason": ""
+      "reason": "pose"
     },
     {
       "offsetSeconds": 0,
-      "servo": "FlapsOpen",
-      "value": -100,
+      "servo": "EyesVerticalUp",
+      "value": 0,
       "speed": "N/C",
-      "reason": ""
-    },
-    {
-      "offsetSeconds": 0,
-      "servo": "FlapTiltUp",
-      "value": 38,
-      "speed": "N/C",
-      "reason": ""
+      "reason": "pose"
     },
     {
       "offsetSeconds": 0,
       "servo": "IrisClose",
       "value": -36,
       "speed": "N/C",
-      "reason": ""
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "FlapsOpen",
+      "value": -100,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "FlapTiltUp",
+      "value": 38,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "VentsOpen",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "NeckTurn",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "NeckNodUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "NoseBody",
+      "value": -100,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "NoseBasket",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "BothEyePop",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "Whip_Antenna_RaiseLower",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "Whip_Antenna_Rotate",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "MFR_UpDown",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "MFR_Rotate",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "Microphone_RaiseLower",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
     },
     {
       "offsetSeconds": 0,
       "servo": "RGBCommand",
       "value": "Fade,255,0,0,200,Eyes,LR,20,In,5,0",
       "speed": "N/C",
-      "reason": "",
-      "color": "#FF0000"
+      "reason": "pose"
     }
-  ]
+  ],
+  "category": "Angry Face"
 }

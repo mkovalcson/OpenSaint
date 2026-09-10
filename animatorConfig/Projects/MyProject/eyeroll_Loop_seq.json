@@ -1,5 +1,5 @@
 {
-  "description": "",
+  "description": " eye roll repeated 4 times.",
   "audioFiles": "",
   "audioFile": "",
   "audioFilePath": "",
@@ -16,7 +16,7 @@
     {
       "offsetSeconds": 0,
       "servo": "EyesVerticalUp",
-      "value": 0,
+      "value": 100,
       "speed": "N/C",
       "reason": ""
     },
@@ -28,170 +28,338 @@
       "reason": ""
     },
     {
-      "offsetSeconds": 1.501,
-      "servo": "EyesVerticalUp",
-      "value": 100,
-      "speed": "N/C",
-      "reason": ""
-    },
-    {
-      "offsetSeconds": 1.501,
-      "servo": "EyesHorizontalRight",
-      "value": 0,
-      "speed": "N/C",
-      "reason": ""
-    },
-    {
-      "offsetSeconds": 2.646,
+      "offsetSeconds": 0.5,
       "servo": "EyesVerticalUp",
       "value": 0,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 2.646,
+      "offsetSeconds": 0.5,
       "servo": "EyesHorizontalRight",
       "value": -100,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 3.752,
+      "offsetSeconds": 1,
       "servo": "EyesVerticalUp",
       "value": -100,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 3.752,
+      "offsetSeconds": 1,
       "servo": "EyesHorizontalRight",
       "value": 0,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 4.818,
+      "offsetSeconds": 1.5,
       "servo": "EyesVerticalUp",
       "value": 0,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 4.818,
+      "offsetSeconds": 1.5,
       "servo": "EyesHorizontalRight",
       "value": 100,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 5.924,
+      "offsetSeconds": 2,
       "servo": "EyesVerticalUp",
       "value": 100,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 5.924,
+      "offsetSeconds": 2,
       "servo": "EyesHorizontalRight",
       "value": 0,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 7.07,
+      "offsetSeconds": 2.5,
       "servo": "EyesHorizontalRight",
       "value": -100,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 7.07,
+      "offsetSeconds": 2.5,
       "servo": "EyesVerticalUp",
       "value": 0,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 8.294,
+      "offsetSeconds": 3,
       "servo": "EyesVerticalUp",
       "value": -100,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 8.294,
+      "offsetSeconds": 3,
       "servo": "EyesHorizontalRight",
       "value": 0,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 9.518,
+      "offsetSeconds": 3.5,
       "servo": "EyesVerticalUp",
       "value": 0,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 9.518,
+      "offsetSeconds": 3.5,
       "servo": "EyesHorizontalRight",
       "value": 100,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 10.427,
+      "offsetSeconds": 4,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 4,
       "servo": "EyesVerticalUp",
       "value": 100,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 10.427,
-      "servo": "EyesHorizontalRight",
-      "value": 0,
-      "speed": "N/C",
-      "reason": ""
-    },
-    {
-      "offsetSeconds": 11.374,
+      "offsetSeconds": 4.5,
       "servo": "EyesVerticalUp",
       "value": 0,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 11.374,
+      "offsetSeconds": 4.5,
       "servo": "EyesHorizontalRight",
       "value": -100,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 12.125,
+      "offsetSeconds": 5,
       "servo": "EyesVerticalUp",
       "value": -100,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 12.125,
+      "offsetSeconds": 5,
       "servo": "EyesHorizontalRight",
       "value": 0,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 12.836,
+      "offsetSeconds": 5.5,
       "servo": "EyesVerticalUp",
       "value": 0,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 12.836,
+      "offsetSeconds": 5.5,
+      "servo": "EyesHorizontalRight",
+      "value": 100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 6,
+      "servo": "EyesVerticalUp",
+      "value": 100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 6,
       "servo": "EyesHorizontalRight",
       "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 6.5,
+      "servo": "EyesHorizontalRight",
+      "value": -100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 6.5,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 7,
+      "servo": "EyesVerticalUp",
+      "value": -100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 7,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 7.5,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 7.5,
+      "servo": "EyesHorizontalRight",
+      "value": 100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 8,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 8,
+      "servo": "EyesVerticalUp",
+      "value": 100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 8.5,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 8.5,
+      "servo": "EyesHorizontalRight",
+      "value": -100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 9,
+      "servo": "EyesVerticalUp",
+      "value": -100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 9,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 9.5,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 9.5,
+      "servo": "EyesHorizontalRight",
+      "value": 100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 10,
+      "servo": "EyesVerticalUp",
+      "value": 100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 10,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 10.5,
+      "servo": "EyesHorizontalRight",
+      "value": -100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 10.5,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 11,
+      "servo": "EyesVerticalUp",
+      "value": -100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 11,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 11.5,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 11.5,
+      "servo": "EyesHorizontalRight",
+      "value": 100,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 12,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "N/C",
+      "reason": ""
+    },
+    {
+      "offsetSeconds": 12,
+      "servo": "EyesVerticalUp",
+      "value": 100,
       "speed": "N/C",
       "reason": ""
     }

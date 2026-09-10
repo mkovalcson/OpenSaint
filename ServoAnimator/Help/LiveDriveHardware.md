@@ -10,17 +10,17 @@ A command with Speed set to N/C sends only position. Default, Slow, Fast or Craw
 
 ## Eye Pop
 
-Left and Right Eye Pop use Tic controllers rather than Maestro PWM. Reset commands both Eye Pops to zero.
+Left and Right Eye Pop use Tic controllers rather than Maestro PWM. Default Positions commands both Eye Pops to zero.
 
 ## Arduino RGB
 
-RGBCommand text is sent through the Arduino lighting path. Reset sends `ClearAll`.
+RGBCommand text is sent through the Arduino lighting path. Default Positions sends `ClearAll`.
 
 ## Live controls
 
 - Live Drive: enables/disables live physical driving from editor movement.
 - Disable Servos: disables Maestro PWM so the servos go limp.
-- Reset: moves Maestro channels to configured Default PWM, resets Eye Pop and clears Arduino lighting.
+- Default Positions: moves Maestro channels to configured Default PWM, resets Eye Pop and clears Arduino lighting.
 
 Status indicators for Maestro, Arduino and the two Tic controllers appear at the top right.
 

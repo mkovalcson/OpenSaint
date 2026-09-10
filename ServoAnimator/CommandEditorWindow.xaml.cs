@@ -5,10 +5,8 @@
 //
 // Design:
 //   * Each command is wrapped in a CommandVM whose property setters write
-//     straight through to the underlying ServoCommand object. Because the
-//     command objects live inside AnimationDocument.Commands, every edit is
-//     immediately part of the document - MainWindow just refreshes markers
-//     and the servo grid when the dialog closes.
+//     through to a draft ServoCommand. Applying merges these drafts with the
+//     current document and resolves duplicate targets before committing them.
 //   * Value editing is per-servo:
 //       - numeric servos: slider (range from ServoCommand.RangeFor:
 //         0..2000 for LeftEyePop/RightEyePop, -100..100 otherwise) plus a
@@ -39,6 +37,11 @@ namespace ServoAnimator
     public partial class CommandEditorWindow : Window
     {
         private readonly AnimationDocument _doc;
+        private readonly AnimationDocument _sourceDoc;
+        private readonly CommandEditSession _session;
+        private readonly Func<List<ServoCommand>, IReadOnlyDictionary<ServoNames, bool>, bool> _commitCommands;
+        private readonly CommandSplineDraft _splineDraft;
+        private bool _discardChanges;
         private readonly double _timeKey;    // the timeline point being edited
         private readonly Action<ServoSpeed, ServoNames, int> _moveServoNow;
         private readonly Action<ServoSpeed, ServoNames, string> _moveServoNowText;
@@ -55,12 +58,22 @@ namespace ServoAnimator
                                    Action<ServoSpeed, ServoNames> configureGangSpeedNow,
                                    Action<ServoSpeed, ServoNames, RobotControls> configureChildSpeedNow,
                                    string libraryCommandsFolder,
+                                   IEnumerable<ServoNames> splineServos,
+                                   Func<List<ServoCommand>, IReadOnlyDictionary<ServoNames, bool>, bool> commitCommands,
                                    ServoCommand focusCommand = null)
         {
             InitializeComponent();
             HelpSystem.EnableContextHelp(this, "commands");
             HelpSystem.SetTopic(CmdList, "commands");
-            _doc = doc;
+            _sourceDoc = doc;
+            _session = new CommandEditSession(doc.Commands, time);
+            _doc = new AnimationDocument { Commands = _session.Commands };
+            _commitCommands = commitCommands;
+            _splineDraft = new CommandSplineDraft(splineServos);
+            // A new command is configured as a draft before comparing its final
+            // target and value with existing timeline commands.
+            if (focusCommand != null && !doc.Commands.Contains(focusCommand))
+                _doc.Commands.Add(focusCommand.Clone());
             _timeKey = ServoCommand.TimeKey(time);
             _moveServoNow = moveServoNow;
             _moveServoNowText = moveServoNowText;
@@ -72,13 +85,18 @@ namespace ServoAnimator
             Title = $"Edit Commands @ {_timeKey:F3} s";
 
             // Wrap every command currently at this time point.
-            foreach (var c in _doc.Commands
-                         .Where(c => ServoCommand.TimeKey(c.OffsetSeconds) == _timeKey)
-                         .OrderBy(c => ReferenceEquals(c, focusCommand) ? 0 : 1)
-                         .ThenBy(c => c.Servo.ToString()))
-                _items.Add(new CommandVM(c, _moveServoNow, _moveServoNowText, _moveChildNow, _configureGangSpeedNow, _configureChildSpeedNow));
+            foreach (var c in _doc.Commands)
+                _items.Add(new CommandVM(c, _moveServoNow, _moveServoNowText, _moveChildNow, _configureGangSpeedNow, _configureChildSpeedNow, _splineDraft));
 
             CmdList.ItemsSource = _items;
+            Closing += (_, e) =>
+            {
+                if (_discardChanges) return;
+                // Commit any focused text field even when closing via the X.
+                if (System.Windows.Input.Keyboard.FocusedElement is System.Windows.Controls.TextBox box)
+                    box.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.UpdateSource();
+                e.Cancel = !_commitCommands(_session.Merge(_sourceDoc.Commands), _splineDraft.Changes);
+            };
         }
 
         /// <summary>Append a new command at the same time point and show it.</summary>
@@ -93,7 +111,7 @@ namespace ServoAnimator
                 Speed = ServoSpeed.NoChange,
             };
             _doc.Commands.Add(cmd);
-            _items.Add(new CommandVM(cmd, _moveServoNow, _moveServoNowText, _moveChildNow, _configureGangSpeedNow, _configureChildSpeedNow));
+            _items.Add(new CommandVM(cmd, _moveServoNow, _moveServoNowText, _moveChildNow, _configureGangSpeedNow, _configureChildSpeedNow, _splineDraft));
         }
 
         /// <summary>Remove one command from the document and from the list.</summary>
@@ -148,44 +166,50 @@ namespace ServoAnimator
                 return copy;
             }).ToList();
 
+            if (!CommandConflictWindow.Resolve(this, commands)) return;
+
             try
             {
-                string imageFile = null;
-                string oldImagePath = null;
-                if (File.Exists(path))
+                LoadingWindow.Run(this, () => Task.Run(() =>
                 {
-                    try
+                    string imageFile = null;
+                    string oldImagePath = null;
+                    if (File.Exists(path))
                     {
-                        var old = AnimationDocument.LoadLibraryItem(path);
-                        if (!string.IsNullOrWhiteSpace(old.ImageFile))
+                        try
                         {
-                            imageFile = old.ImageFile;
-                            oldImagePath = Path.IsPathRooted(old.ImageFile)
-                                ? old.ImageFile
-                                : Path.Combine(Path.GetDirectoryName(path) ?? "", old.ImageFile);
+                            var old = AnimationDocument.LoadLibraryItem(path);
+                            if (!string.IsNullOrWhiteSpace(old.ImageFile))
+                            {
+                                imageFile = old.ImageFile;
+                                oldImagePath = Path.IsPathRooted(old.ImageFile)
+                                    ? old.ImageFile
+                                    : Path.Combine(Path.GetDirectoryName(path) ?? "", old.ImageFile);
+                            }
+                        }
+                        catch { }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(prompt.ImageSourcePath))
+                    {
+                        string ext = Path.GetExtension(prompt.ImageSourcePath);
+                        if (string.IsNullOrWhiteSpace(ext)) ext = ".png";
+                        imageFile = Path.GetFileNameWithoutExtension(path) + "_image" + ext.ToLowerInvariant();
+                        string destination = Path.Combine(Path.GetDirectoryName(path) ?? _libraryCommandsFolder, imageFile);
+                        if (!Path.GetFullPath(prompt.ImageSourcePath).Equals(Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase))
+                            File.Copy(prompt.ImageSourcePath, destination, overwrite: true);
+
+                        if (!string.IsNullOrWhiteSpace(oldImagePath) &&
+                            string.Equals(Path.GetDirectoryName(Path.GetFullPath(oldImagePath)), Path.GetDirectoryName(Path.GetFullPath(path)), StringComparison.OrdinalIgnoreCase) &&
+                            !Path.GetFullPath(oldImagePath).Equals(Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase) &&
+                            File.Exists(oldImagePath))
+                        {
+                            try { File.Delete(oldImagePath); } catch { }
                         }
                     }
-                    catch { }
-                }
 
-                if (!string.IsNullOrWhiteSpace(prompt.ImageSourcePath))
-                {
-                    string ext = Path.GetExtension(prompt.ImageSourcePath);
-                    if (string.IsNullOrWhiteSpace(ext)) ext = ".png";
-                    imageFile = Path.GetFileNameWithoutExtension(path) + "_image" + ext.ToLowerInvariant();
-                    string destination = Path.Combine(Path.GetDirectoryName(path) ?? _libraryCommandsFolder, imageFile);
-                    if (!Path.GetFullPath(prompt.ImageSourcePath).Equals(Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase))
-                        File.Copy(prompt.ImageSourcePath, destination, overwrite: true);
-
-                    if (!string.IsNullOrWhiteSpace(oldImagePath) &&
-                        !Path.GetFullPath(oldImagePath).Equals(Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase) &&
-                        File.Exists(oldImagePath))
-                    {
-                        try { File.Delete(oldImagePath); } catch { }
-                    }
-                }
-
-                AnimationDocument.SaveLibraryCommand(path, commands, prompt.DescriptionText, imageFile);
+                    AnimationDocument.SaveLibraryCommand(path, commands, prompt.DescriptionText, imageFile);
+                }), "Saving Library Pose and image…");
                 MessageBox.Show(this,
                     $"Library Pose saved:\n{path}",
                     "Create Library Pose", MessageBoxButton.OK,
@@ -200,6 +224,12 @@ namespace ServoAnimator
         }
 
         private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+        private void Cancel_Click(object sender, RoutedEventArgs e)
+        {
+            _discardChanges = true;
+            Close();
+        }
 
         /// <summary>Open the RGB command builder for this row: pick one of
         /// the RGBLight.cs commands and fill its arguments; OK writes the
@@ -220,8 +250,8 @@ namespace ServoAnimator
     }
 
     /// <summary>
-    /// View-model wrapper for one ServoCommand row in the editor. Setters
-    /// write through to the wrapped command immediately.
+    /// View-model wrapper for one draft ServoCommand row in the editor.
+    /// Setters write through to the draft; hardware previews remain live.
     /// </summary>
     public class CommandVM : INotifyPropertyChanged
     {
@@ -236,6 +266,24 @@ namespace ServoAnimator
         private readonly Action<ServoSpeed, ServoNames> _configureGangSpeedNow;
         private readonly Action<ServoSpeed, ServoNames, RobotControls> _configureChildSpeedNow;
         private readonly bool _initializing = true;
+        private readonly CommandSplineDraft _splines;
+
+        public bool SupportsSpline => _splines != null && !IsTextServo &&
+            Command.Servo != ServoNames.Play && !Command.Control.HasValue;
+        public bool SplineEnabled
+        {
+            get => _splines?.IsEnabled(Command.Servo) == true;
+            set { if (SupportsSpline) _splines.SetEnabled(Command.Servo, value); }
+        }
+        public string SplineToolTip => Command.Control.HasValue
+            ? "Spline is a sequence-wide setting for the parent servo group; select the group to change it. Individual child commands are not interpolated."
+            : "Enable spline interpolation for this servo throughout the sequence. Neck Nod and Neck Tilt share one spline.";
+        private void RefreshSplineState()
+        {
+            Raise(nameof(SplineEnabled));
+            Raise(nameof(SupportsSpline));
+            Raise(nameof(SplineToolTip));
+        }
 
         // ---- merged Servo picklist ----
         // Display Grid order: each ganged ServoName followed by its child
@@ -299,6 +347,7 @@ namespace ServoAnimator
                 Servo = value.Servo;            // re-ranges + clears bad Control
                 Command.Control = value.Control;
                 Raise(nameof(SelectedServoItem));
+                RefreshSplineState();
             }
         }
 
@@ -308,7 +357,8 @@ namespace ServoAnimator
                          Action<ServoSpeed, ServoNames, string> moveServoNowText,
                          Action<ServoSpeed, ServoNames, RobotControls, int> moveChildNow,
                          Action<ServoSpeed, ServoNames> configureGangSpeedNow,
-                         Action<ServoSpeed, ServoNames, RobotControls> configureChildSpeedNow)
+                         Action<ServoSpeed, ServoNames, RobotControls> configureChildSpeedNow,
+                         CommandSplineDraft splines = null)
         {
             Command = command;
             _moveServoNow = moveServoNow;
@@ -316,6 +366,8 @@ namespace ServoAnimator
             _moveChildNow = moveChildNow;
             _configureGangSpeedNow = configureGangSpeedNow;
             _configureChildSpeedNow = configureChildSpeedNow;
+            _splines = splines;
+            if (_splines != null) _splines.Changed += RefreshSplineState;
             _initializing = false;
         }
 
@@ -376,6 +428,7 @@ namespace ServoAnimator
                 Raise(nameof(SupportsSpeed));
                 Raise(nameof(Value));
                 Raise(nameof(SelectedServoItem));
+                RefreshSplineState();
             }
         }
 

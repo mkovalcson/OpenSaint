@@ -27,7 +27,7 @@ namespace ServoAnimator
         {
             if (!double.IsFinite(Value) || Value < 0)
                 return fallback;
-            return Enum.TryParse<GridUnitType>(Unit, true, out var unit)
+            return Enum.TryParse<GridUnitType>(Unit, true, out var unit) && Enum.IsDefined(unit)
                 ? new GridLength(Value, unit)
                 : fallback;
         }
@@ -40,17 +40,17 @@ namespace ServoAnimator
         public double WindowWidth { get; set; } = 1250;
         public double WindowHeight { get; set; } = 880;
         public string WindowState { get; set; } = nameof(System.Windows.WindowState.Normal);
+        public string TimelineLayout { get; set; } = nameof(TimelineLayoutMode.Combined);
+        // Missing in older settings: adopt Combined once, then remember user choices.
+        public int TimelineLayoutDefaultsVersion { get; set; }
 
+        // Legacy JSON name retained: this column now contains Commands.
         public GridLengthSetting ServoEditorColumn { get; set; } = new() { Value = 1, Unit = nameof(GridUnitType.Star) };
         public GridLengthSetting UrdfEditorColumn { get; set; } = new() { Value = 1, Unit = nameof(GridUnitType.Star) };
-        public GridLengthSetting UndockedServoLeftColumn { get; set; } = new() { Value = 1, Unit = nameof(GridUnitType.Star) };
-        public GridLengthSetting UndockedServoRightColumn { get; set; } = new() { Value = 1, Unit = nameof(GridUnitType.Star) };
         public GridLengthSetting TopEditorRow { get; set; } = new() { Value = 250, Unit = nameof(GridUnitType.Pixel) };
         public GridLengthSetting AudioTimelineRow { get; set; } = new() { Value = 1, Unit = nameof(GridUnitType.Star) };
         public GridLengthSetting LastSplineTimelineHeight { get; set; } = new() { Value = 190, Unit = nameof(GridUnitType.Pixel) };
 
-        public bool CommandsVisible { get; set; } = true;
-        public bool MovieTimelineVisible { get; set; }
         // Legacy stepped height is retained only so old EditorLayout.json files
         // continue to deserialize. v1.7.1+ persists a continuous pixel height.
         public int EmbeddedUrdfHeightStage { get; set; }
@@ -97,8 +97,18 @@ namespace ServoAnimator
         {
             if (string.IsNullOrWhiteSpace(configFolder)) return;
             Directory.CreateDirectory(configFolder);
-            File.WriteAllText(PathFor(configFolder), JsonSerializer.Serialize(
-                this, new JsonSerializerOptions { WriteIndented = true }));
+            string path = PathFor(configFolder);
+            string temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                File.WriteAllText(temporary, JsonSerializer.Serialize(
+                    this, new JsonSerializerOptions { WriteIndented = true }));
+                File.Move(temporary, path, overwrite: true);
+            }
+            finally
+            {
+                if (File.Exists(temporary)) File.Delete(temporary);
+            }
         }
 
         public static bool IsVisibleOnVirtualDesktop(double left, double top, double width, double height)

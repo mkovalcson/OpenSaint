@@ -8,7 +8,8 @@
     <!-- Export options + destination in one place (moved here from the
          spline area): animate mode, spline sample rate, Scale ±1, and the
          output file. All three options persist with the sequence. -->
-    <Grid Margin="14">
+    <DockPanel Margin="14">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -51,4 +52,5 @@
             <Button Content="Cancel" Width="86" Padding="0,4" IsCancel="True"/>
         </StackPanel>
     </Grid>
+    </DockPanel>
 </Window>

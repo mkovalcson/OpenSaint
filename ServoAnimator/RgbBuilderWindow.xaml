@@ -26,7 +26,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="{Binding Label}"
                                    Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1"
+                        <TextBox Grid.Column="1" Width="120" HorizontalAlignment="Left"
                                  Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}">
                             <TextBox.Style>
                                 <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">

@@ -36,7 +36,7 @@ Opening another Sequence, loading another Movie, or starting a new workspace che
 
 Save Sequence and Save Movie write to the current source file. The corresponding Save As command chooses a new path within the active Configuration folder. Save Movie falls through to Save Movie As when a new movie has no path yet.
 
-The status bar continuously summarizes whether the Sequence, Movie, and configuration have unsaved changes; description edits are included in their document status.
+There is no bottom status bar. An asterisk directly after a Sequence or Movie name indicates unsaved changes, including description edits. Unsaved-change prompts remain active.
 
 
 **File > New** clears both the current Sequence and the current Movie workspace, including Movie blocks and Movie metadata.

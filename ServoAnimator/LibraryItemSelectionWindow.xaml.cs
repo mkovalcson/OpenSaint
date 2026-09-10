@@ -10,7 +10,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Data;
-using Microsoft.Win32;
 
 namespace ServoAnimator
 {
@@ -21,6 +20,8 @@ namespace ServoAnimator
         private readonly string _itemLabel;
         private readonly ObservableCollection<LibraryItemInfo> _items;
         private readonly ICollectionView _view;
+        private readonly LibraryCategories _categories;
+        private readonly Dictionary<LibraryItemInfo, string> _savedDescriptions;
 
         public LibraryItemInfo SelectedLibraryItem { get; private set; }
 
@@ -36,8 +37,16 @@ namespace ServoAnimator
             _isCommandMode = itemLabel.EndsWith("Command", StringComparison.OrdinalIgnoreCase) ||
                              itemLabel.EndsWith("Pose", StringComparison.OrdinalIgnoreCase);
             _items = new ObservableCollection<LibraryItemInfo>(LibraryItemInfo.Scan(libraryFolder));
+            _savedDescriptions = _items.ToDictionary(item => item, item => item.Description ?? "");
+            _categories = new LibraryCategories(libraryFolder, _items);
+            Closing += SaveDescriptionsOnClosing;
+            CategoryPicker.ItemsSource = _categories.Names.ToList();
+            CategoryPanel.Visibility = manageMode ? Visibility.Visible : Visibility.Collapsed;
+            UpdateFolderColumn();
             _view = CollectionViewSource.GetDefaultView(_items);
             _view.Filter = LibraryFilter;
+            _view.SortDescriptions.Add(new SortDescription(nameof(LibraryItemInfo.Category), ListSortDirection.Ascending));
+            _view.SortDescriptions.Add(new SortDescription(nameof(LibraryItemInfo.FileName), ListSortDirection.Ascending));
             ItemsGrid.ItemsSource = _view;
 
             string plural = _isCommandMode ? "Library Poses" : "Library Sequences";
@@ -45,31 +54,20 @@ namespace ServoAnimator
             string selectAction = selectActionText ??
                 (_isCommandMode ? "Insert Selected Pose" : "Insert Selected Sequence");
             ModeText.Text = manageMode
-                ? $"Select a {itemLabel.ToLowerInvariant()}. Edit its description or delete the selected file. " +
-                  "Folder and filename are shown separately; child folders are scanned recursively."
+                ? "Double-click a Description cell to edit it. Descriptions save automatically when this window closes. " +
+                  "Select a row to set its category or delete the file."
                 : $"Select a row and click {selectAction} (or double-click it). " +
-                  $"The list contains {plural.ToLowerInvariant()} alphabetically by folder and filename.";
-            DescriptionLabel.Text = $"Selected {itemLabel.ToLowerInvariant()} description:";
+                  $"The list contains {plural.ToLowerInvariant()} sorted by category, then filename.";
             SelectButton.Content = selectAction;
             AudioFilesColumn.Visibility = showAudioFiles ? Visibility.Visible : Visibility.Collapsed;
             SearchBox.ToolTip = showAudioFiles
-                ? "Filter by folder, filename, description, or audio filename"
-                : "Filter by folder, filename, or description";
+                ? "Filter by category, folder, filename, description, or audio filename"
+                : "Filter by category, folder, filename, or description";
 
-            DescriptionEditor.IsReadOnly = !manageMode;
-            SaveDescriptionButton.Visibility = manageMode ? Visibility.Visible : Visibility.Collapsed;
+            ItemsGrid.IsReadOnly = !manageMode;
+            PoseImageColumn.Visibility = _isCommandMode ? Visibility.Visible : Visibility.Collapsed;
             DeleteButton.Visibility = manageMode ? Visibility.Visible : Visibility.Collapsed;
-            ImageButton.Visibility = manageMode && _isCommandMode ? Visibility.Visible : Visibility.Collapsed;
             SelectButton.Visibility = manageMode ? Visibility.Collapsed : Visibility.Visible;
-
-            // Only Library Poses support attached images. Keep the Library
-            // Sequence description editor at full width.
-            if (!_isCommandMode)
-            {
-                ImagePanel.Visibility = Visibility.Collapsed;
-                ImageColumn.Width = new GridLength(0);
-                DescriptionEditor.Margin = new Thickness(0);
-            }
 
             if (_items.Count > 0)
             {
@@ -90,6 +88,7 @@ namespace ServoAnimator
             string q = SearchBox?.Text?.Trim() ?? "";
             if (q.Length == 0) return true;
             return (item.Folder?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                   item.Category.Contains(q, StringComparison.OrdinalIgnoreCase) ||
                    (item.FileName?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
                    (item.Description?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
                    (item.AudioFiles?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false);
@@ -97,6 +96,7 @@ namespace ServoAnimator
 
         private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
+            if (!CommitDescriptionEdit()) return;
             _view?.Refresh();
             if (_view?.IsEmpty == false && ItemsGrid.SelectedItem == null)
                 ItemsGrid.SelectedIndex = 0;
@@ -107,21 +107,13 @@ namespace ServoAnimator
         private void ItemsGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var item = Current;
-            DescriptionEditor.Text = item?.Description ?? "";
+            CategoryPicker.SelectedItem = _categories?.Names.FirstOrDefault(n => n.Equals(item?.Category ?? "none", StringComparison.OrdinalIgnoreCase));
+            CategoryPicker.IsEnabled = SaveCategoryButton.IsEnabled = _manageMode && item?.IsValid == true;
             ErrorText.Foreground = Brushes.IndianRed;
             ErrorText.Text = item?.ReadError ?? "";
-            DescriptionEditor.IsEnabled = item != null && item.IsValid;
-            SaveDescriptionButton.IsEnabled = _manageMode && item != null && item.IsValid;
             DeleteButton.IsEnabled = _manageMode && item != null;
-            ImageButton.IsEnabled = _manageMode && _isCommandMode && item != null && item.IsValid;
             SelectButton.IsEnabled = !_manageMode && item != null && item.IsValid;
 
-            if (_isCommandMode)
-            {
-                CommandImage.Source = item?.ImageSource;
-                NoImageText.Visibility = item?.ImageSource == null ? Visibility.Visible : Visibility.Collapsed;
-                ImageButton.Content = item?.ImageSource == null ? "Add Image…" : "Change Image…";
-            }
         }
 
         private void ItemsGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -140,97 +132,55 @@ namespace ServoAnimator
             DialogResult = true;
         }
 
-        private void SaveDescription_Click(object sender, RoutedEventArgs e)
+        private void ItemsGrid_BeginningEdit(object sender, DataGridBeginningEditEventArgs e)
         {
-            var item = Current;
-            if (item == null || !item.IsValid) return;
-
-            try
-            {
-                string description = DescriptionEditor.Text ?? "";
-                AnimationDocument.UpdateLibraryDescription(item.FullPath, description);
-                item.Description = description;
-                item.Modified = File.GetLastWriteTime(item.FullPath);
-                ErrorText.Foreground = Brushes.LightGreen;
-                ErrorText.Text = "Description saved.";
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, $"Could not update the {_itemLabel}:\n" + ex.Message,
-                                "Library update error", MessageBoxButton.OK,
-                                MessageBoxImage.Error);
-            }
+            e.Cancel = !_manageMode || e.Row.Item is not LibraryItemInfo { IsValid: true };
         }
 
-        private void AddChangeImage_Click(object sender, RoutedEventArgs e)
+        private bool CommitDescriptionEdit() =>
+            ItemsGrid == null ||
+            (ItemsGrid.CommitEdit(DataGridEditingUnit.Cell, true) &&
+             ItemsGrid.CommitEdit(DataGridEditingUnit.Row, true));
+
+        private void SaveDescriptionsOnClosing(object sender, CancelEventArgs e)
         {
-            var item = Current;
-            if (!_manageMode || !_isCommandMode || item == null || !item.IsValid) return;
-
-            var dlg = new OpenFileDialog
+            if (!_manageMode) return;
+            if (!CommitDescriptionEdit())
             {
-                Title = item.ImageSource == null ? "Add Library Pose Image" : "Change Library Pose Image",
-                Filter = "Image files|*.png;*.jpg;*.jpeg;*.bmp;*.gif|All files|*.*",
-                CheckFileExists = true,
-            };
-            if (dlg.ShowDialog(this) != true) return;
+                e.Cancel = true;
+                MessageBox.Show(this, "Finish editing the current description before closing.",
+                    "Description not saved", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
-            try
+            // Save all changed rows, including those currently hidden by the search.
+            // Update only description metadata, preserving categories and commands.
+            foreach (var item in _items.Where(item => item.IsValid))
             {
-                string jsonPath = Path.GetFullPath(item.FullPath);
-                string jsonDir = Path.GetDirectoryName(jsonPath) ?? "";
-                string ext = Path.GetExtension(dlg.FileName);
-                if (string.IsNullOrWhiteSpace(ext)) ext = ".png";
-                string destination = Path.Combine(jsonDir,
-                    Path.GetFileNameWithoutExtension(jsonPath) + "-image" + ext.ToLowerInvariant());
-
-                string oldLocalImage = "";
+                string description = item.Description ?? "";
+                if (_savedDescriptions.TryGetValue(item, out string saved) && description == saved)
+                    continue;
                 try
                 {
-                    var oldDoc = AnimationDocument.LoadLibraryItem(jsonPath);
-                    if (!string.IsNullOrWhiteSpace(oldDoc.ImageFile))
-                    {
-                        string oldPath = Path.IsPathRooted(oldDoc.ImageFile)
-                            ? Path.GetFullPath(oldDoc.ImageFile)
-                            : Path.GetFullPath(Path.Combine(jsonDir, oldDoc.ImageFile));
-                        if (string.Equals(Path.GetDirectoryName(oldPath), jsonDir,
-                                          StringComparison.OrdinalIgnoreCase))
-                            oldLocalImage = oldPath;
-                    }
+                    AnimationDocument.UpdateLibraryDescription(item.FullPath, description);
+                    _savedDescriptions[item] = description;
+                    item.Modified = File.GetLastWriteTime(item.FullPath);
                 }
-                catch { }
-
-                string source = Path.GetFullPath(dlg.FileName);
-                if (!string.Equals(source, destination, StringComparison.OrdinalIgnoreCase))
-                    File.Copy(source, destination, overwrite: true);
-
-                AnimationDocument.UpdateLibraryImage(jsonPath, Path.GetFileName(destination));
-
-                if (!string.IsNullOrWhiteSpace(oldLocalImage) &&
-                    !string.Equals(oldLocalImage, destination, StringComparison.OrdinalIgnoreCase) &&
-                    File.Exists(oldLocalImage))
+                catch (Exception ex)
                 {
-                    try { File.Delete(oldLocalImage); } catch { }
+                    e.Cancel = true;
+                    MessageBox.Show(this,
+                        $"Could not save the description for {item.FileName}:\n{ex.Message}\n\n" +
+                        "The window will remain open so your edits are not lost. Resolve the problem and close again to retry.",
+                        "Library update error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
                 }
-
-                item.SetImagePath(destination);
-                item.Modified = File.GetLastWriteTime(jsonPath);
-                CommandImage.Source = item.ImageSource;
-                NoImageText.Visibility = item.ImageSource == null ? Visibility.Visible : Visibility.Collapsed;
-                ImageButton.Content = item.ImageSource == null ? "Add Image…" : "Change Image…";
-                ErrorText.Foreground = Brushes.LightGreen;
-                ErrorText.Text = "Library Pose image saved.";
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, "Could not attach the Library Pose image:\n" + ex.Message,
-                                "Library image error", MessageBoxButton.OK,
-                                MessageBoxImage.Error);
             }
         }
 
         private void DeleteSelected_Click(object sender, RoutedEventArgs e)
         {
+            if (!CommitDescriptionEdit()) return;
             var item = Current;
             if (item == null) return;
             var answer = MessageBox.Show(this,
@@ -269,6 +219,8 @@ namespace ServoAnimator
                 }
 
                 _items.Remove(item);
+                _savedDescriptions.Remove(item);
+                UpdateFolderColumn();
                 _view.Refresh();
                 if (_view.IsEmpty)
                     SetEmptyState(_isCommandMode
@@ -287,16 +239,36 @@ namespace ServoAnimator
 
         private void SetEmptyState(string message)
         {
-            DescriptionEditor.Text = "";
-            DescriptionEditor.IsEnabled = false;
-            SaveDescriptionButton.IsEnabled = false;
+            CategoryPicker.IsEnabled = SaveCategoryButton.IsEnabled = false;
             DeleteButton.IsEnabled = false;
-            ImageButton.IsEnabled = false;
             SelectButton.IsEnabled = false;
-            CommandImage.Source = null;
-            NoImageText.Visibility = Visibility.Visible;
             ErrorText.Foreground = Brushes.IndianRed;
             ErrorText.Text = message;
+        }
+
+        private void UpdateFolderColumn() => FolderColumn.Visibility = _items.Any(i => !string.IsNullOrWhiteSpace(i.Folder))
+            ? Visibility.Visible : Visibility.Collapsed;
+
+        private void SaveCategory_Click(object sender, RoutedEventArgs e)
+        {
+            if (!CommitDescriptionEdit() || Current?.IsValid != true || CategoryPicker.SelectedItem is not string category) return;
+            try
+            {
+                _categories.Assign(Current, category);
+                _view.Refresh();
+                ErrorText.Foreground = Brushes.LightGreen;
+                ErrorText.Text = "Category saved.";
+            }
+            catch (Exception error) { MessageBox.Show(this, error.Message, "Category save error", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+
+        private void ManageCategories_Click(object sender, RoutedEventArgs e)
+        {
+            if (!CommitDescriptionEdit()) return;
+            new LibraryCategoryWindow(this, _categories).ShowDialog();
+            CategoryPicker.ItemsSource = _categories.Names.ToList();
+            CategoryPicker.SelectedItem = _categories.Names.FirstOrDefault(n => n.Equals(Current?.Category ?? "none", StringComparison.OrdinalIgnoreCase));
+            _view.Refresh();
         }
     }
 }

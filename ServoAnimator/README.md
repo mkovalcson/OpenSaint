@@ -6,6 +6,76 @@ format.
 
 ## Build & run
 
+Version 1.23.2 pins both antenna control groups to the URDF top edge and moves Eye Pop
+sliders 50 pixels left. Layout preferences now save before window teardown and restore
+after startup layout settles, preserving maximized state, splitter sizes, docked URDF
+height and camera zoom. Layout writes replace the settings file atomically.
+
+Version 1.23.1 aligns the URDF camera row with UnDock, anchors Whip/MFRC controls
+to opposite viewport edges, places Microphone beside RGB Command, and shifts NeckTurn
+50 pixels left. Straight URDF sliders have pale rounded tracks and blue square handles.
+Sequence and Movie transport rows now share zoom-first grouping and divider spacing.
+
+Version 1.23.0 restores the previous URDF control arrangement while keeping its
+gradient backdrop, refines the Hardware strip, and gives command values half the
+list width. Combined is the initial timeline layout, Graphite is the fixed palette,
+Sequence/Movie zoom controls match, and spline swatches are checkbox-sized squares.
+Library descriptions are edited in their table cells and automatically saved on close;
+the selected Library Pose's image appears immediately beside its description.
+
+Version 1.22.0 introduces the studio UI polish: refined Graphite surfaces and focus rings,
+grouped vector-icon transport controls, aligned command columns with servo color markers,
+compact spline legend chips, quieter timeline grids and Combined-mode waveforms, Movie
+cards with retained progress shading, a studio URDF backdrop with grouped controls,
+clearer hardware state, and consistent dialog titles and primary actions. Existing
+spacing remains flexible; no fixed spacing system is imposed.
+
+Version 1.21.0 preserves untouched individual-child servo positions across loop restarts,
+adds Show all modified controls with purple triangle highlighting, reserves middle-drag
+for panning everywhere, and moves hardware controls to a persistent right-hand strip.
+The docked URDF now reaches the top of the client area. The status bar and the Edit
+Commands Reason field are removed; existing Reason metadata is retained.
+
+Version 1.20.0 moves playback cursors into lightweight WPF overlays, refreshing
+them at display cadence without redrawing waveform, spline or Movie contents.
+The picklist beside Help selects Waveform top, Spline top or Combined, and is
+saved in editor layout settings. The Spline show-all button wraps after the last legend item.
+
+Version 1.19.0 adds persistent Library categories with category/filename sorting,
+animated pose-save progress, command-snapping Library range endpoints, and
+Ctrl/Shift triangle selection with group dragging, Uniform offset, Repeat,
+Copy/Paste and Delete. Group operations integrate with Undo and conflict resolution.
+
+Version 1.18.3 gives every Movie sequence block a minimum width of 100 pixels,
+including during Fit and zoom-out. Cursor positioning, hit testing and scrolling
+follow the adjusted block widths without changing Sequence or Movie timing.
+
+Version 1.18.2 separates Sequence zoom/Fit from playback with additional spacing.
+An open Movie has a **New Sequence** button after its final block: name a blank
+draft, build it, and save to append it once. Movie Fit/scroll includes the button,
+and recovery preserves pending drafts. Save Movie to retain the updated list.
+
+Version 1.18.1 reserves a permanent left inset for zero-time waveform/Spline
+markers, adds double-click command editing and a Spline **show all** button,
+keeps Commands and Movie Timeline visible, and puts Sequence zoom/Fit before playback.
+
+Version 1.18.0 anchors wheel/button zoom in the waveform, Spline and Movie
+timelines to their timeline cursor. Fit and normal timeline bounds are preserved.
+
+Version 1.17.7 adds **Help > Contents & Search > Step-by-Step Tutorials**:
+numbered walkthroughs for Sequences, Splines, command edits, URDF poses,
+audio/RGB, Movies, looping cues, Library Poses, and saving/reopening work.
+
+Version 1.17.6 replaces the Grid controls with the resizable Commands pane beside
+the URDF. Edit Commands now includes a Spline checkbox before Servo, with draft,
+Cancel and Undo/Redo support. Command triangles reliably show their full command
+list on hover, and the Spline graph has horizontal 25-point reference lines.
+
+Version 1.17.5 moves spline hover readouts beside the pointer and the checkbox
+legend above the graph. Movie controls now fit their content, with transport
+buttons matching the Sequence controls and no Created Date or Description label.
+Small bold **edit** links follow descriptions, including those in Movie blocks.
+
 Version 1.17.0 improves transport cancellation, uses a monotonic playback clock
 corrected by audio output position, caches waveform/sequence data and timeline
 backgrounds, prepares upcoming movie cues, and removes file reads from movie
@@ -40,10 +110,9 @@ The top editor is now a 50/50 split: all servo groups are stacked in the left pa
 
 ## v1.0.9 layout, paths, and playback controls
 
-- Servo grid is arranged as paired sections: Eye Flaps | Eyes, Nose | Neck, Eye Pop | Lighting & Vents, and Headtop Controls on the lower right.
-- MFR, Whip Antenna, and Microphone are combined under one Headtop Controls header, collapsed by default, with thin internal separators.
+- Commands sits beside the docked URDF, with Add/Edit/Delete before its heading and adjustable pane height and width.
 - Servo group headers are vertically compact.
-- Expanded Sequence and Movie descriptions use half the servo-grid height and never show a horizontal scrollbar.
+- Sequence and Movie descriptions are read-only; a small bold **edit** link immediately after the text opens a focused popup editor, including descriptions inside Movie blocks.
 - Set Paths asks only for Configuration; Projects is always Configuration\Projects.
 - Popup/menu command text is darkened for readability while top-level menu labels retain the theme foreground.
 - Sequence transport includes a 0–100% audio playback volume control that applies to primary and inserted audio clips.
@@ -59,7 +128,7 @@ The top editor is now a 50/50 split: all servo groups are stacked in the left pa
 ## v1.0.7 UI and workflow improvements
 
 Sequence and Movie work areas now use distinct accents and explicit labels. The
-servo grid has collapsible functional groups, filenames show `*` when Sequence
+Commands pane replaces the former Grid controls; filenames show `*` when Sequence
 or Movie changes are unsaved, Commands at Cursor supports direct add/edit/delete,
 and waveform markers show command summaries on hover. The spline area displays
 exact servo/time/value feedback while hovering or selecting points.
@@ -83,10 +152,9 @@ The menu bar is organized by workflow:
 * **View**: Robot Head · Movie Timeline
 * **Help**: Controls & Hotkeys… · About Animation Editor & Player
 
-The top options bar contains a **Description** field instead of an animation
-name. It is one line high during normal editing. Click **Expand** to replace the
-servo grid with a full-size multiline description editor; **Collapse** returns
-to the grid. Sequence JSON files store this text in the top-level
+The top options bar shows the Sequence name, unsaved asterisk, duration, and a
+read-only description. A small bold **edit** link opens a multiline description
+popup. Sequence JSON files store this text in the top-level
 `"description"` field. Older files containing `"name"` still load, but new
 saves no longer write `"name"`.
 
@@ -153,25 +221,20 @@ and the `RGBCommand` row shows the last command text used (editable in Live
 Drive / the editor) instead of a slider. The JSON `"value"` field is read
 polymorphically — number or string — via a custom converter in `Models.cs`.
 
-The servo grid is laid out as **two columns** with divider lines between
-functional groups (flaps / eyes / neck / nose-basket on the left; nose-body +
-RGB + vents / eye pops / microphone / antenna / MFR on the right). The order
-and group breaks live in `BuildServoGridColumns()` in `MainWindow.xaml.cs` and
-are easy to rearrange. The separate numeric "Type" entry column has been
-removed — the slider is the value editor for numeric servos.
+The Commands pane sits beside the docked URDF. Servo values, speeds and Spline settings are edited in Edit Commands; complete poses can be drafted in the URDF pose editor.
 
 | Action | How |
 |---|---|
 | Zoom the time axis | Mouse wheel over the waveform (zooms at the mouse), or Zoom −/+/Fit buttons |
 | Pan / scroll | Middle-button drag, or the horizontal scrollbar |
 | Drag a command group | **Press a `+` marker in the top lane and drag** left/right to move every command at that time to a new offset (one undo step; positions occupied by another `+` are skipped so groups never merge silently). A press-and-release without moving is a normal marker select |
-| Move the cursor | **Left-click** the waveform (snaps to a nearby `+` marker); the servo grid updates to the last value of each servo at that time, and all commands at that point are listed at the bottom |
+| Move the cursor | Left-click the waveform or a command triangle; Commands lists the commands at that time |
 | Edit / insert / delete / copy / paste commands | **Right-click** the waveform — the menu operates at the last selected cursor position |
 | Insert commands from another JSON | Right-click → *Insert commands from JSON file* — each command's `offsetSeconds` is incremented by the cursor offset |
-| Keyframe all servos | Right-click → *Generate commands from grid values* |
+| Keyframe a pose | Arrange the URDF pose editor, then right-click the timeline → Insert Pose |
 | Clear everything | **Clear** button — asks "Are you sure?" (Yes/No) first |
-| Live Drive | Toggle **Live Drive** On — the grid sliders/value boxes become editable and every change calls `MoveServoNow()`; the **RGBCommand text field is editable too** (commit with Enter or by leaving the field) and calls the text overload. While Live Drive is On, grid values **accumulate**: cursor clicks and playback ticks don't overwrite your manual settings, so you can dial in several servos and then right-click → *Generate commands from grid values* to keyframe them all. Turning Live Drive Off resyncs the grid to the cursor |
-| Resize grid vs waveform | Drag the **horizontal splitter handle** on the boundary between the servo grid and the waveform to give the grid more height (more rows visible) and shrink the waveform, or vice versa |
+| Live Drive | Enables physical output while editing commands or playing timelines; the URDF preview also works with Live Drive off |
+| Resize Commands / timelines | Drag the horizontal bar below Commands; the vertical divider adjusts Commands / URDF width |
 | Save / load | **Save JSON / Save JSON As… / Open JSON** — after saving, the filename shows in the window title bar; loading re-places all `+` markers |
 
 `+` markers appear at every unique command offset and disappear automatically

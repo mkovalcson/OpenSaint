@@ -5,12 +5,27 @@
     {
       "Path": "Projects\\testmovie.json",
       "Kind": "Movie",
-      "LastOpenedUtc": "2026-09-04T17:16:53.2827886Z"
+      "LastOpenedUtc": "2026-09-09T12:30:41.9992121Z"
+    },
+    {
+      "Path": "Projects\\Demo1movie.json",
+      "Kind": "Movie",
+      "LastOpenedUtc": "2026-09-07T13:40:08.5074628Z"
     },
     {
       "Path": "Projects\\MyProject\\eyeroll_Loop_seq.json",
       "Kind": "Sequence",
-      "LastOpenedUtc": "2026-09-04T15:31:16.6307568Z"
+      "LastOpenedUtc": "2026-09-07T12:37:47.4607291Z"
+    },
+    {
+      "Path": "Projects\\MyProject\\Waking up.json",
+      "Kind": "Sequence",
+      "LastOpenedUtc": "2026-09-07T11:12:19.3850897Z"
+    },
+    {
+      "Path": "Projects\\MyProject\\SleepInit_seq.json",
+      "Kind": "Sequence",
+      "LastOpenedUtc": "2026-09-07T10:36:08.7407575Z"
     },
     {
       "Path": "Projects\\MyProject\\demosequence1_seq.json",

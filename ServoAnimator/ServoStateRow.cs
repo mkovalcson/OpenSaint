@@ -1,21 +1,6 @@
-// ---------------------------------------------------------------------------
-// ServoStateRow.cs
-//
-// View-model for one row of the servo status grid shown above the waveform.
-// There is exactly one row per ServoNames value. Each row displays the *last*
-// command applied to that servo at/before the current cursor/playback time:
-//     ServoName | OffsetSeconds | Speed | Value | Slider(range) | TextBox
-//
-// Value handling differs per servo:
-//   * Numeric servos: slider + numeric box, range from ServoCommand.RangeFor
-//     (EyePop = 0..2000; NoseBasket and other positive controls = 0..100;
-//      centered controls = -100..+100).
-//   * RGBCommand (IsTextRow): the slider is replaced by a text box showing
-//     the last command text used.
-//
-// The editors are enabled only while "Live Drive" is on; the actual
-// MoveServoNow() call is wired up in MainWindow's event handlers.
-// ---------------------------------------------------------------------------
+// Servo state cache used by playback, hardware and the URDF preview.
+// The former on-screen Grid editor has been removed; values remain shared
+// here so command and pose playback retain their existing behavior.
 
 using System.ComponentModel;
 

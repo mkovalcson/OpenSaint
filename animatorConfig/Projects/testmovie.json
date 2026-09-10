@@ -1,8 +1,19 @@
 {
-  "description": "",
+  "description": "Demo movie",
   "createdDate": "2026-08-19",
   "sequences": [
     "Projects\\MyProject\\LightningRound_demo_seq.json",
+    "Projects\\MyProject\\eyeroll_Loop_seq.json",
     "Projects\\MyProject\\LightningRound_seq.json"
+  ],
+  "sequenceLoops": [
+    false,
+    true,
+    false
+  ],
+  "sequenceTriggers": [
+    "",
+    "F7",
+    "F2"
   ]
 }

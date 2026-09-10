@@ -86,7 +86,7 @@ namespace ServoAnimator
             Title = $"Help — {topic.Title}";
         }
 
-        private FlowDocument MarkdownToFlowDocument(string text)
+        internal FlowDocument MarkdownToFlowDocument(string text)
         {
             var doc = new FlowDocument
             {
@@ -164,11 +164,29 @@ namespace ServoAnimator
                 if (trimmed.StartsWith("- ") || trimmed.StartsWith("* "))
                 {
                     FlushParagraph();
+                    if (currentList?.MarkerStyle != TextMarkerStyle.Disc) FlushList();
                     currentList ??= new List { MarkerStyle = TextMarkerStyle.Disc, Margin = new Thickness(22, 2, 0, 8) };
                     currentList.ListItems.Add(new ListItem(new Paragraph(InlineText(trimmed[2..])) { Margin = new Thickness(0, 1, 0, 1) }));
                     continue;
                 }
 
+                var numbered = System.Text.RegularExpressions.Regex.Match(trimmed, @"^(\d{1,9})[.)]\s+(.+)$");
+                if (numbered.Success && int.TryParse(numbered.Groups[1].Value, out int number) && number > 0)
+                {
+                    FlushParagraph();
+                    if (currentList?.MarkerStyle != TextMarkerStyle.Decimal) FlushList();
+                    currentList ??= new List
+                    {
+                        MarkerStyle = TextMarkerStyle.Decimal,
+                        StartIndex = number,
+                        Margin = new Thickness(28, 2, 0, 8),
+                    };
+                    currentList.ListItems.Add(new ListItem(new Paragraph(InlineText(numbered.Groups[2].Value))
+                        { Margin = new Thickness(0, 2, 0, 4) }));
+                    continue;
+                }
+
+                FlushList();
                 paragraphLines.Add(trimmed);
             }
             FlushParagraph(); FlushList(); if (inCode || code.Length > 0) FlushCode();

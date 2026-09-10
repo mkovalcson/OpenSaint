@@ -7,11 +7,17 @@ namespace ServoAnimator
     public partial class RobotHeadWindow : Window
     {
         public bool ForceClose { get; set; }
+        public WindowState LastNonMinimizedWindowState { get; private set; } = WindowState.Normal;
         public event Action DockRequested;
 
         public RobotHeadWindow()
         {
             InitializeComponent();
+            StateChanged += (_, _) =>
+            {
+                if (WindowState != WindowState.Minimized)
+                    LastNonMinimizedWindowState = WindowState;
+            };
             HelpSystem.EnableContextHelp(this, "urdf-viewer");
             HelpSystem.SetTopic(HeadView, "urdf-viewer");
             HeadView.DockToggleRequested += () => DockRequested?.Invoke();

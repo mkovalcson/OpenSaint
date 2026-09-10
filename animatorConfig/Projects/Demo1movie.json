@@ -1,0 +1,14 @@
+{
+  "description": "Demo Movie",
+  "createdDate": "2026-09-07",
+  "sequences": [
+    "Projects\\MyProject\\SleepInit_seq.json",
+    "Projects\\MyProject\\Waking up.json",
+    "Projects\\MyProject\\eyeroll_Loop_seq.json"
+  ],
+  "sequenceLoops": [
+    false,
+    false,
+    false
+  ]
+}

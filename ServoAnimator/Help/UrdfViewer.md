@@ -1,10 +1,13 @@
 # URDF 3D Viewer
 
-The URDF viewer renders the calibrated Johnny 5 head and neck and follows the logical values produced by the Grid, timeline and playback.
+The URDF viewer renders the calibrated Johnny 5 head and neck and follows the logical values produced by command editing, the timeline and playback.
 
-## Bottom-left controls
+## Preview controls
 
-The controls are stacked vertically:
+The studio-gradient viewport keeps the familiar lower-left vertical control stack,
+with camera controls in a separate row beneath it and the legend at lower right.
+Pose and Face Reset sit near the bottom-center handle. Library Pose actions appear
+above the preview controls while Pose is enabled:
 
 - Collision Warning: On/Off
 - Drive: On/Off
@@ -12,13 +15,16 @@ The controls are stacked vertically:
 - ← / Recenter / → camera row
 - -90° / +90° camera turns
 
+Recenter stretches so the right camera arrow lines up with the right edge of UnDock.
+The NeckTurn circle is offset 50 pixels left from its previous position near the legend.
+
 Drive controls only visual URDF updates. Turning URDF Drive off freezes the model pose to reduce rendering work; it does not disable physical Live Drive.
 
 ## Docking
 
-UnDock opens the URDF in a separate window and removes its pane from the editor. The Servo Grid expands into two columns. The detached window uses the standard Windows maximize/restore controls.
+UnDock opens the URDF in a separate window and removes its pane from the editor. Commands expands across the freed width. The detached window uses the standard Windows maximize/restore controls.
 
-If the detached window is not visible, use the Dock button under Headtop Controls in the expanded Servo Grid.
+If the detached window is not visible, use Dock URDF in the Commands header.
 
 ## Docked height
 
@@ -33,14 +39,16 @@ The URDF camera and its on-screen controls remain operational while the modeless
 
 ## Pose editor
 
-The **Pose** button is positioned between the camera-right control and the bottom-center resize handle. Pose mode is a non-destructive URDF drafting mode: timeline/grid refreshes do not overwrite the draft while Pose is active. Leaving Pose mode without inserting it restores the current timeline pose.
+The **Pose** button is positioned between the camera-right control and the bottom-center resize handle. Pose mode is a non-destructive URDF drafting mode: timeline refreshes do not overwrite the draft while Pose is active. Leaving Pose mode without inserting it restores the current timeline pose.
 
 - The eye bullseye is constrained to the eye-tube target circle. Center is centered eyes; an axis at the circle edge is 100% of that eye travel. Diagonal positions mix horizontal and vertical movement. Horizontal bullseye motion uses the visually reversed command-axis mapping required by the eye mechanism.
 - In **LR Joined**, the gaze bullseye is on the robot's right eye and the shared iris slider sits immediately below the robot's left eye tube. **LR Split** exposes both eye targets and places an iris slider immediately below each eye tube.
 - Flap Open/Close, Nose Body, and Nose Basket are vertical sliders centered on the overall robot-head frame rather than the moving NoseBody. Flap Open/Close is centered, Nose Body is on the robot-right side, and the half-height Nose Basket slider is on the robot-left side. In **LR Split**, Nose Body/Basket stay in those same locations while the left/right Flap Open/Close sliders appear side-by-side at the center. **T** handles still control upper-flap tilt. The Vent control is a 90° slider arc following the CAD outer edge of the robot-left eye tube from the top down to the side. In **LR Split**, a mirrored arc appears on the opposite eye and the two vents are controlled independently.
 - Eye Pop is anchored 15 mm outside the physical head sides. The bottom of each vertical Eye Pop slider is aligned with the projected top of the mouth, so that relationship follows the model through head/camera motion. Joined mode uses one outside slider; Split mode exposes independent left/right sliders.
 - NeckTurn uses a 50%-larger editable circular dial positioned 75% of the way from the bottom-center resize-handle reference toward the lower-right legend. Its zero pointer is straight down and acts as a top-down heading indicator for the front of the head. A **↺** reset is centered inside the dial. NeckNod remains anchored at the physical front-middle of the Fabco neck assembly, while NeckTilt remains anchored to the physical robot-left Fabco cylinder midpoint; moving Nod or Tilt transfers ownership of the shared neck actuators to that mode.
-- Whip antenna Up/Down, MFRC Up/Down, and Microphone Up/Down are vertical sliders pinned to the top of the URDF display while following their mechanisms horizontally. The Whip slider is projected 30 mm outside its antenna, the MFRC slider 50 mm outside its antenna, and the Microphone slider follows the top of the microphone. An editable Whip rotation dial sits just outside the Whip vertical slider. An editable MFRC rotation dial sits immediately to the right of the MFRC Up/Down slider.
+- Whip antenna height and rotation controls are anchored at the top-left edge of the URDF viewport; MFRC height and rotation controls are anchored at the top-right. Both groups keep their 8-pixel top inset even in narrow panes. Microphone Up/Down sits just left of the RGB Command box. Antenna height-reset buttons sit beneath their sliders.
+- Eye Pop sliders are offset 50 pixels left from their projected side positions, in both Joined and Split modes. Their reset buttons follow the shifted sliders.
+- Straight pose sliders use pale rounded tracks and blue, white-bordered handles without numeric labels. Their existing ranges, dragging, keyboard controls and reset actions are unchanged.
 - Every Pose slider has a small **↺** reset button positioned toward the outside of the robot relative to that control; each visible Vent arc has one as well. The NeckTurn, Whip rotation, and MFRC rotation dials have reset buttons centered inside their circles. Resetting NeckNod or NeckTilt also makes that mode the active shared-neck owner.
 - While Pose mode is on, **Face Reset** appears immediately to the right of the Pose button. It neutralizes eye gaze, irises, flap open/close and tilt, vents, Nose Body, Nose Basket, and Eye Pop without changing NeckTurn, NeckNod, or NeckTilt. Face Reset also clears the Pose RGB Command and applies the same lighting-off result as `ClearAll` to the URDF preview and Live Drive hardware.
 - **LR Joined** is the default. **LR Split** exposes separate eye targets/iris sliders, eye-pop sliders, mirrored left/right Vent arcs, and left/right flap controls so asymmetric poses can be created.

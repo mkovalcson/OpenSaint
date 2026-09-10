@@ -38,14 +38,12 @@ namespace ServoAnimator
         /// <summary>The animation document currently being edited. All
         /// timeline operations mutate _doc.Commands directly.</summary>
         private AnimationDocument _doc = new();
+        private PendingMovieSequence _pendingMovieSequence;
+        private PendingMovieSequence CurrentMovieDraft =>
+            _pendingMovieSequence?.IsFor(_doc, _moviePath) == true ? _pendingMovieSequence : null;
 
         private string _jsonPath;    // path of the loaded/saved JSON (title bar)
         private string _audioPath;   // path of the loaded audio file
-
-        /// <summary>Prevents the collapsed and expanded description editors
-        /// from recursively updating one another.</summary>
-        private bool _syncingDescription;
-        private bool _syncingMovieDescription;
 
         // NAudio playback objects. _reader is also used once at load time to
         // decode the whole file into peak buckets for the waveform display.
@@ -84,6 +82,8 @@ namespace ServoAnimator
         /// competing 33 ms dispatcher timer.</summary>
         private bool _playbackRenderingSubscribed;
         private TimeSpan _lastPlaybackRenderingTime;
+        private readonly PlaybackFrameCadence _previewFrameCadence = new();
+        private bool _refreshPreviewThisFrame = true;
         private long _lastInformationalRefreshMs;
 
         /// <summary>Slow serial/ticcmd writes are ordered on a background
@@ -164,7 +164,7 @@ namespace ServoAnimator
         // command list and a user-facing action description are stored. Undo
         // swaps the current list with the top snapshot (pushing the current
         // one and its description onto redo); any NEW edit clears redo.
-        private sealed record UndoEntry(List<ServoCommand> Commands, string Description);
+        private sealed record UndoEntry(List<ServoCommand> Commands, string Description, double AudioOffset, List<ServoNames> Splines);
         private readonly List<UndoEntry> _undoStack = new();
         private readonly List<UndoEntry> _redoStack = new();
         private const int UndoLimit = 100;
@@ -212,7 +212,6 @@ namespace ServoAnimator
         private string _savedSequenceFingerprint = "";
         private string _savedMovieFingerprint = "";
         private string _savedConfigurationFingerprint = "";
-        private readonly DispatcherTimer _statusTimer;
         private readonly DispatcherTimer _recoveryTimer;
         private bool _repairWindowOpen;
         private bool _repairOfferQueued;
@@ -222,7 +221,7 @@ namespace ServoAnimator
         // day, increment minor/reset patch on a new day, and major only on
         // explicit user request.
         private const string AppDisplayName = "Animation Editor & Player";
-        private const string AppVersion = "1.17.2";
+        private const string AppVersion = "1.23.2";
 
         /// <summary>Detached URDF preview used when the user presses Undock.
         /// The old View > Robot Head entry has been removed; docking is now
@@ -299,18 +298,11 @@ namespace ServoAnimator
             "#FFB74D", "#4FC3F7", "#DCE775", "#90A4AE",
         };
 
-        /// <summary>Set while the grid is being updated programmatically so
-        /// slider ValueChanged events don't get mistaken for user input.</summary>
-        private bool _suppressGridEvents;
-
         /// <summary>
-        /// Grid rows manually changed at the current cursor position. These
-        /// values intentionally remain staged together while the user adjusts
-        /// additional rows, so "Generate commands from grid values" captures
-        /// the complete staged pose. Moving to another timeline time or
-        /// starting playback clears the staged overrides.
+        /// Servo state explicitly reset at the current cursor remains staged until
+        /// cursor movement or playback resumes normal timeline tracking.
         /// </summary>
-        private readonly HashSet<ServoNames> _manualGridOverrides = new();
+        private readonly HashSet<ServoNames> _manualPoseOverrides = new();
 
         /// <summary>Timeline command groups whose resulting calibrated URDF
         /// pose was colliding during playback. WaveformView renders these command
@@ -321,6 +313,9 @@ namespace ServoAnimator
         /// <summary>Last user-selected spline-area height so hiding/re-showing
         /// the spline does not discard the audio/spline GridSplitter ratio.</summary>
         private GridLength _lastSplineTimelineHeight = new(190, GridUnitType.Pixel);
+        private GridLength _lastTopEditorHeight = new(250, GridUnitType.Pixel);
+        private EditorLayoutSettings _startupEditorLayout;
+        private WindowState _lastNonMinimizedWindowState = WindowState.Normal;
 
         /// <summary>Explicit embedded URDF pane height in pixels. A value <= 0
         /// means follow the normal top editor row height until the user drags
@@ -392,6 +387,11 @@ namespace ServoAnimator
         public MainWindow()
         {
             InitializeComponent();
+            StateChanged += (_, _) =>
+            {
+                if (WindowState != WindowState.Minimized)
+                    _lastNonMinimizedWindowState = WindowState;
+            };
 
             // Native searchable/context-sensitive Help is completely lazy.
             // MainWindow owns the playback policy used by every child dialog:
@@ -412,10 +412,7 @@ namespace ServoAnimator
                 EmbeddedHeadView.VerticalResizeDeltaRequested += EmbeddedHeadView_VerticalResizeDeltaRequested;
                 EmbeddedHeadView.SetDockedHostState();
             }
-            UpdateThemeMenuChecks();
             PreviewKeyDown += MainWindow_PreviewKeyDown;
-            _statusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
-            _statusTimer.Tick += (_, _) => { _statusTimer.Stop(); if (StatusText != null) StatusText.Text = "Ready"; };
             _recoveryTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
             _movieMetadataRefreshTimer.Tick += RefreshChangedMovieMetadata;
             _recoveryTimer.Tick += (_, _) => SaveRecoverySnapshotIfNeeded();
@@ -428,11 +425,12 @@ namespace ServoAnimator
                 if (s == ServoNames.Play) continue;   // export-only pseudo-servo
                 _rows.Add(new ServoStateRow(s));
             }
-            BuildServoGridColumns();
             RefreshGridChildren();   // populate the [+/-] RobotControl sub-rows
 
             // Waveform events.
             Waveform.TimeClicked += Waveform_TimeClicked;
+            Waveform.CommandsEditRequested += Timeline_EditCommandsRequested;
+            Spline.CommandsEditRequested += Timeline_EditCommandsRequested;
             Waveform.RightClicked += Waveform_RightClicked;
             Waveform.ViewChanged += SyncScrollBar;
             Waveform.ViewChanged += SyncSplineView;   // keep spline zoom/scroll matched
@@ -440,6 +438,7 @@ namespace ServoAnimator
             Waveform.AudioOffsetDragEnded += Waveform_AudioOffsetDragEnded;
             Waveform.MarkerDragged += Waveform_MarkerDragged;
             Waveform.MarkerDragCompleted += Waveform_MarkerDragCompleted;
+            InitializeCommandGroups();
             Waveform.ClipMoveRequested += Waveform_ClipMoveRequested;
             Waveform.ClipDragCompleted += Waveform_ClipDragCompleted;
             Waveform.ClipOffsetDialogRequested += Waveform_ClipOffsetDialog;
@@ -454,11 +453,19 @@ namespace ServoAnimator
             MovieTimeline.InsertRequested += MovieTimeline_InsertRequested;
             MovieTimeline.RemoveRequested += MovieTimeline_RemoveRequested;
             MovieTimeline.LoopToggleRequested += MovieTimeline_LoopToggleRequested;
+            MovieTimeline.AssignTriggerRequested += MovieTimeline_AssignTriggerRequested;
+            MovieTimeline.DescriptionEditRequested += index =>
+            {
+                if (index < 0 || index >= _movieItems.Count) return;
+                // Editing the loaded sequence must not reload/discard its unsaved changes.
+                if (!PathsEqual(_movieItems[index].FilePath, _jsonPath) && !SelectMovieSequence(index, 0)) return;
+                SequenceDescriptionEdit_Click(MovieTimeline, new RoutedEventArgs());
+            };
             MovieTimeline.ViewChanged += SyncMovieScroll;
+            MovieTimeline.NewSequenceRequested += NewMovieSequence;
             MovieTimeline.BlockToolTipProvider = MovieBlockToolTip;
             MovieTimeline.SetItems(_movieItems);
             SetMovieDescriptionText(_movieDescription);
-            RefreshMovieMetadataView();
             UpdateEmptyStates();
 
             // Spline area: forwards zoom/pan to the waveform, clicks move the
@@ -469,11 +476,11 @@ namespace ServoAnimator
             Spline.PointValueChanged += Spline_PointValueChanged;
             Spline.PointTimeChanged += Spline_PointTimeChanged;
             Spline.PointAdded += Spline_PointAdded;
-            Spline.PointServoToggled += Spline_PointServoToggled;
             Spline.PointDeleted += Spline_PointDeleted;
-            Spline.InfoChanged += text => { if (SplineInspectorText != null) SplineInspectorText.Text = text; };
             Spline.DragCompleted += () => { _dragUndoPushed = false; RefreshAfterEdit(); };
-            SplineLegend.ItemsSource = _legend;
+            ((System.Windows.Data.CompositeCollection)SplineLegend.ItemsSource)
+                .OfType<System.Windows.Data.CollectionContainer>().Single().Collection = _legend;
+            InitializeTimelineLayout();
 
             UpdateTitle();
             UpdateTimeText();
@@ -548,8 +555,24 @@ namespace ServoAnimator
                 // undocked layout. Dock/Undock is controlled directly from the
                 // URDF view rather than from the View menu.
                 PushHeadPose();
+                Dispatcher.BeginInvoke(new Action(FinishRestoringEditorLayout),
+                    System.Windows.Threading.DispatcherPriority.ContextIdle);
                 _recoveryTimer.Start();
             };
+        }
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            if (!ApplyOpenCommandEditor()) e.Cancel = true;
+            base.OnClosing(e);
+            // Window/owned-window bounds must be captured before WPF tears down
+            // their native handles; OnClosed is too late for RestoreBounds.
+            if (!e.Cancel && !SaveEditorLayout())
+                e.Cancel = MessageBox.Show(this,
+                    "The window layout could not be saved. Close anyway?\n\n" +
+                    "Choose No to keep the editor open and retry after fixing access to the Config folder.",
+                    "Layout not saved", MessageBoxButton.YesNo, MessageBoxImage.Warning,
+                    MessageBoxResult.No) != MessageBoxResult.Yes;
         }
 
         protected override void OnClosed(EventArgs e)
@@ -557,7 +580,6 @@ namespace ServoAnimator
             StopPlaybackRendering();
             _recoveryTimer.Stop();
             SaveRecoverySnapshotIfNeeded();
-            SaveEditorLayout();
             SaveLastActiveDocument();
             if (_head != null) { _head.ForceClose = true; _head.Close(); }
             _urdfConfigReloadTimer.Stop();
@@ -591,6 +613,7 @@ namespace ServoAnimator
                 {
                     SavedUtc = DateTime.UtcNow,
                     SequencePath = _jsonPath ?? "",
+                    PendingMovieSequenceName = CurrentMovieDraft?.Name ?? "",
                     Sequence = _doc,
                     MoviePath = _moviePath ?? "",
                     MovieDescription = _movieDescription ?? "",
@@ -601,6 +624,7 @@ namespace ServoAnimator
                         DurationSeconds = i.DurationSeconds,
                         Description = i.Description,
                         IsLooping = i.IsLooping,
+                        Trigger = i.Trigger,
                     }).ToList(),
                     MovieSelectedIndex = _movieSelectedIndex,
                     SequenceCursorTime = _cursorTime,
@@ -664,16 +688,19 @@ namespace ServoAnimator
                     ? DateTime.Today.ToString("yyyy-MM-dd") : snapshot.MovieCreatedDate;
                 _movieSelectedIndex = Math.Clamp(snapshot.MovieSelectedIndex, -1, _movieItems.Count - 1);
                 SetMovieDescriptionText(_movieDescription);
-                RefreshMovieMetadataView();
 
                 if (snapshot.Sequence != null)
                     ApplyRecoveredSequence(snapshot.Sequence, snapshot.SequencePath,
                                            snapshot.SequenceCursorTime);
 
+                _pendingMovieSequence = snapshot.Sequence != null &&
+                    string.IsNullOrWhiteSpace(snapshot.SequencePath) &&
+                    !string.IsNullOrWhiteSpace(_moviePath) &&
+                    PendingMovieSequence.TryName(snapshot.PendingMovieSequenceName, out string draftName)
+                        ? new PendingMovieSequence(draftName, _moviePath, _doc) : null;
+
                 if (Enum.TryParse(snapshot.ActiveDocumentKind, out ActiveDocumentKind active))
                     _activeDocumentKind = active;
-                if (_activeDocumentKind == ActiveDocumentKind.Movie || _movieItems.Count > 0)
-                    MovieTimelineToggle.IsChecked = true;
 
                 MovieTimeline.SetItems(_movieItems);
                 MovieTimeline.CursorTime = Math.Clamp(snapshot.MovieCursorTime, 0, MovieTimeline.TotalDuration);
@@ -701,6 +728,9 @@ namespace ServoAnimator
         private void ApplyRecoveredSequence(AnimationDocument document, string logicalPath,
                                             double initialCursor)
         {
+            document ??= new AnimationDocument();
+            if (!CommandConflictWindow.Resolve(this, document.Commands))
+                throw new OperationCanceledException("Recovery canceled while resolving redundant commands.");
             StopPlayback();
             _reader?.Dispose();
             _reader = null;
@@ -1058,11 +1088,11 @@ namespace ServoAnimator
             if (!preservePending) _hardwarePlaybackQueue.ClearPending();
             // Playback always returns the grid to the authored timeline pose;
             // any manually staged multi-row values are intentionally discarded.
-            ClearManualGridOverrides();
+            ClearManualPoseOverrides();
 
             // Rebuild immediately before every run so the preview evaluates
             // the latest spline control points, including edits made since
-            // the last save/load.  UpdateServoGrid() also pushes that exact
+            // the last save/load.  UpdateServoState() also pushes that exact
             // evaluated pose into the URDF view before the first timer tick.
             RebuildSplineData();
 
@@ -1078,7 +1108,7 @@ namespace ServoAnimator
             try { SwitchAudioTo(DesiredSourceAt(_cursorTime), _cursorTime); }
             catch { /* the tick retries */ }
 
-            UpdateServoGrid(_cursorTime);
+            UpdateServoState(_cursorTime);
 
             // Commands authored exactly at zero are the first changes applied
             // to a carried movie pose. The normal (from,to] timer window cannot
@@ -1096,6 +1126,7 @@ namespace ServoAnimator
         private void StartPlaybackRendering()
         {
             _lastPlaybackRenderingTime = TimeSpan.MinValue;
+            _previewFrameCadence.Reset();
             _lastInformationalRefreshMs = 0;
             if (_playbackRenderingSubscribed) return;
             System.Windows.Media.CompositionTarget.Rendering += Playback_Rendering;
@@ -1111,15 +1142,13 @@ namespace ServoAnimator
 
         private void Playback_Rendering(object sender, EventArgs e)
         {
-            // Some displays render at 120/144 Hz. Cap editor work near 60 Hz;
-            // the audio clock still supplies the exact current time each frame.
+            // Advance clock, command dispatch and cursor transforms on every display
+            // frame. Only the heavier model/slider work is paced near 60 Hz.
             if (e is System.Windows.Media.RenderingEventArgs rendering)
             {
-                if (_lastPlaybackRenderingTime != TimeSpan.MinValue &&
-                    rendering.RenderingTime - _lastPlaybackRenderingTime <
-                        TimeSpan.FromMilliseconds(15))
-                    return;
+                if (_lastPlaybackRenderingTime == rendering.RenderingTime) return;
                 _lastPlaybackRenderingTime = rendering.RenderingTime;
+                _refreshPreviewThisFrame = _previewFrameCadence.IsDue(rendering.RenderingTime);
             }
             Timer_Tick(sender, e);
         }
@@ -1147,7 +1176,7 @@ namespace ServoAnimator
             _mode = PlayMode.Stopped;
             UpdateHelpAvailability();
             ForEachHeadView(v => v.SetMouth(0));
-            PlayPauseBtn.Content = "▶ Play";
+            PlayPauseBtn.Content = "▶ Sequence";
             if (_moviePlaybackActive)
             {
                 _moviePlaybackActive = false;
@@ -1157,7 +1186,7 @@ namespace ServoAnimator
         }
 
         /// <summary>
-        /// Playback heartbeat (render-synchronized, capped near 60 fps). The wall clock is the master:
+        /// Playback heartbeat (every display frame, with heavy preview work paced near 60 fps). The wall clock is the master:
         ///   * timeline time advances from the anchor unconditionally, so
         ///     the cursor moves smoothly through the pre-audio region and
         ///     never stalls waiting for the audio device
@@ -1226,7 +1255,7 @@ namespace ServoAnimator
                 Waveform.InvalidateCursor();
                 SyncSplineView();
                 UpdateTimeText();
-                UpdateServoGrid(_cursorTime);
+                UpdateServoState(_cursorTime);
                 SyncMovieCursorToSequencePlayback(_cursorTime);
                 if (!ContinueMoviePlaybackAfterSequenceEnd())
                     StopPlayback(cancelPending: false);
@@ -1256,7 +1285,7 @@ namespace ServoAnimator
                     : AmplitudeFrom(_activeSource.PeakMin,
                                     _activeSource.PeakMax, at);
             }
-            ForEachHeadView(v => v.SetMouth(amp));
+            if (_refreshPreviewThisFrame) ForEachHeadView(v => v.SetMouth(amp));
 
             // Text formatting/layout is informational; 15 Hz is responsive
             // while leaving render frames for cursors, sliders, and the model.
@@ -1271,7 +1300,7 @@ namespace ServoAnimator
             // evaluates spline-enabled servos at the exact timeline time and
             // PushHeadPose() sends those values to every URDF joint each tick.
             // Non-spline servos continue to hold their latest command value.
-            UpdateServoGrid(t);
+            if (_refreshPreviewThisFrame) UpdateServoState(t);
         }
 
         /// <summary>
@@ -1340,7 +1369,7 @@ namespace ServoAnimator
             _cursorTime = time;
             try
             {
-                UpdateServoGrid(time);
+                UpdateServoState(time);
                 RobotHeadView view = _urdfUndocked
                     ? _head?.HeadView
                     : EmbeddedHeadView;
@@ -1420,7 +1449,7 @@ namespace ServoAnimator
             SyncScrollBar();
             RefreshMarkers();          // '+' symbols follow the shifted commands
             RebuildSplineData();       // spline curves follow too
-            UpdateServoGrid(_cursorTime);
+            UpdateServoState(_cursorTime);
             UpdateCommandsAtPointList();
         }
 
@@ -1591,7 +1620,7 @@ namespace ServoAnimator
         /// <summary>Tiny modal numeric prompt (seconds, 3 decimals).</summary>
         private double? PromptForTime(string title, double current)
         {
-            var box = new TextBox { Text = current.ToString("F3"), Margin = new Thickness(0, 6, 0, 10) };
+            var box = new TextBox { Width = 120, HorizontalAlignment = HorizontalAlignment.Left, Text = current.ToString("F3"), Margin = new Thickness(0, 6, 0, 10) };
             var ok = new Button { Content = "OK", Width = 70, IsDefault = true, Margin = new Thickness(0, 0, 6, 0) };
             var cancel = new Button { Content = "Cancel", Width = 70, IsCancel = true };
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
@@ -1668,220 +1697,117 @@ namespace ServoAnimator
         #endregion
 
         // ================================================================
-        #region 4. Servo status grid ("last state of each servo at time t")
+        #region 4. Servo playback state and hardware preview
         // ================================================================
 
-        /// <summary>
-        /// Lays out every servo group in a single left-side column beside the
-        /// embedded Robot Head. Group order is:
-        /// Eye Flaps, Nose, Eyes, Neck, Lighting & Vents, Eye Pop,
-        /// Headtop Controls. Headtop Controls contains MFR, Whip Antenna and
-        /// Microphone and starts collapsed; thin separators distinguish those
-        /// subgroups.
-        /// </summary>
-        private void BuildServoGridColumns()
-        {
-            ServoStateRow R(ServoNames servo) => _rows.First(r => r.Servo == servo);
-
-            foreach (var r in _rows)
-            {
-                r.DividerBelow = false;
-                r.SubDividerBelow = false;
-                r.GroupName = "";
-                r.GroupHeader = "";
-                r.GroupCollapsed = false;
-            }
-
-            void Group(string name, params ServoNames[] servos)
-            {
-                for (int i = 0; i < servos.Length; i++)
-                {
-                    var row = R(servos[i]);
-                    row.GroupName = name;
-                    row.GroupHeader = i == 0 ? name : "";
-                    if (i == servos.Length - 1) row.DividerBelow = true;
-                }
-            }
-
-            // Single-column section order beside the embedded Robot Head:
-            // Eye Flaps, Nose, Eyes, Neck, Lighting & Vents, Eye Pop,
-            // Headtop Controls.
-            Group("Eye Flaps", ServoNames.FlapsOpen, ServoNames.FlapTiltUp);
-            Group("Eyes", ServoNames.IrisClose, ServoNames.EyesVerticalUp, ServoNames.EyesHorizontalRight);
-            Group("Nose", ServoNames.NoseBasket, ServoNames.NoseBody);
-            Group("Neck", ServoNames.NeckTurn, ServoNames.NeckNodUp, ServoNames.NeckTiltRight);
-            Group("Eye Pop", ServoNames.BothEyePop, ServoNames.LeftEyePop, ServoNames.RightEyePop);
-            Group("Lighting & Vents", ServoNames.RGBCommand, ServoNames.VentsOpen);
-            Group("Headtop Controls",
-                  ServoNames.MFR_UpDown, ServoNames.MFR_Rotate,
-                  ServoNames.Whip_Antenna_RaiseLower, ServoNames.Whip_Antenna_Rotate,
-                  ServoNames.Microphone_RaiseLower);
-
-            // Thin subgroup separators inside the single Headtop Controls group.
-            R(ServoNames.MFR_Rotate).SubDividerBelow = true;
-            R(ServoNames.Whip_Antenna_Rotate).SubDividerBelow = true;
-
-            // Headtop Controls starts collapsed on every application launch.
-            foreach (var row in _rows.Where(r => r.GroupName == "Headtop Controls"))
-                row.GroupCollapsed = true;
-
-            var eyeFlapsRows = new[] { ServoNames.FlapsOpen, ServoNames.FlapTiltUp }.Select(R).ToList();
-            var noseRows = new[] { ServoNames.NoseBasket, ServoNames.NoseBody }.Select(R).ToList();
-            var eyesRows = new[] { ServoNames.IrisClose, ServoNames.EyesVerticalUp, ServoNames.EyesHorizontalRight }.Select(R).ToList();
-            var neckRows = new[] { ServoNames.NeckTurn, ServoNames.NeckNodUp, ServoNames.NeckTiltRight }.Select(R).ToList();
-            var lightingVentsRows = new[] { ServoNames.RGBCommand, ServoNames.VentsOpen }.Select(R).ToList();
-            var eyePopRows = new[] { ServoNames.BothEyePop, ServoNames.LeftEyePop, ServoNames.RightEyePop }.Select(R).ToList();
-            var headtopRows = new[]
-            {
-                ServoNames.MFR_UpDown, ServoNames.MFR_Rotate,
-                ServoNames.Whip_Antenna_RaiseLower, ServoNames.Whip_Antenna_Rotate,
-                ServoNames.Microphone_RaiseLower,
-            }.Select(R).ToList();
-
-            // Docked single-column view.
-            ServoGridEyeFlaps.ItemsSource = eyeFlapsRows;
-            ServoGridNose.ItemsSource = noseRows;
-            ServoGridEyes.ItemsSource = eyesRows;
-            ServoGridNeck.ItemsSource = neckRows;
-            ServoGridLightingVents.ItemsSource = lightingVentsRows;
-            ServoGridEyePop.ItemsSource = eyePopRows;
-            ServoGridHeadtop.ItemsSource = headtopRows;
-
-            // Undocked two-column view uses the exact same row objects so edits,
-            // group collapse state and live values stay synchronized. The right
-            // column begins with Lighting & Vents as requested.
-            UndockedServoGridEyeFlaps.ItemsSource = eyeFlapsRows;
-            UndockedServoGridNose.ItemsSource = noseRows;
-            UndockedServoGridEyes.ItemsSource = eyesRows;
-            UndockedServoGridNeck.ItemsSource = neckRows;
-            UndockedServoGridLightingVents.ItemsSource = lightingVentsRows;
-            UndockedServoGridEyePop.ItemsSource = eyePopRows;
-            UndockedServoGridHeadtop.ItemsSource = headtopRows;
-        }
-
-        private void ServoGroupToggle_Click(object sender, RoutedEventArgs e)
-        {
-            if ((sender as FrameworkElement)?.DataContext is not ServoStateRow row ||
-                string.IsNullOrWhiteSpace(row.GroupName)) return;
-            bool collapse = !_rows.Where(r => r.GroupName == row.GroupName).All(r => r.GroupCollapsed);
-            foreach (var r in _rows.Where(r => r.GroupName == row.GroupName))
-                r.GroupCollapsed = collapse;
-            ShowStatus($"{row.GroupName} group {(collapse ? "collapsed" : "expanded")}");
-        }
-
-        /// <summary>Recovery Dock button shown under Headtop Controls while the
+        /// <summary>Recovery Dock button shown in Commands while the
         /// URDF preview is undocked. Uses the same docking path as the detached
         /// URDF window so all window/layout state stays synchronized.</summary>
-        private void DockUrdfFromGrid_Click(object sender, RoutedEventArgs e)
+        private void DockUrdf_Click(object sender, RoutedEventArgs e)
         {
             if (_urdfUndocked)
                 SetUrdfUndocked(false);
         }
 
         /// <summary>
-        /// Recomputes every grid row so it shows the most recent command for
+        /// Recomputes the cached state from the most recent command for
         /// that servo at or before time <paramref name="t"/>. Servos with no
         /// command yet show Value 0 / Speed Default / Offset "—".
         /// Called on every left click, every playback tick, and after edits.
         /// </summary>
-        private void UpdateServoGrid(double t)
+        private void UpdateServoState(double t)
         {
-            // The editor grid and URDF preview always represent the timeline
+            // The cached servo state and URDF preview represent the timeline
             // state at the current cursor, regardless of Live Drive. Live Drive
             // only gates whether user/playback movements are also sent to the
             // physical robot.
-            _suppressGridEvents = true;   // slider updates below are not user input
-            try
+            foreach (var row in _rows)
             {
-                foreach (var row in _rows)
+                // Never clobber a row the user is actively editing or
+                // one that has been manually staged at this cursor time.
+                // Staged values remain together until another time is
+                // selected, playback begins, or they are generated into
+                // timeline commands.
+                if (row.IsEditing || _manualPoseOverrides.Contains(row.Servo)) continue;
+
+                _gangCommandIndex.TryGetValue(row.Servo, out ServoCommand[] positions);
+                _gangSpeedCommandIndex.TryGetValue(row.Servo, out ServoCommand[] speeds);
+                ServoCommand last = LastCommandAtOrBefore(positions, t);
+                ServoCommand lastSpeed = LastCommandAtOrBefore(speeds, t);
+
+                // The grid represents the active speed state. Before any
+                // explicit speed command, Maestro channels start in the
+                // configured Default profile.
+                row.Speed = lastSpeed?.Speed ??
+                    (_movieCarryPose?.Speeds.TryGetValue(row.Servo, out ServoSpeed carriedSpeed) == true
+                        ? carriedSpeed : ServoSpeed.Default);
+
+                if (last == null)
                 {
-                    // Never clobber a row the user is actively editing or
-                    // one that has been manually staged at this cursor time.
-                    // Staged values remain together until another time is
-                    // selected, playback begins, or they are generated into
-                    // timeline commands.
-                    if (row.IsEditing || _manualGridOverrides.Contains(row.Servo)) continue;
-
-                    _gangCommandIndex.TryGetValue(row.Servo, out ServoCommand[] positions);
-                    _gangSpeedCommandIndex.TryGetValue(row.Servo, out ServoCommand[] speeds);
-                    ServoCommand last = LastCommandAtOrBefore(positions, t);
-                    ServoCommand lastSpeed = LastCommandAtOrBefore(speeds, t);
-
-                    // The grid represents the active speed state. Before any
-                    // explicit speed command, Maestro channels start in the
-                    // configured Default profile.
-                    row.Speed = lastSpeed?.Speed ??
-                        (_movieCarryPose?.Speeds.TryGetValue(row.Servo, out ServoSpeed carriedSpeed) == true
-                            ? carriedSpeed : ServoSpeed.Default);
-
-                    if (last == null)
+                    row.Offset = null;
+                    if (_movieCarryPose?.Values.TryGetValue(row.Servo, out double carriedValue) == true)
                     {
-                        row.Offset = null;
-                        if (_movieCarryPose?.Values.TryGetValue(row.Servo, out double carriedValue) == true)
-                        {
-                            row.Value = Math.Clamp(carriedValue, row.Min, row.Max);
-                            row.TextValue = _movieCarryPose.TextValues.GetValueOrDefault(row.Servo, "");
-                            row.ColorHex = _movieCarryPose.Colors.GetValueOrDefault(row.Servo, "");
-                        }
-                        else
-                        {
-                            row.Value = row.Min <= 0 ? 0 : row.Min;   // default 0 (or range floor)
-                            row.TextValue = "";
-                            row.ColorHex = "";
-                        }
+                        row.Value = Math.Clamp(carriedValue, row.Min, row.Max);
+                        row.TextValue = _movieCarryPose.TextValues.GetValueOrDefault(row.Servo, "");
+                        row.ColorHex = _movieCarryPose.Colors.GetValueOrDefault(row.Servo, "");
                     }
                     else
                     {
-                        row.Offset = last.OffsetSeconds;
-                        if (row.IsTextRow)
-                        {
-                            row.TextValue = last.TextValue;        // last command text used
-                            row.ColorHex = last.ColorHex;          // legacy RGB metadata
-                        }
-                        else
-                            row.Value = last.NumericValue;
-                    }
-
-                    // SPLINE-checked servos: instead of holding the last
-                    // command's step value, show the Cubic-Hermite
-                    // INTERPOLATED value of the curve at the current time -
-                    // so during playback (and when clicking the timeline) the
-                    // grid tracks the smooth motion the hardware will follow.
-                    // Outside the curve's range the ends hold (Eval clamps),
-                    // and servos with fewer than 2 points fall back to the
-                    // normal last-command behavior above.
-                    if (row.SplineEnabled && !row.IsTextRow &&
-                        !IsSharedNeckServo(row.Servo))
-                    {
-                        _splineCurveIndex.TryGetValue(row.Servo, out SplineCurve curve);
-                        if (curve?.T?.Length >= 2 &&
-                            t >= curve.T[0] - 1e-9)
-                            row.Value = Math.Clamp(
-                                SplineUtil.Eval(curve.T, curve.V, curve.M, t),
-                                curve.Min, curve.Max);
+                        row.Value = row.Min <= 0 ? 0 : row.Min;   // default 0 (or range floor)
+                        row.TextValue = "";
+                        row.ColorHex = "";
                     }
                 }
-
-                // The neck pair is one mutually-exclusive physical control.
-                // In spline mode show the common interpolated value only on
-                // the row that currently owns the neck; the other row is zero.
-                var nodSplineRow = _rows.First(r => r.Servo == ServoNames.NeckNodUp);
-                var tiltSplineRow = _rows.First(r => r.Servo == ServoNames.NeckTiltRight);
-                if ((nodSplineRow.SplineEnabled || tiltSplineRow.SplineEnabled) &&
-                    !_manualGridOverrides.Contains(ServoNames.NeckNodUp) &&
-                    !_manualGridOverrides.Contains(ServoNames.NeckTiltRight))
+                else
                 {
-                    var neckState = SharedNeckStateAt(t);
-                    if (neckState.Owner.HasValue)
+                    row.Offset = last.OffsetSeconds;
+                    if (row.IsTextRow)
                     {
-                        nodSplineRow.Value = neckState.Owner.Value == ServoNames.NeckNodUp
-                            ? neckState.Value : 0;
-                        tiltSplineRow.Value = neckState.Owner.Value == ServoNames.NeckTiltRight
-                            ? neckState.Value : 0;
+                        row.TextValue = last.TextValue;        // last command text used
+                        row.ColorHex = last.ColorHex;          // legacy RGB metadata
                     }
+                    else
+                        row.Value = last.NumericValue;
+                }
+
+                // SPLINE-checked servos: instead of holding the last
+                // command's step value, show the Cubic-Hermite
+                // INTERPOLATED value of the curve at the current time -
+                // so during playback (and when clicking the timeline) the
+                // grid tracks the smooth motion the hardware will follow.
+                // Outside the curve's range the ends hold (Eval clamps),
+                // and servos with fewer than 2 points fall back to the
+                // normal last-command behavior above.
+                if (row.SplineEnabled && !row.IsTextRow &&
+                    !IsSharedNeckServo(row.Servo))
+                {
+                    _splineCurveIndex.TryGetValue(row.Servo, out SplineCurve curve);
+                    if (curve?.T?.Length >= 2 &&
+                        t >= curve.T[0] - 1e-9)
+                        row.Value = Math.Clamp(
+                            SplineUtil.Eval(curve.T, curve.V, curve.M, t),
+                            curve.Min, curve.Max);
                 }
             }
-            finally { _suppressGridEvents = false; }
+
+            // The neck pair is one mutually-exclusive physical control.
+            // In spline mode show the common interpolated value only on
+            // the row that currently owns the neck; the other row is zero.
+            var nodSplineRow = _rows.First(r => r.Servo == ServoNames.NeckNodUp);
+            var tiltSplineRow = _rows.First(r => r.Servo == ServoNames.NeckTiltRight);
+            if ((nodSplineRow.SplineEnabled || tiltSplineRow.SplineEnabled) &&
+                !_manualPoseOverrides.Contains(ServoNames.NeckNodUp) &&
+                !_manualPoseOverrides.Contains(ServoNames.NeckTiltRight))
+            {
+                var neckState = SharedNeckStateAt(t);
+                if (neckState.Owner.HasValue)
+                {
+                    nodSplineRow.Value = neckState.Owner.Value == ServoNames.NeckNodUp
+                        ? neckState.Value : 0;
+                    tiltSplineRow.Value = neckState.Owner.Value == ServoNames.NeckTiltRight
+                        ? neckState.Value : 0;
+                }
+            }
 
             // The head preview mirrors the grid: same values, including
             // spline interpolation, so moving the timeline cursor (or
@@ -1942,22 +1868,6 @@ namespace ServoAnimator
             }
         }
 
-        /// <summary>The grid Speed picklist changed. The selection is always
-        /// editable; when Live Drive is on, push the speed/accel pair to the
-        /// physical servo gang.</summary>
-        private void RowSpeed_Changed(object sender, SelectionChangedEventArgs e)
-        {
-            if (_suppressGridEvents) return;
-            if ((sender as FrameworkElement)?.DataContext is not ServoStateRow row) return;
-            if (!row.ShowSpeed) return;
-
-            _manualGridOverrides.Add(row.Servo);
-
-            if (LiveDrive && _hw.Connected)
-                _hw.ConfigureGangSpeed(row.Servo, row.Speed);
-            Debug.WriteLine($"ConfigureGangSpeed(servo={row.Servo}, speed={row.Speed})");
-        }
-
         /// <summary>"Disable All": disable PWM on every Maestro servo
         /// channel so the servos go limp (safety / rest). Works whenever
         /// hardware is connected, regardless of the Live Drive state.</summary>
@@ -2001,52 +1911,28 @@ namespace ServoAnimator
             // Mirror the reset in the editable grid/URDF without creating
             // timeline commands. Treat the rows as manually staged values so
             // they remain visible until the cursor moves or playback starts.
-            _suppressGridEvents = true;
-            try
+            _manualPoseOverrides.Clear();
+            foreach (var row in _rows)
             {
-                _manualGridOverrides.Clear();
-                foreach (var row in _rows)
+                row.Offset = null;
+                if (row.IsTextRow)
                 {
-                    row.Offset = null;
-                    if (row.IsTextRow)
-                    {
-                        row.TextValue = "ClearAll";
-                        row.ColorHex = "#000000";
-                    }
-                    else
-                    {
-                        row.Value = 0;
-                        foreach (var child in row.Children)
-                            child.Value = 0;
-                    }
-                    _manualGridOverrides.Add(row.Servo);
+                    row.TextValue = "ClearAll";
+                    row.ColorHex = "#000000";
                 }
+                else
+                {
+                    row.Value = 0;
+                    foreach (var child in row.Children)
+                        child.Value = 0;
+                }
+                _manualPoseOverrides.Add(row.Servo);
             }
-            finally { _suppressGridEvents = false; }
 
             PushHeadPose();
             ShowStatus(_hw.Connected
                 ? "Robot reset to servo defaults; Eye Pop = 0; Arduino ClearAll"
                 : "Reset preview applied; hardware not connected");
-        }
-
-        /// <summary>A RobotControl sub-row slider moved: always update the
-        /// corresponding URDF part; when Live Drive is on, also drive that
-        /// single physical servo.</summary>
-        private void ChildSlider_ValueChanged(object sender,
-            RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (_suppressGridEvents) return;
-            if ((sender as FrameworkElement)?.DataContext is not RobotControlRow row) return;
-
-            int value = (int)Math.Round(e.NewValue);
-            ForEachHeadView(v => v.SetChildServo(row.Parent, row.Control, value));   // preview always
-
-            bool centered = ServoCommand.RangeFor(row.Parent).Min < 0;
-            if (LiveDrive && _hw.Connected)
-                _hw.DriveControlValue(row.Parent, row.Control,
-                                      ServoSpeed.NoChange, value, centered);
-            Debug.WriteLine($"ChildDrive(gang={row.Parent}, control={row.Control}, value={value})");
         }
 
         /// <summary>Expand ganged commands into per-control child commands
@@ -2245,8 +2131,8 @@ namespace ServoAnimator
             // use the shared time-ordered neck stream. This fixes the previous
             // mismatch where two separately evaluated spline rows could leave
             // NeckTiltRight visually inactive even though it owned the neck.
-            bool nodManual = _manualGridOverrides.Contains(ServoNames.NeckNodUp);
-            bool tiltManual = _manualGridOverrides.Contains(ServoNames.NeckTiltRight);
+            bool nodManual = _manualPoseOverrides.Contains(ServoNames.NeckNodUp);
+            bool tiltManual = _manualPoseOverrides.Contains(ServoNames.NeckTiltRight);
             if (nodManual && !tiltManual)
             {
                 neckOwner = ServoNames.NeckNodUp;
@@ -2302,23 +2188,16 @@ namespace ServoAnimator
                 // While manually staging multiple grid values, the visible
                 // ganged row is the user's intended pose and must not be
                 // displaced by an older individual-child command.
-                if (_manualGridOverrides.Contains(gang)) return row.Value;
+                if (_manualPoseOverrides.Contains(gang)) return row.Value;
 
                 _childCommandIndex.TryGetValue((gang, control),
                     out ServoCommand[] childCommands);
                 ServoCommand last = LastCommandAtOrBefore(childCommands,
                     _cursorTime + 1e-9);
 
-                if (last == null)
-                {
-                    if (!row.Offset.HasValue &&
-                        _movieCarryPose?.ChildValues.TryGetValue((gang, control), out double carriedChild) == true)
-                        return carriedChild;
-                    return row.Value;
-                }
-                if (row.Offset.HasValue && row.Offset.Value >= last.OffsetSeconds)
-                    return row.Value;              // gang command is newer
-                return last.NumericValue;          // child owns this servo
+                return MoviePoseContinuity.ChildValue(row.Value, row.Offset, last,
+                    _movieCarryPose?.ChildValues.TryGetValue((gang, control), out double carriedChild) == true
+                        ? carriedChild : null);
             }
 
             void ApplyPose(RobotHeadView headView) => headView.SetPose(
@@ -2377,6 +2256,11 @@ namespace ServoAnimator
                     LiveDrive
                         ? System.Windows.Media.Color.FromRgb(80, 170, 112)
                         : ThemeManager.GetColor("ControlBorder", System.Windows.Media.Color.FromRgb(74, 81, 96)));
+                LiveDriveBtn.SetResourceReference(System.Windows.Controls.Control.ForegroundProperty,
+                    LiveDrive ? "LiveDriveText" : "PrimaryText");
+                LiveDriveBtn.ToolTip = LiveDrive
+                    ? "Live Drive ON — editor movements are sent to connected hardware"
+                    : "Live Drive OFF — edit and preview without driving hardware";
             }
 
             // First press of Live Drive (or a retry after one or more missing
@@ -2435,98 +2319,9 @@ namespace ServoAnimator
             SetStatus(RightTicStatusDot, _hw.RightTicConnected);
         }
 
-        /// <summary>
-        /// A grid slider moved. Update the URDF preview in either Live Drive
-        /// state; MoveServoNow gates physical hardware output on Live Drive.
-        /// </summary>
-        private void RowSlider_ValueChanged(object sender,
-            RoutedPropertyChangedEventArgs<double> e)
+        private void ClearManualPoseOverrides()
         {
-            if (_suppressGridEvents) return;
-            if ((sender as FrameworkElement)?.DataContext is not ServoStateRow row) return;
-
-            _manualGridOverrides.Add(row.Servo);
-            int value = (int)Math.Round(e.NewValue);
-            MoveServoNow(ServoSpeed.NoChange, row.Servo, value);
-            ReflectGangIntoChildren(row, value);
-        }
-
-        /// <summary>Moving a ganged ServoName's slider also moves its child
-        /// sliders to their appropriate positions: the same parent-range
-        /// value, negated for gang-reversed children on centered ranges
-        /// (mirroring MapDeltatoServo's isGangReversed). Suppressed so the
-        /// child updates don't re-drive hardware - the gang move already
-        /// drove every member.</summary>
-        private void ReflectGangIntoChildren(ServoStateRow row, int value)
-        {
-            if (row.Children.Count == 0) return;
-            bool centered = row.Min < 0;
-            bool was = _suppressGridEvents;
-            _suppressGridEvents = true;
-            try
-            {
-                foreach (var child in row.Children)
-                {
-                    bool gangRev = _servoConfig.GangReversed(row.Servo, child.Control);
-                    child.Value = (centered && gangRev) ? -value : value;
-                }
-            }
-            finally { _suppressGridEvents = was; }
-        }
-
-        /// <summary>RGBCommand row text box: Enter commits and sends the text
-        /// to the hardware stub (Live Drive on).</summary>
-        private void RowRgbBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key != Key.Enter || sender is not TextBox box) return;
-            box.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
-            SendRgbRow(box);
-        }
-
-        /// <summary>RGBCommand row text box: leaving the box also sends the
-        /// (binding-committed) text when Live Drive is on.</summary>
-        private void RowRgbBox_LostFocus(object sender, RoutedEventArgs e) =>
-            SendRgbRow(sender as TextBox);
-
-        private void SendRgbRow(TextBox box)
-        {
-            if (_suppressGridEvents) return;
-            if (box?.DataContext is not ServoStateRow row || !row.IsTextRow) return;
-
-            // Make sure the typed text has been committed to the row before
-            // sending (our LostFocus handler can run before the binding's own
-            // LostFocus update, which would send the previous value).
-            box.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
-            _manualGridOverrides.Add(row.Servo);
-            MoveServoNow(ServoSpeed.NoChange, row.Servo, row.TextValue);
-            // The grid value is staged rather than authored yet, so preview
-            // that one Arduino line after the hardware send/timeline refresh.
-            var preview = _rgbSimulator.PreviewCommand(row.TextValue);
-            ForEachHeadView(v => v.SetRgbRingFrame(preview));
-        }
-
-        /// <summary>Grid editor (slider / value box / RGB text box) gained
-        /// keyboard focus: mark the row as being edited so playback refreshes
-        /// leave it alone while the user works on it (Live Drive).</summary>
-        private void RowEditor_GotFocus(object sender, KeyboardFocusChangedEventArgs e)
-        {
-            if ((sender as FrameworkElement)?.DataContext is ServoStateRow row)
-                row.IsEditing = true;
-        }
-
-        /// <summary>Focus left the editor. A manually changed row remains
-        /// staged at its edited value so additional grid rows can be changed
-        /// before generating a command group. Timeline selection/playback is
-        /// what returns staged rows to timeline tracking.</summary>
-        private void RowEditor_LostFocus(object sender, KeyboardFocusChangedEventArgs e)
-        {
-            if ((sender as FrameworkElement)?.DataContext is ServoStateRow row)
-                row.IsEditing = false;
-        }
-
-        private void ClearManualGridOverrides()
-        {
-            _manualGridOverrides.Clear();
+            _manualPoseOverrides.Clear();
             foreach (var row in _rows) row.IsEditing = false;
         }
 
@@ -2540,6 +2335,13 @@ namespace ServoAnimator
         /// already snapped to a nearby command marker) and show what lives there.</summary>
         private void Waveform_TimeClicked(double t) => SetCursor(t);
 
+        private void Timeline_EditCommandsRequested(double time)
+        {
+            if (IsRunning) PausePlayback();
+            SetCursor(time);
+            EditCommandsAtCursor();
+        }
+
         /// <summary>
         /// Central "move the cursor" routine. Clamps, seeks the audio if it is
         /// currently playing, updates the time readout, the servo grid (last
@@ -2549,7 +2351,7 @@ namespace ServoAnimator
         {
             double newTime = Math.Clamp(t, 0, TimelineDuration);
             if (Math.Abs(newTime - _cursorTime) > 1e-9)
-                ClearManualGridOverrides();
+                ClearManualPoseOverrides();
             _cursorTime = newTime;
 
             if (IsRunning || _reader != null)
@@ -2575,7 +2377,7 @@ namespace ServoAnimator
             Waveform.InvalidateCursor();
             SyncSplineView();
             UpdateTimeText();
-            UpdateServoGrid(_cursorTime);
+            UpdateServoState(_cursorTime);
             UpdateCommandsAtPointList();
         }
 
@@ -2592,6 +2394,14 @@ namespace ServoAnimator
         /// <summary>Refresh the bottom list showing every command at the cursor.</summary>
         private void UpdateCommandsAtPointList()
         {
+            CommandsAtPointEditButton.IsEnabled = CommandsAtPointDeleteButton.IsEnabled = !_showModifiedControls;
+            if (_showModifiedControls)
+            {
+                UpdateModifiedControlsList();
+                return;
+            }
+            CommandsAtPointList.ToolTip = "Double-click to edit; Delete removes the selected command";
+            CommandsAtPointHeader.ToolTip = "Commands at the current sequence cursor";
             var cmds = CommandsAt(_cursorTime);
             int keep = CommandsAtPointList.SelectedIndex;
             CommandsAtPointList.Items.Clear();
@@ -2601,11 +2411,11 @@ namespace ServoAnimator
                 : $"Commands at cursor {_cursorTime:F3} s: {cmds.Count} command(s)";
 
             foreach (var c in cmds)
-                CommandsAtPointList.Items.Add(
-                    $"{c.OffsetSeconds:F3}s  {c.Servo}" +
-                    (c.Control.HasValue ? $"[{c.Control}]" : "") +
-                    $" = {c.ValueDisplay}  ({c.SpeedDisplay})" +
-                    (string.IsNullOrWhiteSpace(c.Reason) ? "" : $"  — {c.Reason}"));
+                CommandsAtPointList.Items.Add(new CommandInspectorRow(
+                    c.Control.HasValue ? $"{c.Servo} [{c.Control}]" : c.Servo.ToString(),
+                    c.ValueDisplay, c.SpeedDisplay, $"{c.OffsetSeconds:0.000}", BrushFor(c.Servo),
+                    $"{c.Servo}{(c.Control.HasValue ? $" [{c.Control}]" : "")}\n{c.ValueDisplay} · {c.SpeedDisplay} · {c.OffsetSeconds:F3} s" +
+                    (string.IsNullOrWhiteSpace(c.Reason) ? "" : $"\n{c.Reason}")));
             if (CommandsAtPointList.Items.Count > 0)
                 CommandsAtPointList.SelectedIndex = Math.Clamp(keep, 0, CommandsAtPointList.Items.Count - 1);
         }
@@ -2614,17 +2424,18 @@ namespace ServoAnimator
         {
             var cmds = CommandsAt(time);
             if (cmds.Count == 0) return $"No commands at {time:F3} s";
-            var lines = cmds.Take(8).Select(c =>
+            var lines = cmds.Select(c =>
                 $"{c.Servo}{(c.Control.HasValue ? $"[{c.Control}]" : "")}: {c.ValueDisplay}");
             string text = $"{cmds.Count} command{(cmds.Count == 1 ? "" : "s")} @ {time:F3} s\n" +
                           string.Join("\n", lines);
-            if (cmds.Count > 8) text += $"\n… +{cmds.Count - 8} more";
+
             return text;
         }
 
         private void CommandsAtPointAdd_Click(object sender, RoutedEventArgs e) => InsertNewCommand();
         private void CommandsAtPointEdit_Click(object sender, RoutedEventArgs e)
         {
+            if (_showModifiedControls) return;
             var cmds = CommandsAt(_cursorTime);
             if (cmds.Count == 0) return;
             int i = CommandsAtPointList.SelectedIndex;
@@ -2633,6 +2444,7 @@ namespace ServoAnimator
         private void CommandsAtPointDelete_Click(object sender, RoutedEventArgs e) => DeleteSelectedCommandAtCursor();
         private void CommandsAtPointList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            if (_showModifiedControls) return;
             var cmds = CommandsAt(_cursorTime);
             int i = CommandsAtPointList.SelectedIndex;
             if (i >= 0 && i < cmds.Count) EditCommandsAtCursor(cmds[i]);
@@ -2645,6 +2457,7 @@ namespace ServoAnimator
         }
         private void DeleteSelectedCommandAtCursor()
         {
+            if (_showModifiedControls) return;
             var cmds = CommandsAt(_cursorTime);
             int i = CommandsAtPointList.SelectedIndex;
             if (i < 0 || i >= cmds.Count) return;
@@ -2664,6 +2477,7 @@ namespace ServoAnimator
                 .ToList();
 
             var liveMarkers = Waveform.Markers.ToHashSet();
+            SyncCommandGroupSelection();
             Waveform.CollisionMarkers = _collisionCommandMarkers
                 .Where(liveMarkers.Contains)
                 .OrderBy(t => t)
@@ -2674,8 +2488,25 @@ namespace ServoAnimator
         /// <summary>One-stop refresh after any timeline edit. Spline curves
         /// are rebuilt FIRST because the grid now reads interpolated values
         /// from them for spline-checked servos.</summary>
-        private void RefreshAfterEdit()
+        private bool RefreshAfterEdit()
         {
+            bool accepted = true;
+            if (CommandConflicts.Find(_doc.Commands).Count > 0)
+            {
+                if (IsRunning) PausePlayback();
+                if (!CommandConflictWindow.Resolve(this, _doc.Commands))
+                {
+                    // Every timeline insertion/drag has a pre-operation undo
+                    // snapshot. Cancel restores the entire pending operation.
+                    if (_undoStack.Count == 0)
+                        throw new InvalidOperationException("Cannot cancel a command change without its original snapshot.");
+                    var before = _undoStack[^1];
+                    _undoStack.RemoveAt(_undoStack.Count - 1);
+                    RestoreSnapshot(before.Commands, refresh: false, audioOffset: before.AudioOffset, splines: before.Splines);
+                    accepted = false;
+                    ShowStatus("Command change canceled");
+                }
+            }
             MovieTimeline.RefreshBlockToolTip();
             // Collision warnings describe the exact command values that were
             // previously played. Any command modification invalidates them;
@@ -2692,10 +2523,11 @@ namespace ServoAnimator
             Waveform.ContentDuration = ContentEnd;
             Spline.Duration = TimelineDuration;
             SyncScrollBar();
-            UpdateServoGrid(_cursorTime);
+            UpdateServoState(_cursorTime);
             UpdateCommandsAtPointList();
             UpdateDocumentStatusIndicators();
             UpdateEmptyStates();
+            return accepted;
         }
 
         private void UpdateEmptyStates()
@@ -2708,7 +2540,7 @@ namespace ServoAnimator
                     ? Visibility.Visible : Visibility.Collapsed;
             }
             if (MovieEmptyStatePanel != null)
-                MovieEmptyStatePanel.Visibility = _movieItems.Count == 0
+                MovieEmptyStatePanel.Visibility = _movieItems.Count == 0 && string.IsNullOrWhiteSpace(_moviePath)
                     ? Visibility.Visible : Visibility.Collapsed;
         }
 
@@ -2771,11 +2603,18 @@ namespace ServoAnimator
         /// per spec). Items appear/enable depending on whether commands exist
         /// at the cursor and whether the clipboard holds copied commands.
         /// </summary>
-        private void Waveform_RightClicked(double clickTime) =>
-            ShowCursorContextMenu(Waveform);
+        private void Waveform_RightClicked(double clickTime)
+        {
+            if (_libraryPrompt != LibraryPrompt.InsertSequence && Waveform.SelectedMarkers.Count > 0)
+                ShowSelectedCommandMenu();
+            else ShowCursorContextMenu(Waveform);
+        }
 
-        private void Spline_RightClicked(double clickTime) =>
-            ShowCursorContextMenu(Spline);
+        private void Spline_RightClicked(double clickTime)
+        {
+            if (Spline.CombinedMode && Waveform.SelectedMarkers.Count > 0) ShowSelectedCommandMenu();
+            else ShowCursorContextMenu(Spline);
+        }
 
         private void ShowCursorContextMenu(UIElement placementTarget)
         {
@@ -2830,9 +2669,6 @@ namespace ServoAnimator
             Item($"Insert audio file at {_cursorTime:F3} s…",
                  (_, _) => InsertAudioFileAtCursor());
 
-            Item($"Generate commands from grid values at {_cursorTime:F3} s",
-                 (_, _) => GenerateCommandsFromGrid());
-
             menu.PlacementTarget = placementTarget;
             menu.IsOpen = true;
         }
@@ -2841,7 +2677,6 @@ namespace ServoAnimator
         /// so its fields can be filled in.</summary>
         private void InsertNewCommand()
         {
-            PushUndo($"Insert command at {_cursorTime:F3} s");
             var cmd = new ServoCommand
             {
                 OffsetSeconds = ServoCommand.TimeKey(_cursorTime),
@@ -2849,15 +2684,13 @@ namespace ServoAnimator
                 NumericValue = 0,
                 Speed = ServoSpeed.NoChange,
             };
-            _doc.Commands.Add(cmd);
-            RefreshAfterEdit();
-            EditCommandsAtCursor();
+            EditCommandsAtCursor(cmd);
         }
 
         /// <summary>Open the modeless editor for every command at the cursor.
         /// Keeping this window modeless leaves the URDF camera/buttons fully
-        /// operational while commands are being edited. Command objects are live;
-        /// the timeline/grid receive their normal full refresh when the window closes.</summary>
+        /// operational while commands are being edited. Draft rows are merged
+        /// and checked for conflicts before they enter the playable timeline.</summary>
         private void EditCommandsAtCursor(ServoCommand focusCommand = null)
         {
             if (_commandEditorWindow != null)
@@ -2868,7 +2701,8 @@ namespace ServoAnimator
                 return;
             }
 
-            PushUndo($"Edit commands at {_cursorTime:F3} s");   // one undo step for the whole editor session
+            AnimationDocument source = _doc;
+            double editTime = _cursorTime;
             var editor = new CommandEditorWindow(_doc, _cursorTime,
                                                  MoveServoNow,      // numeric variant
                                                  MoveServoNow,      // text variant (RGBCommand)
@@ -2876,6 +2710,27 @@ namespace ServoAnimator
                                                  ConfigureServoSpeedNow,
                                                  ConfigureChildServoSpeedNow,
                                                  LibraryCommandsFolder(),
+                                                 SplineServosEnabled(),
+                                                 (commands, splineChanges) =>
+                                                 {
+                                                     if (!ReferenceEquals(source, _doc))
+                                                     {
+                                                         MessageBox.Show(this, "A different sequence is now open. Cancel this editor and reopen Edit Commands for the current sequence.",
+                                                             "Sequence changed", MessageBoxButton.OK, MessageBoxImage.Information);
+                                                         return false;
+                                                     }
+                                                     if (!CommandConflictWindow.Resolve(_commandEditorWindow ?? (Window)this, commands)) return false;
+                                                     var splines = SplineServosEnabled().ToHashSet();
+                                                     foreach (var change in splineChanges)
+                                                         if (change.Value) splines.Add(change.Key); else splines.Remove(change.Key);
+                                                     if (splines.SetEquals(SplineServosEnabled()) && _doc.Commands.Count == commands.Count &&
+                                                         _doc.Commands.Zip(commands).All(p => CommandConflicts.SameContent(p.First, p.Second)))
+                                                         return true;
+                                                     PushUndo($"Edit commands at {editTime:F3} s");
+                                                     _doc.Commands = commands;
+                                                     ApplySplineSettings(splines);
+                                                     return true;
+                                                 },
                                                  focusCommand)
             {
                 Owner = this,
@@ -2889,6 +2744,12 @@ namespace ServoAnimator
             };
             editor.Show();
             editor.Activate();
+        }
+
+        private bool ApplyOpenCommandEditor()
+        {
+            _commandEditorWindow?.Close();
+            return _commandEditorWindow == null;
         }
 
         /// <summary>Delete every command at the cursor; the command marker is
@@ -2915,16 +2776,13 @@ namespace ServoAnimator
         /// get the cursor's time offset, and a '+' appears there.</summary>
         private void PasteClipboardAtCursor()
         {
+            if (_clipboard.Count == 0 || !ApplyOpenCommandEditor()) return;
+            if (IsRunning) PausePlayback();
             PushUndo($"Paste {_clipboard.Count} command(s) at {_cursorTime:F3} s");
             double t = ServoCommand.TimeKey(_cursorTime);
-            foreach (var c in _clipboard)
-            {
-                var copy = c.Clone();
-                copy.OffsetSeconds = t;
-                _doc.Commands.Add(copy);
-            }
-            RefreshAfterEdit();
-            ShowStatus($"{_clipboard.Count} command(s) pasted at {_cursorTime:F3} s");
+            _doc.Commands.AddRange(CommandGroupOperations.CopyAt(_clipboard, t));
+            if (RefreshAfterEdit())
+                ShowStatus($"Paste completed at {_cursorTime:F3} s");
         }
 
         /// <summary>Open the Library\Commands browser and insert the
@@ -2962,9 +2820,8 @@ namespace ServoAnimator
                     copy.OffsetSeconds = at;
                     _doc.Commands.Add(copy);
                 }
-                RefreshAfterEdit();
-                ShowStatus($"Inserted Library Pose '{Path.GetFileName(win.SelectedLibraryItem.FullPath)}' " +
-                           $"({cmds.Count} command(s)) at {at:F3} s");
+                if (RefreshAfterEdit())
+                    ShowStatus($"Library Pose inserted at {at:F3} s");
             }
             catch (Exception ex)
             {
@@ -3020,8 +2877,8 @@ namespace ServoAnimator
                     c.OffsetSeconds = ServoCommand.TimeKey(c.OffsetSeconds + _cursorTime);
                     _doc.Commands.Add(c);
                 }
-                RefreshAfterEdit();
-                ShowStatus($"Inserted {cmds.Count} command(s) from {Path.GetFileName(dlg.FileName)}");
+                if (RefreshAfterEdit())
+                    ShowStatus($"Command insertion completed from {Path.GetFileName(dlg.FileName)}");
             }
             catch (Exception ex)
             {
@@ -3141,26 +2998,16 @@ namespace ServoAnimator
             RobotPoseSnapshot pose = view.CapturePose();
             double t = ServoCommand.TimeKey(_cursorTime);
             var commands = BuildCommandsFromPose(pose, t);
-            string poseRgb = (pose.RgbCommand ?? string.Empty).Trim();
 
             PushUndo($"Insert URDF pose at {t:F3} s");
 
-            // A pose is a complete numeric keyframe. Replace every existing
-            // numeric command at this exact point. If the Pose draft contains an
-            // RGB command, replace the RGB command at the same time as well;
-            // otherwise existing RGB/audio Play commands remain untouched.
-            foreach (var existing in _doc.Commands.Where(c =>
-                         ServoCommand.TimeKey(c.OffsetSeconds) == t &&
-                         (!c.IsTextServo ||
-                          (!string.IsNullOrWhiteSpace(poseRgb) &&
-                           c.Servo == ServoNames.RGBCommand))).ToList())
-                _doc.Commands.Remove(existing);
-
+            // Keep earlier candidates until the conflict chooser has shown
+            // their values alongside the newly inserted pose commands.
             _doc.Commands.AddRange(commands);
-            ClearManualGridOverrides();
-            RefreshAfterEdit();
+            ClearManualPoseOverrides();
+            if (!RefreshAfterEdit()) return;
             SetCursor(t);
-            ShowStatus($"Inserted URDF pose at {t:F3} s ({commands.Count} commands)");
+            ShowStatus($"URDF pose insertion completed at {t:F3} s");
         }
 
         private void SaveLibraryPose(RobotHeadView view)
@@ -3190,57 +3037,66 @@ namespace ServoAnimator
 
             try
             {
-                string imageFile;
-                string oldImagePath = null;
-                if (File.Exists(path))
+                LoadingWindow.Run(this, async () =>
                 {
-                    try
+                    var commands = BuildCommandsFromPose(view.CapturePose(), 0.0);
+                    var image = string.IsNullOrWhiteSpace(prompt.ImageSourcePath)
+                        ? view.CaptureCenteredLibraryPoseImage() : null;
+                    await Task.Run(() =>
                     {
-                        var old = AnimationDocument.LoadLibraryItem(path);
-                        if (!string.IsNullOrWhiteSpace(old.ImageFile))
+                        string imageFile;
+                        string oldImagePath = null;
+                        if (File.Exists(path))
                         {
-                            oldImagePath = Path.IsPathRooted(old.ImageFile)
-                                ? old.ImageFile
-                                : Path.Combine(Path.GetDirectoryName(path) ?? "", old.ImageFile);
+                            try
+                            {
+                                var old = AnimationDocument.LoadLibraryItem(path);
+                                if (!string.IsNullOrWhiteSpace(old.ImageFile))
+                                {
+                                    oldImagePath = Path.IsPathRooted(old.ImageFile)
+                                        ? old.ImageFile
+                                        : Path.Combine(Path.GetDirectoryName(path) ?? "", old.ImageFile);
+                                }
+                            }
+                            catch { }
                         }
-                    }
-                    catch { }
-                }
 
-                string destination;
-                if (!string.IsNullOrWhiteSpace(prompt.ImageSourcePath))
-                {
-                    // A user-supplied image always wins. Automatic URDF capture is
-                    // intentionally skipped when Attach Image was used in the save dialog.
-                    string ext = Path.GetExtension(prompt.ImageSourcePath);
-                    if (string.IsNullOrWhiteSpace(ext)) ext = ".png";
-                    imageFile = Path.GetFileNameWithoutExtension(path) + "_image" + ext.ToLowerInvariant();
-                    destination = Path.Combine(Path.GetDirectoryName(path) ?? folder, imageFile);
-                    if (!Path.GetFullPath(prompt.ImageSourcePath).Equals(
-                            Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase))
-                        File.Copy(prompt.ImageSourcePath, destination, overwrite: true);
-                }
-                else
-                {
-                    // Library + automatically creates a clean visual reference of
-                    // the current Pose. The RobotHeadView temporarily centers its
-                    // camera, hides editor chrome, crops to the head/flaps/neck,
-                    // saves the PNG, and restores the user's live view.
-                    imageFile = Path.GetFileNameWithoutExtension(path) + "_image.png";
-                    destination = Path.Combine(Path.GetDirectoryName(path) ?? folder, imageFile);
-                    view.SaveCenteredLibraryPoseImage(destination);
-                }
+                        string destination;
+                        if (!string.IsNullOrWhiteSpace(prompt.ImageSourcePath))
+                        {
+                            // A user-supplied image always wins. Automatic URDF capture is
+                            // intentionally skipped when Attach Image was used in the save dialog.
+                            string ext = Path.GetExtension(prompt.ImageSourcePath);
+                            if (string.IsNullOrWhiteSpace(ext)) ext = ".png";
+                            imageFile = Path.GetFileNameWithoutExtension(path) + "_image" + ext.ToLowerInvariant();
+                            destination = Path.Combine(Path.GetDirectoryName(path) ?? folder, imageFile);
+                            if (!Path.GetFullPath(prompt.ImageSourcePath).Equals(
+                                    Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase))
+                                File.Copy(prompt.ImageSourcePath, destination, overwrite: true);
+                        }
+                        else
+                        {
+                            // Library + automatically creates a clean visual reference of
+                            // the current Pose. The RobotHeadView temporarily centers its
+                            // camera, hides editor chrome, crops to the head/flaps/neck,
+                            // saves the PNG, and restores the user's live view.
+                            imageFile = Path.GetFileNameWithoutExtension(path) + "_image.png";
+                            destination = Path.Combine(Path.GetDirectoryName(path) ?? folder, imageFile);
+                            RobotHeadView.SaveLibraryPoseBitmap(image, destination);
+                        }
 
-                if (!string.IsNullOrWhiteSpace(oldImagePath) &&
-                    !Path.GetFullPath(oldImagePath).Equals(
-                        Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase) &&
-                    File.Exists(oldImagePath))
-                {
-                    try { File.Delete(oldImagePath); } catch { }
-                }
+                        if (!string.IsNullOrWhiteSpace(oldImagePath) &&
+                            string.Equals(Path.GetDirectoryName(Path.GetFullPath(oldImagePath)), Path.GetDirectoryName(Path.GetFullPath(path)), StringComparison.OrdinalIgnoreCase) &&
+                            !Path.GetFullPath(oldImagePath).Equals(
+                                Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase) &&
+                            File.Exists(oldImagePath))
+                        {
+                            try { File.Delete(oldImagePath); } catch { }
+                        }
 
-                var commands = BuildCommandsFromPose(view.CapturePose(), 0.0);
-                AnimationDocument.SaveLibraryCommand(path, commands, prompt.DescriptionText, imageFile);
+                        AnimationDocument.SaveLibraryCommand(path, commands, prompt.DescriptionText, imageFile);
+                    });
+                }, "Saving Library Pose and image…");
                 ShowStatus($"Library Pose saved: {Path.GetFileName(path)}");
             }
             catch (Exception ex)
@@ -3356,30 +3212,6 @@ namespace ServoAnimator
             return pose;
         }
 
-        /// <summary>Create one command per servo at the cursor, capturing the
-        /// grid's current Speed and Value (numeric or text) for each servo
-        /// (a "keyframe all").</summary>
-        private void GenerateCommandsFromGrid()
-        {
-            PushUndo($"Generate commands from grid at {_cursorTime:F3} s");
-            double t = ServoCommand.TimeKey(_cursorTime);
-            foreach (var row in _rows)
-            {
-                _doc.Commands.Add(new ServoCommand
-                {
-                    OffsetSeconds = t,
-                    Servo = row.Servo,
-                    NumericValue = row.IsTextRow ? 0 : (int)Math.Round(row.Value),
-                    TextValue = row.IsTextRow ? row.TextValue : "",
-                    Speed = row.Speed,
-                    Reason = "generated from grid",
-                });
-            }
-            // The staged values are now real timeline commands at this point.
-            ClearManualGridOverrides();
-            RefreshAfterEdit();
-        }
-
         #endregion
 
         // ================================================================
@@ -3389,26 +3221,22 @@ namespace ServoAnimator
         private static bool IsSharedNeckServo(ServoNames servo) =>
             servo is ServoNames.NeckNodUp or ServoNames.NeckTiltRight;
 
-        /// <summary>A spline-checked servo toggled: rebuild legend + curves.
-        /// NeckNodUp and NeckTiltRight share one physical pair and therefore
-        /// one spline; enabling/disabling either keeps the pair synchronized.</summary>
-        private void SplineCheck_Click(object sender, RoutedEventArgs e)
+        /// <summary>Legend show/hide checkbox toggled: remember and redraw.</summary>
+        private void SplineShowAll_Click(object sender, RoutedEventArgs e)
         {
-            if ((sender as FrameworkElement)?.DataContext is ServoStateRow row &&
-                IsSharedNeckServo(row.Servo))
-            {
-                bool enabled = row.SplineEnabled;
-                var other = _rows.First(r => r.Servo ==
-                    (row.Servo == ServoNames.NeckNodUp
-                        ? ServoNames.NeckTiltRight : ServoNames.NeckNodUp));
-                other.SplineEnabled = enabled;
-            }
-
+            RevealSplineLines(_legend, _lineVisible);
             RebuildSplineData();
-            UpdateDocumentStatusIndicators();
         }
 
-        /// <summary>Legend show/hide checkbox toggled: remember and redraw.</summary>
+        internal static void RevealSplineLines(IEnumerable<SplineLegendItem> legend, IDictionary<ServoNames, bool> visibility)
+        {
+            foreach (var item in legend)
+            {
+                item.Visible = true;
+                visibility[item.Servo] = true;
+            }
+        }
+
         private void LegendToggle_Click(object sender, RoutedEventArgs e)
         {
             if ((sender as FrameworkElement)?.DataContext is SplineLegendItem item)
@@ -3437,7 +3265,7 @@ namespace ServoAnimator
                 c.NumericValue = value;   // clamped per-servo by the model
 
             RebuildSplineData();
-            UpdateServoGrid(_cursorTime);
+            UpdateServoState(_cursorTime);
         }
 
         /// <summary>
@@ -3465,16 +3293,12 @@ namespace ServoAnimator
         /// </summary>
         private void Spline_PointAdded(ServoNames servo, double timeKey, int value)
         {
-            // Ordinary servos cannot duplicate their own point. The neck pair
-            // is a single shared spline, so neither logical neck owner may
-            // already have a control point at this time.
-            bool exists = IsSharedNeckServo(servo)
-                ? _doc.Commands.Any(c => IsSharedNeckServo(c.Servo) &&
-                    !c.Control.HasValue && !c.Disable &&
-                    ServoCommand.TimeKey(c.OffsetSeconds) == timeKey)
-                : _doc.Commands.Any(c => c.Servo == servo &&
-                    ServoCommand.TimeKey(c.OffsetSeconds) == timeKey);
-            if (exists) return;
+            // Retain the shared-neck ownership rule. Same-target duplicates
+            // are instead offered to the normal conflict chooser below.
+            if (IsSharedNeckServo(servo) && _doc.Commands.Any(c =>
+                IsSharedNeckServo(c.Servo) && c.Servo != servo &&
+                !c.Control.HasValue && !c.Disable &&
+                ServoCommand.TimeKey(c.OffsetSeconds) == timeKey)) return;
 
             PushUndo($"Add {servo} spline point at {timeKey:F3} s");
 
@@ -3489,35 +3313,6 @@ namespace ServoAnimator
             RefreshAfterEdit();
         }
 
-        /// <summary>Middle-clicking an already-selected point on the shared
-        /// neck spline changes only which logical neck axis owns that point.
-        /// Time, value, speed and reason remain unchanged.</summary>
-        private void Spline_PointServoToggled(ServoNames servo, double timeKey)
-        {
-            if (!IsSharedNeckServo(servo)) return;
-
-            ServoNames target = servo == ServoNames.NeckNodUp
-                ? ServoNames.NeckTiltRight : ServoNames.NeckNodUp;
-            var source = _doc.Commands.Where(c => c.Servo == servo &&
-                !c.Control.HasValue && !c.Disable &&
-                ServoCommand.TimeKey(c.OffsetSeconds) == timeKey).ToList();
-            if (source.Count == 0) return;
-
-            PushUndo($"Change spline point from {servo} to {target}");
-
-            // A shared spline has one owner per time key. Remove any stale
-            // command of the destination owner at the same key before moving
-            // the selected command(s) across.
-            foreach (var duplicate in _doc.Commands.Where(c => c.Servo == target &&
-                         !c.Control.HasValue && !c.Disable &&
-                         ServoCommand.TimeKey(c.OffsetSeconds) == timeKey).ToList())
-                _doc.Commands.Remove(duplicate);
-
-            foreach (var c in source)
-                c.Servo = target;
-
-            RefreshAfterEdit();
-        }
 
         /// <summary>
         /// DELETE pressed with a spline point selected (left-clicked): remove
@@ -3539,6 +3334,18 @@ namespace ServoAnimator
         private List<ServoNames> SplineServosEnabled() =>
             _rows.Where(r => r.SplineEnabled && !r.IsTextRow)
                  .Select(r => r.Servo).ToList();
+
+        private void ApplySplineSettings(IEnumerable<ServoNames> servos)
+        {
+            var enabled = servos.ToHashSet();
+            if (enabled.Contains(ServoNames.NeckNodUp) || enabled.Contains(ServoNames.NeckTiltRight))
+            {
+                enabled.Add(ServoNames.NeckNodUp);
+                enabled.Add(ServoNames.NeckTiltRight);
+            }
+            foreach (var row in _rows) row.SplineEnabled = !row.IsTextRow && enabled.Contains(row.Servo);
+            _doc.SplineServos = SplineServosEnabled().Select(s => s.ToString()).ToList();
+        }
 
         /// <summary>This servo's spline control points: its commands on the
         /// timeline, deduped per millisecond time key, sorted by time.</summary>
@@ -3659,7 +3466,7 @@ namespace ServoAnimator
                 : Array.Empty<double>();
         }
 
-        private System.Windows.Media.Brush BrushFor(ServoNames s) =>
+        internal static System.Windows.Media.Brush BrushFor(ServoNames s) =>
             (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter()
                 .ConvertFromString(CurvePalette[(int)s % CurvePalette.Length]);
 
@@ -3676,21 +3483,7 @@ namespace ServoAnimator
         {
             RebuildPlaybackIndexes();
             var enabled = SplineServosEnabled();
-            bool showSpline = enabled.Count > 0;
-            if (showSpline)
-            {
-                SplineArea.Visibility = Visibility.Visible;
-                if (SplineTimelineRow.Height.Value <= 0.0)
-                    SplineTimelineRow.Height = _lastSplineTimelineHeight;
-            }
-            else
-            {
-                if (SplineTimelineRow.ActualHeight > 1.0)
-                    _lastSplineTimelineHeight = new GridLength(
-                        Math.Max(80.0, SplineTimelineRow.ActualHeight), GridUnitType.Pixel);
-                SplineArea.Visibility = Visibility.Collapsed;
-                SplineTimelineRow.Height = new GridLength(0, GridUnitType.Pixel);
-            }
+            ApplyTimelineLayout();
 
             // Legend: rebuild in grid order, keeping remembered visibility.
             _legend.Clear();
@@ -3712,6 +3505,9 @@ namespace ServoAnimator
             // checked state is visible. NeckNodUp/NeckTiltRight are the one
             // exception: they are rendered as ONE shared curve whose segment
             // color identifies the current logical owner.
+            SplineShowAllButton.Visibility = _legend.Any(item => !item.Visible)
+                ? Visibility.Visible : Visibility.Collapsed;
+
             var curves = new List<SplineCurve>();
 
             bool neckEnabled = enabled.Any(IsSharedNeckServo);
@@ -3773,10 +3569,13 @@ namespace ServoAnimator
         private void SyncSplineView()
         {
             if (Spline == null) return;
+            bool viewportChanged = Spline.ViewStart != Waveform.ViewStart ||
+                Spline.PixelsPerSecond != Waveform.PixelsPerSecond || Spline.Duration != TimelineDuration;
             Spline.ViewStart = Waveform.ViewStart;
             Spline.PixelsPerSecond = Waveform.PixelsPerSecond;
             Spline.CursorTime = _cursorTime;
             Spline.Duration = TimelineDuration;
+            if (viewportChanged) Spline.InvalidateVisual();
             Spline.InvalidateCursor();
         }
 
@@ -3918,6 +3717,7 @@ namespace ServoAnimator
                                           bool preservePending = false)
         {
             if (!RequireConfigPath(path, "sequence")) return false;
+            if (!ApplyOpenCommandEditor()) return false;
             if (setActiveDocument && !ConfirmDocumentSwitch(replaceMovie: false)) return false;
             try
             {
@@ -3926,6 +3726,8 @@ namespace ServoAnimator
                 // leaves the current sequence and its undo history intact.
                 var prepared = LoadingWindow.Wait(this, _mediaCache.PrepareSequence(path, ConfigRoot),
                     "Preparing sequence and audio…").Clone();
+                bool resolvedConflicts = CommandConflicts.Find(prepared.Commands).Count > 0;
+                if (!CommandConflictWindow.Resolve(this, prepared.Commands)) return false;
                 _reader?.Dispose();
                 _reader = null;
                 _audioPath = null;
@@ -3940,6 +3742,7 @@ namespace ServoAnimator
                 }
 
                 _doc = prepared;
+                _pendingMovieSequence = null;
                 RebuildPlaybackIndexes();
                 _rgbSimulator.Invalidate();
                 _jsonPath = path;
@@ -3995,7 +3798,7 @@ namespace ServoAnimator
                 if (fitTimeline) Waveform.ZoomToFit();
                 SyncScrollBar();
                 UpdateTitle();
-                _savedSequenceFingerprint = CurrentSequenceFingerprint();
+                _savedSequenceFingerprint = resolvedConflicts ? "<resolved-command-conflicts>" : CurrentSequenceFingerprint();
                 UpdateDocumentStatusIndicators();
                 if (setActiveDocument)
                     _activeDocumentKind = ActiveDocumentKind.Sequence;
@@ -4032,6 +3835,8 @@ namespace ServoAnimator
             string projDefault;
             if (!string.IsNullOrEmpty(_jsonPath))
                 projDefault = Path.GetFileName(_jsonPath);
+            else if (CurrentMovieDraft != null)
+                projDefault = CurrentMovieDraft.Name + ".json";
             else if (!string.IsNullOrEmpty(_doc.AudioFile))
                 projDefault = Path.GetFileNameWithoutExtension(_doc.AudioFile)
                               + "_seq.json";
@@ -4085,7 +3890,7 @@ namespace ServoAnimator
         /// (shared by project save and animation export).</summary>
         private void SyncDocMetadata()
         {
-            _doc.Description = DescriptionBox.Text;
+            _doc.Description ??= "";
             _doc.AudioStartOffsetSeconds = _audioOffset;
             _doc.SplineServos = SplineServosEnabled().Select(s => s.ToString()).ToList();
             _doc.SplineSampleHz = _splineHz;
@@ -4120,6 +3925,7 @@ namespace ServoAnimator
 
         private bool SaveProjectTo(string path)
         {
+            if (!ApplyOpenCommandEditor()) return false;
             if (!RequireConfigPath(path, "sequence")) return false;
             _doc.AudioFiles = BuildAudioFilesHeader();
             string oldPath = _jsonPath;
@@ -4140,14 +3946,29 @@ namespace ServoAnimator
                     _movieItems[_movieSelectedIndex].FilePath = path;
 
                 _savedSequenceFingerprint = CurrentSequenceFingerprint();
+                bool appended = CurrentMovieDraft?.AppendAfterSave(_doc, _moviePath, path, ContentEnd, _movieItems) == true;
+                if (appended)
+                {
+                    _pendingMovieSequence = null;
+                    _movieSelectedIndex = _movieItems.Count - 1;
+                }
                 RefreshMovieDurationForPath(path);
+                if (appended)
+                {
+                    RefreshMovieTimelineView();
+                    MovieTimeline.CursorTime = MovieTimeline.StartOf(_movieSelectedIndex) + _cursorTime;
+                    MovieTimeline.EnsureVisible(MovieTimeline.CursorTime);
+                    MovieTimeline.InvalidateVisual();
+                }
                 UpdateDocumentStatusIndicators();
                 if (_activeDocumentKind != ActiveDocumentKind.Movie)
                 {
                     _activeDocumentKind = ActiveDocumentKind.Sequence;
                     RecordRecentFile(path, ActiveDocumentKind.Sequence, setActive: true);
                 }
-                ShowStatus($"Sequence saved: {Path.GetFileName(path)}");
+                ShowStatus(appended
+                    ? $"Sequence saved and added to Movie: {Path.GetFileName(path)} — save the Movie to keep its updated sequence list"
+                    : $"Sequence saved: {Path.GetFileName(path)}");
                 return true;
             }
             catch (Exception ex)
@@ -4166,6 +3987,7 @@ namespace ServoAnimator
         /// </summary>
         private void ExportAnimationTo(string path)
         {
+            if (!ApplyOpenCommandEditor()) return;
             if (!RequireConfigPath(path, "animation")) return;
             try
             {
@@ -4232,6 +4054,8 @@ namespace ServoAnimator
                 if (AnimateIndividual)
                     export.Commands = ExpandGangedCommands(export.Commands);
 
+                if (!CommandConflictWindow.Resolve(this, export.Commands)) return;
+
                 // "Scale ±1": divide every numeric value by its range's
                 // maximum, so -100..100 -> -1.000..1.000, 0..100 ->
                 // 0..1.000, and the 0..2000 eye pops -> 0..1.000 (3
@@ -4275,63 +4099,29 @@ namespace ServoAnimator
             RefreshAfterEdit();
         }
 
-        /// <summary>Set both description editors without creating a
-        /// TextChanged feedback loop.</summary>
+        /// <summary>Update the authored Sequence description and its read-only header.</summary>
         private void SetDescriptionText(string text)
         {
-            _syncingDescription = true;
             string value = text ?? "";
-            if (DescriptionBox != null) DescriptionBox.Text = value;
-            if (DescriptionExpandedBox != null) DescriptionExpandedBox.Text = value;
-            _syncingDescription = false;
-        }
-
-        private void DescriptionBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (_syncingDescription) return;
-            _syncingDescription = true;
-            string value = DescriptionBox?.Text ?? "";
-            if (DescriptionExpandedBox != null && DescriptionExpandedBox.Text != value)
-                DescriptionExpandedBox.Text = value;
             if (_doc != null) _doc.Description = value;
-            _syncingDescription = false;
-            RefreshMovieDescriptionForPath(_jsonPath, value);
+            if (SequenceDescriptionRun != null) SequenceDescriptionRun.Text = value;
+        }
+
+        private void SequenceDescriptionEdit_Click(object sender, RoutedEventArgs e)
+        {
+            var editor = new DescriptionEditWindow(this, "Sequence", _doc?.Description ?? "");
+            if (editor.ShowDialog() != true ||
+                string.Equals(editor.DescriptionText, _doc?.Description ?? "", StringComparison.Ordinal)) return;
+            SetDescriptionText(editor.DescriptionText);
+            RefreshMovieDescriptionForPath(_jsonPath, editor.DescriptionText);
             UpdateDocumentStatusIndicators();
-        }
-
-        private void DescriptionExpandedBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (_syncingDescription) return;
-            _syncingDescription = true;
-            string value = DescriptionExpandedBox?.Text ?? "";
-            if (DescriptionBox != null && DescriptionBox.Text != value)
-                DescriptionBox.Text = value;
-            if (_doc != null) _doc.Description = value;
-            _syncingDescription = false;
-            RefreshMovieDescriptionForPath(_jsonPath, value);
-            UpdateDocumentStatusIndicators();
-        }
-
-        private void DescriptionExpand_Click(object sender, RoutedEventArgs e)
-        {
-            SetDescriptionText(DescriptionBox?.Text);
-            DescriptionOverlay.Visibility = Visibility.Visible;
-            DescriptionExpandedBox.Focus();
-            DescriptionExpandedBox.CaretIndex = DescriptionExpandedBox.Text.Length;
-        }
-
-        private void DescriptionCollapse_Click(object sender, RoutedEventArgs e)
-        {
-            DescriptionOverlay.Visibility = Visibility.Collapsed;
-            DescriptionBox.Focus();
-            DescriptionBox.CaretIndex = DescriptionBox.Text.Length;
         }
 
         /// <summary>Window title and compact file/dirty indicators.</summary>
         private void UpdateTitle()
         {
             string file = string.IsNullOrEmpty(_jsonPath) ? "" : $" — {Path.GetFileName(_jsonPath)}";
-            string dirty = SequenceHasUnsavedChanges() ? " *" : "";
+            string dirty = SequenceHasUnsavedChanges() ? "*" : "";
             Title = AppDisplayName + file + dirty;
         }
 
@@ -4341,7 +4131,7 @@ namespace ServoAnimator
             sb.AppendLine(_movieDescription ?? "");
             sb.AppendLine(_movieCreatedDate ?? "");
             foreach (var item in _movieItems)
-                sb.AppendLine((item.FilePath ?? "") + "\t" + (item.IsLooping ? "loop" : "once"));
+                sb.AppendLine((item.FilePath ?? "") + "\t" + (item.IsLooping ? "loop" : "once") + "\t" + (item.Trigger ?? ""));
             return sb.ToString();
         }
 
@@ -4370,40 +4160,38 @@ namespace ServoAnimator
 
         private void UpdateDocumentStatusIndicators()
         {
+            bool sequenceDirty = SequenceHasUnsavedChanges();
+            // A new draft has no Movie block yet, so keep its header and editor visible.
+            if (SequenceDescriptionPanel != null)
+                SequenceDescriptionPanel.Visibility = _movieItems.Any(item => PathsEqual(item.FilePath, _jsonPath))
+                    ? Visibility.Collapsed : Visibility.Visible;
             if (SequenceFileText != null)
             {
-                string name = string.IsNullOrWhiteSpace(_jsonPath) ? "(unsaved)" : Path.GetFileNameWithoutExtension(_jsonPath);
-                SequenceFileText.Text = $"Sequence: {name}{(SequenceHasUnsavedChanges() ? " *" : "")}";
+                string name = string.IsNullOrWhiteSpace(_jsonPath) ? CurrentMovieDraft?.Name ?? "(unsaved)" : Path.GetFileNameWithoutExtension(_jsonPath);
+                SequenceFileText.Text = $"Sequence: {name}{(sequenceDirty ? "*" : "")} — {ContentEnd:0.###} s";
                 SequenceFileText.ToolTip = string.IsNullOrWhiteSpace(_jsonPath) ? "Unsaved sequence" : _jsonPath;
             }
+            bool blockStatusChanged = false;
+            foreach (var item in _movieItems)
+            {
+                bool modified = sequenceDirty && PathsEqual(item.FilePath, _jsonPath);
+                if (item.IsModified == modified) continue;
+                item.IsModified = modified;
+                blockStatusChanged = true;
+            }
+            if (blockStatusChanged) MovieTimeline?.InvalidateVisual();
             if (MovieFileText != null)
             {
                 string name = string.IsNullOrWhiteSpace(_moviePath) ? "(unsaved)" : Path.GetFileNameWithoutExtension(_moviePath);
-                MovieFileText.Text = name + (MovieHasUnsavedChanges() ? " *" : "");
+                MovieFileText.Text = $"{name}{(MovieHasUnsavedChanges() ? "*" : "")} — {MovieTimeline.TotalDuration:0.###} s";
                 MovieFileText.ToolTip = string.IsNullOrWhiteSpace(_moviePath) ? "Unsaved movie" : _moviePath;
-            }
-            if (DirtySummaryText != null)
-            {
-                bool sequenceDirty = SequenceHasUnsavedChanges();
-                bool movieDirty = MovieHasUnsavedChanges();
-                bool configDirty = ConfigurationHasUnsavedChanges();
-                DirtySummaryText.Text =
-                    $"Sequence: {(sequenceDirty ? "Unsaved" : "Saved")}  |  " +
-                    $"Movie: {(movieDirty ? "Unsaved" : "Saved")}  |  " +
-                    $"Config: {(configDirty ? "Unsaved" : "Saved")}";
-                DirtySummaryText.Foreground = (System.Windows.Media.Brush)FindResource(
-                    sequenceDirty || movieDirty || configDirty ? "WarningText" : "SecondaryText");
-                DirtySummaryText.ToolTip = "Sequence and Movie status includes description edits.";
             }
             UpdateTitle();
         }
 
         private void ShowStatus(string text)
         {
-            if (StatusText == null) return;
-            StatusText.Text = text ?? "Ready";
-            _statusTimer.Stop();
-            _statusTimer.Start();
+            Debug.WriteLine(text);
         }
 
         #endregion
@@ -4421,14 +4209,21 @@ namespace ServoAnimator
         private void PushUndo(string description)
         {
             _undoStack.Add(new UndoEntry(Snapshot(),
-                string.IsNullOrWhiteSpace(description) ? "Edit timeline" : description.Trim()));
+                string.IsNullOrWhiteSpace(description) ? "Edit timeline" : description.Trim(), _audioOffset, SplineServosEnabled()));
             if (_undoStack.Count > UndoLimit) _undoStack.RemoveAt(0);
             _redoStack.Clear();
         }
 
-        private void RestoreSnapshot(List<ServoCommand> snap, bool refresh = true)
+        private void RestoreSnapshot(List<ServoCommand> snap, bool refresh = true, double? audioOffset = null, List<ServoNames> splines = null)
         {
             _doc.Commands = snap.Select(c => c.Clone()).ToList();
+            if (splines != null) ApplySplineSettings(splines);
+            if (audioOffset.HasValue)
+            {
+                _audioOffset = audioOffset.Value;
+                _doc.AudioStartOffsetSeconds = _audioOffset;
+                Waveform.AudioOffset = _audioOffset;
+            }
             if (refresh) RefreshAfterEdit();
         }
 
@@ -4455,8 +4250,8 @@ namespace ServoAnimator
             {
                 UndoEntry entry = _undoStack[^1];
                 _undoStack.RemoveAt(_undoStack.Count - 1);
-                _redoStack.Add(new UndoEntry(Snapshot(), entry.Description));
-                RestoreSnapshot(entry.Commands, refresh: false);
+                _redoStack.Add(new UndoEntry(Snapshot(), entry.Description, _audioOffset, SplineServosEnabled()));
+                RestoreSnapshot(entry.Commands, refresh: false, audioOffset: entry.AudioOffset, splines: entry.Splines);
             }
 
             RefreshAfterEdit();
@@ -4508,9 +4303,9 @@ namespace ServoAnimator
             if (_redoStack.Count == 0) return;
             UndoEntry entry = _redoStack[^1];
             _redoStack.RemoveAt(_redoStack.Count - 1);
-            _undoStack.Add(new UndoEntry(Snapshot(), entry.Description));
+            _undoStack.Add(new UndoEntry(Snapshot(), entry.Description, _audioOffset, SplineServosEnabled()));
             if (_undoStack.Count > UndoLimit) _undoStack.RemoveAt(0);
-            RestoreSnapshot(entry.Commands);
+            RestoreSnapshot(entry.Commands, audioOffset: entry.AudioOffset, splines: entry.Splines);
             CommandManager.InvalidateRequerySuggested();
             ShowStatus($"Redid: {entry.Description}");
         }
@@ -4542,6 +4337,7 @@ namespace ServoAnimator
 
             _doc = new AnimationDocument();
             RebuildPlaybackIndexes();
+            _pendingMovieSequence = null;
             _movieCarryPose = null;
             _rgbSimulator.SetInitialFrame(null);
             _rgbSimulator.Invalidate();
@@ -4564,7 +4360,6 @@ namespace ServoAnimator
             }
             if (MoviePlayButton != null)
                 MoviePlayButton.Content = "▶ Movie";
-            RefreshMovieMetadataView();
             RefreshMovieTimelineView();
 
             Waveform.PrimaryAudioName = "";
@@ -4602,10 +4397,9 @@ namespace ServoAnimator
         private void LoadEditorLayout()
         {
             var layout = EditorLayoutSettings.Load(_folders?.ConfigFolderOrDefault);
+            _startupEditorLayout = layout;
             if (layout == null)
             {
-                // Ensure the initial toggle label reflects the default visible state.
-                CommandsListToggle_Changed(CommandsListToggle, new RoutedEventArgs());
                 return;
             }
 
@@ -4622,16 +4416,25 @@ namespace ServoAnimator
                     Height = layout.WindowHeight;
                 }
 
-                _lastDockedServoColumnWidth = layout.ServoEditorColumn.ToGridLength(new GridLength(1, GridUnitType.Star));
-                _lastDockedUrdfColumnWidth = layout.UrdfEditorColumn.ToGridLength(new GridLength(1, GridUnitType.Star));
-                ServoEditorColumn.Width = _lastDockedServoColumnWidth;
+                if (string.Equals(layout.WindowState, nameof(WindowState.Maximized), StringComparison.OrdinalIgnoreCase))
+                    WindowState = WindowState.Maximized;
+
+                _lastDockedServoColumnWidth = layout.ServoEditorColumn?.ToGridLength(new GridLength(1, GridUnitType.Star))
+                    ?? new GridLength(1, GridUnitType.Star);
+                _lastDockedUrdfColumnWidth = layout.UrdfEditorColumn?.ToGridLength(new GridLength(1, GridUnitType.Star))
+                    ?? new GridLength(1, GridUnitType.Star);
+                CommandsEditorColumn.Width = _lastDockedServoColumnWidth;
                 UrdfEditorColumn.Width = _lastDockedUrdfColumnWidth;
-                UndockedServoLeftColumn.Width = layout.UndockedServoLeftColumn.ToGridLength(new GridLength(1, GridUnitType.Star));
-                UndockedServoRightColumn.Width = layout.UndockedServoRightColumn.ToGridLength(new GridLength(1, GridUnitType.Star));
-                TopEditorRow.Height = layout.TopEditorRow.ToGridLength(new GridLength(250, GridUnitType.Pixel));
-                AudioTimelineRow.Height = layout.AudioTimelineRow.ToGridLength(new GridLength(1, GridUnitType.Star));
-                _lastSplineTimelineHeight = layout.LastSplineTimelineHeight.ToGridLength(
-                    new GridLength(190, GridUnitType.Pixel));
+                TopEditorRow.Height = layout.TopEditorRow?.ToGridLength(new GridLength(250))
+                    ?? new GridLength(250);
+                AudioTimelineRow.Height = layout.AudioTimelineRow?.ToGridLength(new GridLength(1, GridUnitType.Star))
+                    ?? new GridLength(1, GridUnitType.Star);
+                _lastSplineTimelineHeight = layout.LastSplineTimelineHeight?.ToGridLength(new GridLength(190))
+                    ?? new GridLength(190);
+                TimelineLayoutPicker.SelectedIndex = layout.TimelineLayoutDefaultsVersion >= 1 &&
+                    Enum.TryParse<TimelineLayoutMode>(layout.TimelineLayout, out var timelineMode) &&
+                    Enum.IsDefined(timelineMode) ? (int)timelineMode : (int)TimelineLayoutMode.Combined;
+                ApplyTimelineLayout();
 
                 if (EditorLayoutSettings.IsVisibleOnVirtualDesktop(
                     layout.UrdfWindowLeft, layout.UrdfWindowTop,
@@ -4641,15 +4444,10 @@ namespace ServoAnimator
                         layout.UrdfWindowLeft, layout.UrdfWindowTop,
                         layout.UrdfWindowWidth, layout.UrdfWindowHeight);
                 }
-                _savedUrdfWindowState = Enum.TryParse<WindowState>(layout.UrdfWindowState, true, out var urdfState)
-                    ? urdfState
-                    : WindowState.Normal;
+                _savedUrdfWindowState = string.Equals(layout.UrdfWindowState, nameof(WindowState.Maximized),
+                    StringComparison.OrdinalIgnoreCase) ? WindowState.Maximized : WindowState.Normal;
 
-                CommandsListToggle.IsChecked = layout.CommandsVisible;
-                CommandsListToggle_Changed(CommandsListToggle, new RoutedEventArgs());
 
-                MovieTimelineToggle.IsChecked = layout.MovieTimelineVisible;
-                MovieTimelineToggle_Changed(MovieTimelineToggle, new RoutedEventArgs());
 
                 _embeddedUrdfHeightPixels = layout.EmbeddedUrdfHeightPixels > 0
                     ? layout.EmbeddedUrdfHeightPixels
@@ -4661,13 +4459,6 @@ namespace ServoAnimator
                     layout.UrdfCameraDistance);
                 SetUrdfUndocked(layout.UrdfUndocked);
 
-                // Never reopen with a transient description editor expanded.
-                MovieDescriptionExpandedPanel.Visibility = Visibility.Collapsed;
-                MovieDescriptionExpandedRow.Height = new GridLength(0, GridUnitType.Pixel);
-                MovieTimelinePanel.Height = MovieTimelineCollapsedHeight;
-
-                if (string.Equals(layout.WindowState, nameof(WindowState.Maximized), StringComparison.OrdinalIgnoreCase))
-                    WindowState = WindowState.Maximized;
             }
             catch (Exception ex)
             {
@@ -4675,11 +4466,41 @@ namespace ServoAnimator
             }
         }
 
+        private void FinishRestoringEditorLayout()
+        {
+            var layout = _startupEditorLayout;
+            _startupEditorLayout = null;
+            if (layout == null || !IsLoaded) return;
+
+            // Wait until the document headers, spline visibility, maximized
+            // client area, and docked/undocked hosts have their final arrangement.
+            _lastTopEditorHeight = layout.TopEditorRow?.ToGridLength(new GridLength(250))
+                ?? new GridLength(250);
+            TopEditorRow.Height = _lastTopEditorHeight;
+            if (!_urdfUndocked)
+            {
+                CommandsEditorColumn.Width = _lastDockedServoColumnWidth;
+                UrdfEditorColumn.Width = _lastDockedUrdfColumnWidth;
+            }
+            _lastSplineTimelineHeight = layout.LastSplineTimelineHeight?.ToGridLength(new GridLength(190))
+                ?? new GridLength(190);
+            _timelineLayout?.RestoreHeights(
+                layout.AudioTimelineRow?.ToGridLength(new GridLength(1, GridUnitType.Star))
+                    ?? new GridLength(1, GridUnitType.Star),
+                _lastSplineTimelineHeight);
+            EditorTimelineGrid.UpdateLayout();
+            ApplyEmbeddedUrdfHeight();
+
+            EmbeddedHeadView?.ApplyCameraState(layout.UrdfCameraYaw, layout.UrdfCameraPitch, layout.UrdfCameraDistance);
+            if (_urdfUndocked)
+                _head?.HeadView.ApplyCameraState(layout.UrdfCameraYaw, layout.UrdfCameraPitch, layout.UrdfCameraDistance);
+        }
+
         /// <summary>Save splitter positions, window placement and user-selectable
         /// editor panels into EditorLayout.json in the active Configuration folder.</summary>
-        private void SaveEditorLayout()
+        private bool SaveEditorLayout()
         {
-            if (_folders == null) return;
+            if (_folders == null) return true;
 
             try
             {
@@ -4687,20 +4508,15 @@ namespace ServoAnimator
                     ? new Rect(Left, Top, ActualWidth, ActualHeight)
                     : RestoreBounds;
 
-                double splineHeight = SplineArea?.Visibility == Visibility.Visible &&
-                                      SplineTimelineRow.ActualHeight > 1.0
-                    ? SplineTimelineRow.ActualHeight
-                    : _lastSplineTimelineHeight.Value;
-
-                if (_head != null)
+                if (_urdfUndocked && _head != null)
                 {
                     _savedUrdfWindowBounds = _head.GetNormalBounds();
-                    _savedUrdfWindowState = _head.WindowState;
+                    _savedUrdfWindowState = _head.LastNonMinimizedWindowState;
                 }
 
                 var dockedServoWidth = _urdfUndocked
                     ? _lastDockedServoColumnWidth
-                    : ServoEditorColumn.Width;
+                    : CommandsEditorColumn.Width;
                 var dockedUrdfWidth = _urdfUndocked
                     ? _lastDockedUrdfColumnWidth
                     : UrdfEditorColumn.Width;
@@ -4715,19 +4531,17 @@ namespace ServoAnimator
                     WindowTop = bounds.Top,
                     WindowWidth = Math.Max(MinWidth, bounds.Width),
                     WindowHeight = Math.Max(MinHeight, bounds.Height),
-                    WindowState = WindowState == WindowState.Maximized
+                    WindowState = _lastNonMinimizedWindowState == WindowState.Maximized
                         ? nameof(WindowState.Maximized)
                         : nameof(WindowState.Normal),
                     ServoEditorColumn = GridLengthSetting.From(dockedServoWidth),
                     UrdfEditorColumn = GridLengthSetting.From(dockedUrdfWidth),
-                    UndockedServoLeftColumn = GridLengthSetting.From(UndockedServoLeftColumn.Width),
-                    UndockedServoRightColumn = GridLengthSetting.From(UndockedServoRightColumn.Width),
-                    TopEditorRow = GridLengthSetting.From(TopEditorRow.Height),
-                    AudioTimelineRow = GridLengthSetting.From(AudioTimelineRow.Height),
+                    TopEditorRow = GridLengthSetting.From(TopEditorRow.Height.Value > 0 ? TopEditorRow.Height : _lastTopEditorHeight),
+                    AudioTimelineRow = GridLengthSetting.From(_timelineLayout?.SavedAudioHeight ?? AudioTimelineRow.Height),
+                    TimelineLayout = (_timelineLayout?.Mode ?? TimelineLayoutMode.Combined).ToString(),
+                    TimelineLayoutDefaultsVersion = 1,
                     LastSplineTimelineHeight = GridLengthSetting.From(
-                        new GridLength(Math.Max(80.0, splineHeight), GridUnitType.Pixel)),
-                    CommandsVisible = CommandsListToggle?.IsChecked == true,
-                    MovieTimelineVisible = MovieTimelineToggle?.IsChecked == true,
+                        _timelineLayout?.SavedSplineHeight ?? _lastSplineTimelineHeight),
                     EmbeddedUrdfHeightPixels = _embeddedUrdfHeightPixels,
                     UrdfCameraYaw = camera.Item1,
                     UrdfCameraPitch = camera.Item2,
@@ -4740,10 +4554,12 @@ namespace ServoAnimator
                     UrdfWindowState = _savedUrdfWindowState.ToString(),
                 };
                 layout.Save(_folders.ConfigFolderOrDefault);
+                return true;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[layout] Could not save EditorLayout.json: {ex.Message}");
+                return false;
             }
         }
 
@@ -4924,10 +4740,7 @@ namespace ServoAnimator
             ApplyEmbeddedUrdfHeight();
         }
 
-        /// <summary>Switch between the embedded URDF pane and the detachable
-        /// window. Undocking expands the servo editor across the full width and
-        /// changes it to two section columns, with Lighting & Vents starting the
-        /// right column.</summary>
+        /// <summary>Switch between embedded and detached URDF; Commands fills the freed width.</summary>
         private void SetUrdfUndocked(bool undocked)
         {
             if (_urdfUndocked == undocked)
@@ -4938,15 +4751,11 @@ namespace ServoAnimator
 
             if (undocked)
             {
-                // The expanded two-column grid should expose Headtop Controls
-                // automatically whenever the URDF is detached.
-                foreach (var row in _rows.Where(r => r.GroupName == "Headtop Controls"))
-                    row.GroupCollapsed = false;
 
                 // Remember the docked splitter ratio before collapsing the URDF
                 // columns; restoring later should reproduce the user's layout.
-                if (ServoEditorColumn.Width.Value > 0)
-                    _lastDockedServoColumnWidth = ServoEditorColumn.Width;
+                if (CommandsEditorColumn.Width.Value > 0)
+                    _lastDockedServoColumnWidth = CommandsEditorColumn.Width;
                 if (UrdfEditorColumn.Width.Value > 0)
                     _lastDockedUrdfColumnWidth = UrdfEditorColumn.Width;
             }
@@ -4976,7 +4785,7 @@ namespace ServoAnimator
             else if (_head != null)
             {
                 _savedUrdfWindowBounds = _head.GetNormalBounds();
-                _savedUrdfWindowState = _head.WindowState;
+                _savedUrdfWindowState = _head.LastNonMinimizedWindowState;
                 if (EmbeddedHeadView != null)
                 {
                     EmbeddedHeadView.SetUrdfDriveEnabled(_head.HeadView.UrdfDriveEnabled);
@@ -4991,40 +4800,26 @@ namespace ServoAnimator
             }
         }
 
+        /// <summary>Commands occupy the former grid pane; keep its URDF divider and saved ratio.</summary>
         private void ApplyUrdfDockLayout()
         {
-            if (ServoGridBorder == null || RobotHeadEmbeddedBorder == null) return;
-
-            if (_urdfUndocked)
-            {
-                RobotHeadEmbeddedBorder.Visibility = Visibility.Collapsed;
-                RobotHeadEmbeddedBorder.Height = double.NaN;
-                UrdfColumnSplitter.Visibility = Visibility.Collapsed;
-                UrdfSplitterColumn.Width = new GridLength(0, GridUnitType.Pixel);
-                UrdfEditorColumn.MinWidth = 0;
-                UrdfEditorColumn.Width = new GridLength(0, GridUnitType.Pixel);
-                ServoEditorColumn.Width = new GridLength(1, GridUnitType.Star);
-                Grid.SetColumnSpan(ServoGridBorder, 3);
-                ServoGridBorder.Margin = new Thickness(6, 5, 6, 0);
-                Grid.SetColumnSpan(DescriptionOverlay, 3);
-                DescriptionOverlay.Margin = new Thickness(6, 5, 6, 0);
-                DockedServoGridScroll.Visibility = Visibility.Collapsed;
-                UndockedServoGridColumns.Visibility = Visibility.Visible;
-            }
+            if (CommandsAtPointPanel == null || RobotHeadEmbeddedBorder == null) return;
+            TopEditorRow.MinHeight = 80;
+            if (TopEditorRow.Height.Value <= 0) TopEditorRow.Height = _lastTopEditorHeight;
+            CommandsTimelineSplitter.Visibility = Visibility.Visible;
+            CommandsEditorColumn.MinWidth = 280;
+            CommandsEditorColumn.Width = _urdfUndocked ? new GridLength(1, GridUnitType.Star) : _lastDockedServoColumnWidth;
+            UrdfSplitterColumn.Width = new GridLength(_urdfUndocked ? 0 : 8);
+            UrdfColumnSplitter.Visibility = _urdfUndocked ? Visibility.Collapsed : Visibility.Visible;
+            UrdfEditorColumn.MinWidth = _urdfUndocked ? 0 : 260;
+            UrdfEditorColumn.Width = _urdfUndocked ? new GridLength(0) : _lastDockedUrdfColumnWidth;
+            Grid.SetColumnSpan(CommandsAtPointPanel, _urdfUndocked ? 3 : 1);
+            CommandsAtPointPanel.Margin = new Thickness(6, 5, _urdfUndocked ? 6 : 0, 0);
+            DockUrdfButton.Visibility = _urdfUndocked ? Visibility.Visible : Visibility.Collapsed;
+            RobotHeadEmbeddedBorder.Visibility = _urdfUndocked ? Visibility.Collapsed : Visibility.Visible;
+            if (_urdfUndocked) RobotHeadEmbeddedBorder.Height = double.NaN;
             else
             {
-                Grid.SetColumnSpan(ServoGridBorder, 1);
-                ServoGridBorder.Margin = new Thickness(6, 5, 0, 0);
-                Grid.SetColumnSpan(DescriptionOverlay, 1);
-                DescriptionOverlay.Margin = new Thickness(6, 5, 0, 0);
-                DockedServoGridScroll.Visibility = Visibility.Visible;
-                UndockedServoGridColumns.Visibility = Visibility.Collapsed;
-                UrdfSplitterColumn.Width = new GridLength(8, GridUnitType.Pixel);
-                UrdfEditorColumn.MinWidth = 260;
-                ServoEditorColumn.Width = _lastDockedServoColumnWidth;
-                UrdfEditorColumn.Width = _lastDockedUrdfColumnWidth;
-                UrdfColumnSplitter.Visibility = Visibility.Visible;
-                RobotHeadEmbeddedBorder.Visibility = Visibility.Visible;
                 ApplyEmbeddedUrdfHeight();
                 EmbeddedHeadView?.SetDockedHostState();
             }
@@ -5032,7 +4827,7 @@ namespace ServoAnimator
 
         private void About_Click(object sender, RoutedEventArgs e) =>
             MessageBox.Show(this,
-                $"{AppDisplayName}\nVersion {AppVersion}   Date 2026-09-06\nDesigned by Mark Kovalcson\n\n" +
+                $"{AppDisplayName}\nVersion {AppVersion}   Date 2026-09-08\nDesigned by Mark Kovalcson\n\n" +
                 "Edits servo animation timelines against an audio waveform.\n" +
                 "Cubic Hermite spline interpolation, live drive, an animation\n" +
                 "library, and a movie timeline for ordered sequence projects.\n\n" +
@@ -5063,24 +4858,19 @@ namespace ServoAnimator
         {
             HelpSystem.SetTopic(Waveform, "sequence-editor");
             HelpSystem.SetTopic(VolumeSlider, "sequence-editor");
-            HelpSystem.SetTopic(DescriptionBox, "sequence-editor");
-            HelpSystem.SetTopic(DescriptionExpandedBox, "sequence-editor");
+            HelpSystem.SetTopic(SequenceDescriptionText, "sequence-editor");
+            HelpSystem.SetTopic(SequenceDescriptionEditButton, "sequence-editor");
 
-            HelpSystem.SetTopic(ServoGridBorder, "servo-grid");
-            HelpSystem.SetTopic(DockedServoGridScroll, "servo-grid");
-            HelpSystem.SetTopic(UndockedServoGridColumns, "servo-grid");
 
             HelpSystem.SetTopic(SplineArea, "spline-editor");
             HelpSystem.SetTopic(Spline, "spline-editor");
             HelpSystem.SetTopic(CommandsAtPointPanel, "commands");
             HelpSystem.SetTopic(CommandsAtPointList, "commands");
-            HelpSystem.SetTopic(CommandsListToggle, "commands");
 
             HelpSystem.SetTopic(MovieTimelinePanel, "movie-timeline");
             HelpSystem.SetTopic(MovieTimeline, "movie-timeline");
-            HelpSystem.SetTopic(MovieDescriptionBox, "movie-timeline");
-            HelpSystem.SetTopic(MovieDescriptionExpandedBox, "movie-timeline");
-            HelpSystem.SetTopic(MovieTimelineToggle, "movie-timeline");
+            HelpSystem.SetTopic(MovieDescriptionText, "movie-timeline");
+            HelpSystem.SetTopic(MovieDescriptionEditButton, "movie-timeline");
 
             HelpSystem.SetTopic(LiveDriveBtn, "live-drive-hardware");
             HelpSystem.SetTopic(MaestroStatusDot, "live-drive-hardware");
@@ -5090,62 +4880,7 @@ namespace ServoAnimator
 
             HelpSystem.SetTopic(RobotHeadEmbeddedBorder, "urdf-viewer");
             HelpSystem.SetTopic(EmbeddedHeadView, "urdf-viewer");
-            HelpSystem.SetTopic(DockUrdfFromGridButton, "urdf-viewer");
-        }
-
-        private void ThemeMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is not MenuItem item || item.Tag is not string themeName)
-                return;
-
-            ThemeManager.Apply(themeName);
-            UpdateThemeMenuChecks();
-
-            // Live Drive sets a local brush while toggled, so refresh its OFF
-            // chrome explicitly after a palette switch. The ON state remains
-            // semantic green regardless of the selected theme.
-            if (!LiveDrive && LiveDriveBtn != null)
-            {
-                LiveDriveBtn.Background = new System.Windows.Media.SolidColorBrush(
-                    ThemeManager.GetColor("ControlBackground", System.Windows.Media.Color.FromRgb(48, 53, 61)));
-                LiveDriveBtn.BorderBrush = new System.Windows.Media.SolidColorBrush(
-                    ThemeManager.GetColor("ControlBorder", System.Windows.Media.Color.FromRgb(74, 81, 96)));
-            }
-
-            // Custom-drawn timeline/spline surfaces are not ordinary WPF
-            // controls, so explicitly repaint them after a palette change.
-            Waveform?.InvalidateVisual();
-            Spline?.InvalidateVisual();
-            MovieTimeline?.InvalidateVisual();
-            ForEachHeadView(v => v.InvalidateVisual());
-
-            ShowStatus($"Color theme: {themeName}");
-        }
-
-        private void UpdateThemeMenuChecks()
-        {
-            if (ThemeGraphiteMenuItem == null) return;
-            ThemeGraphiteMenuItem.IsChecked =
-                ThemeManager.CurrentTheme.Equals("Graphite", StringComparison.OrdinalIgnoreCase);
-            ThemeSteelBlueMenuItem.IsChecked =
-                ThemeManager.CurrentTheme.Equals("Steel Blue", StringComparison.OrdinalIgnoreCase);
-            ThemeTealMenuItem.IsChecked =
-                ThemeManager.CurrentTheme.Equals("Teal", StringComparison.OrdinalIgnoreCase);
-            ThemeVioletMenuItem.IsChecked =
-                ThemeManager.CurrentTheme.Equals("Violet", StringComparison.OrdinalIgnoreCase);
-            ThemeSlateMidMenuItem.IsChecked =
-                ThemeManager.CurrentTheme.Equals("Slate Mid", StringComparison.OrdinalIgnoreCase);
-            ThemeSandstoneMidMenuItem.IsChecked =
-                ThemeManager.CurrentTheme.Equals("Sandstone Mid", StringComparison.OrdinalIgnoreCase);
-            ThemeMistLightMenuItem.IsChecked =
-                ThemeManager.CurrentTheme.Equals("Mist Light", StringComparison.OrdinalIgnoreCase);
-            ThemeWarmPaperMenuItem.IsChecked =
-                ThemeManager.CurrentTheme.Equals("Warm Paper", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private void ViewMovieTimeline_Click(object sender, RoutedEventArgs e)
-        {
-            MovieTimelineToggle.IsChecked = ViewMovieTimelineMenuItem.IsChecked;
+            HelpSystem.SetTopic(DockUrdfButton, "urdf-viewer");
         }
 
         #endregion
@@ -5154,33 +4889,17 @@ namespace ServoAnimator
         #region 10. Movie timeline
         // ================================================================
 
-        private void MovieTimelineToggle_Changed(object sender, RoutedEventArgs e)
-        {
-            if (MovieTimelinePanel == null) return;
-            bool show = MovieTimelineToggle.IsChecked == true;
-            MovieTimelinePanel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
-            if (SequenceDescriptionPanel != null)
-                SequenceDescriptionPanel.Visibility = show ? Visibility.Collapsed : Visibility.Visible;
-            if (show && DescriptionOverlay != null)
-                DescriptionOverlay.Visibility = Visibility.Collapsed;
-            if (ViewMovieTimelineMenuItem != null) ViewMovieTimelineMenuItem.IsChecked = show;
-            if (show) SyncMovieScroll();
-        }
 
-        private void CommandsListToggle_Changed(object sender, RoutedEventArgs e)
-        {
-            if (CommandsAtPointPanel == null || CommandsListToggle == null) return;
-            bool show = CommandsListToggle.IsChecked == true;
-            CommandsAtPointPanel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
-            CommandsListToggle.Content = show ? "Hide Commands" : "Show Commands";
-        }
+
+
 
         private double GetEmbeddedUrdfMinimumHeight()
         {
-            double actual = TopEditorRow?.ActualHeight ?? 0;
+            double headerHeight = (MainMenuPanel?.ActualHeight ?? 0) + (SequenceDescriptionPanel?.ActualHeight ?? 0) + (SequenceDescriptionPanel?.Margin.Top ?? 0);
+            double actual = (TopEditorRow?.ActualHeight ?? 0) + headerHeight;
             if (actual > 1) return actual;
             if (TopEditorRow != null && TopEditorRow.Height.IsAbsolute)
-                return Math.Max(80.0, TopEditorRow.Height.Value);
+                return Math.Max(80.0, TopEditorRow.Height.Value) + headerHeight;
             return 250.0;
         }
 
@@ -5188,9 +4907,8 @@ namespace ServoAnimator
         {
             if (EditorTimelineGrid == null) return GetEmbeddedUrdfMinimumHeight();
             double total = 0;
-            // The URDF may extend through rows 0..4 (editor, audio and spline),
-            // but never over the Commands row at index 5.
-            for (int i = 0; i < Math.Min(5, EditorTimelineGrid.RowDefinitions.Count); i++)
+            // The URDF may extend through rows 0..4 (Commands, audio and spline).
+            for (int i = 0; i < EditorTimelineGrid.RowDefinitions.Count; i++)
                 total += EditorTimelineGrid.RowDefinitions[i].ActualHeight;
             return Math.Max(GetEmbeddedUrdfMinimumHeight(), total);
         }
@@ -5206,75 +4924,32 @@ namespace ServoAnimator
                 return;
             }
 
-            Grid.SetRowSpan(RobotHeadEmbeddedBorder, 5);
+            Grid.SetRowSpan(RobotHeadEmbeddedBorder, EditorTimelineGrid.RowDefinitions.Count);
             RobotHeadEmbeddedBorder.VerticalAlignment = VerticalAlignment.Top;
             double min = GetEmbeddedUrdfMinimumHeight();
             double max = GetEmbeddedUrdfMaximumHeight();
             double target = _embeddedUrdfHeightPixels > 0 ? _embeddedUrdfHeightPixels : min;
             target = Math.Clamp(target, min, max);
-            if (_embeddedUrdfHeightPixels > 0)
-                _embeddedUrdfHeightPixels = target;
+            // Clamp the rendered height, not the user's saved preference.
+            // Startup, restoring from maximized, or a temporary narrow layout
+            // must not permanently shrink the last dragged URDF height.
             RobotHeadEmbeddedBorder.Height = target;
             EmbeddedHeadView?.SetDockedHostState();
         }
 
         private void SetMovieDescriptionText(string text)
         {
-            _syncingMovieDescription = true;
             _movieDescription = text ?? "";
-            if (MovieDescriptionBox != null) MovieDescriptionBox.Text = _movieDescription;
-            if (MovieDescriptionExpandedBox != null) MovieDescriptionExpandedBox.Text = _movieDescription;
-            _syncingMovieDescription = false;
+            if (MovieDescriptionRun != null) MovieDescriptionRun.Text = _movieDescription;
         }
 
-        private void MovieDescriptionBox_TextChanged(object sender, TextChangedEventArgs e)
+        private void MovieDescriptionEdit_Click(object sender, RoutedEventArgs e)
         {
-            if (_syncingMovieDescription) return;
-            _syncingMovieDescription = true;
-            _movieDescription = MovieDescriptionBox?.Text ?? "";
-            if (MovieDescriptionExpandedBox != null && MovieDescriptionExpandedBox.Text != _movieDescription)
-                MovieDescriptionExpandedBox.Text = _movieDescription;
-            _syncingMovieDescription = false;
+            var editor = new DescriptionEditWindow(this, "Movie", _movieDescription);
+            if (editor.ShowDialog() != true ||
+                string.Equals(editor.DescriptionText, _movieDescription, StringComparison.Ordinal)) return;
+            SetMovieDescriptionText(editor.DescriptionText);
             UpdateDocumentStatusIndicators();
-        }
-
-        private void MovieDescriptionExpandedBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (_syncingMovieDescription) return;
-            _syncingMovieDescription = true;
-            _movieDescription = MovieDescriptionExpandedBox?.Text ?? "";
-            if (MovieDescriptionBox != null && MovieDescriptionBox.Text != _movieDescription)
-                MovieDescriptionBox.Text = _movieDescription;
-            _syncingMovieDescription = false;
-            UpdateDocumentStatusIndicators();
-        }
-
-        private const double MovieTimelineCollapsedHeight = 132.0;
-        private const double MovieDescriptionExpandedHeight = 165.0;
-
-        private void MovieDescriptionExpand_Click(object sender, RoutedEventArgs e)
-        {
-            SetMovieDescriptionText(MovieDescriptionBox?.Text);
-            MovieDescriptionExpandedPanel.Visibility = Visibility.Visible;
-            MovieDescriptionExpandedRow.Height = new GridLength(MovieDescriptionExpandedHeight, GridUnitType.Pixel);
-            MovieTimelinePanel.Height = MovieTimelineCollapsedHeight + MovieDescriptionExpandedHeight;
-            MovieDescriptionExpandedBox.Focus();
-            MovieDescriptionExpandedBox.CaretIndex = MovieDescriptionExpandedBox.Text.Length;
-        }
-
-        private void MovieDescriptionCollapse_Click(object sender, RoutedEventArgs e)
-        {
-            MovieDescriptionExpandedPanel.Visibility = Visibility.Collapsed;
-            MovieDescriptionExpandedRow.Height = new GridLength(0, GridUnitType.Pixel);
-            MovieTimelinePanel.Height = MovieTimelineCollapsedHeight;
-            MovieDescriptionBox.Focus();
-            MovieDescriptionBox.CaretIndex = MovieDescriptionBox.Text.Length;
-        }
-
-        private void RefreshMovieMetadataView()
-        {
-            if (MovieCreatedText != null)
-                MovieCreatedText.Text = $"Created: {_movieCreatedDate}";
         }
 
         /// <summary>A stable representation of every editable sequence value.
@@ -5283,7 +4958,7 @@ namespace ServoAnimator
         private string CurrentSequenceFingerprint()
         {
             var sb = new StringBuilder();
-            sb.AppendLine(DescriptionBox?.Text ?? _doc?.Description ?? "");
+            sb.AppendLine(_doc?.Description ?? "");
             sb.AppendLine(_audioPath ?? "");
             sb.AppendLine(_audioOffset.ToString("R", CultureInfo.InvariantCulture));
             sb.AppendLine(_splineHz.ToString(CultureInfo.InvariantCulture));
@@ -5346,6 +5021,7 @@ namespace ServoAnimator
 
         private bool ConfirmDocumentSwitch(bool replaceMovie)
         {
+            if (!ApplyOpenCommandEditor()) return false;
             if (!ConfirmSequenceSwitch()) return false;
             if (!replaceMovie || !MovieHasUnsavedChanges()) return true;
             if (IsRunning) PausePlayback();
@@ -5656,8 +5332,61 @@ namespace ServoAnimator
             if (changed) MovieTimeline?.InvalidateVisual();
         }
 
+        private void NewMovieSequence()
+        {
+            if (string.IsNullOrWhiteSpace(_moviePath)) return;
+            var dialog = new NewSequenceWindow(this);
+            if (dialog.ShowDialog() != true) return;
+            if (!ConfirmDocumentSwitch(replaceMovie: false)) return;
+
+            // Only reset the Sequence editor: existing Movie blocks and metadata stay intact.
+            StopPlayback();
+            _reader?.Dispose(); _reader = null;
+            _audioPath = null;
+            _jsonPath = null;
+            _doc = new AnimationDocument();
+            _pendingMovieSequence = new PendingMovieSequence(dialog.SequenceName, _moviePath, _doc);
+            _activeDocumentKind = ActiveDocumentKind.Sequence;
+            _movieSelectedIndex = -1;
+            _moviePlaybackActive = false;
+            _moviePlaybackIndex = -1;
+            _movieCarryPose = null;
+            _rgbSimulator.SetInitialFrame(null);
+            _rgbSimulator.Invalidate();
+            _primaryDuration = 0;
+            _activeSource = null;
+            _lastDesiredKey = null;
+            _audioOffset = 0;
+            _mediaCache.Clear();
+            _undoStack.Clear();
+            _redoStack.Clear();
+            _clipboard.Clear();
+            foreach (var row in _rows) row.SplineEnabled = false;
+            _splineHz = 50;
+            SetDescriptionText(_doc.Description);
+            RebuildPlaybackIndexes();
+            Waveform.PrimaryAudioName = "";
+            Waveform.AudioOffset = 0;
+            Waveform.SetAudio(null, null, 0.001, 0);
+            Waveform.Duration = TimelineDuration;
+            Waveform.ContentDuration = ContentEnd;
+            EndArrowPrompt();
+            SetCursor(0);
+            // An empty named draft is unsaved too; navigation/close must still prompt.
+            _savedSequenceFingerprint = "<new-movie-sequence>";
+            RefreshAfterEdit();
+            Waveform.ZoomToFit();
+            SyncScrollBar();
+            MovieTimeline.CursorTime = MovieTimeline.TotalDuration;
+            MoviePlayButton.Content = "▶ Movie";
+            RefreshMovieTimelineView();
+            UpdateTitle();
+            ShowStatus($"New Sequence: {dialog.SequenceName} — save it to add it at the end of the Movie");
+        }
+
         private void RefreshMovieTimelineView()
         {
+            MovieTimeline.CanCreateSequence = !string.IsNullOrWhiteSpace(_moviePath);
             MovieTimeline.SetItems(_movieItems);
             MovieTimeline.SelectedIndex = _movieSelectedIndex;
             MovieTimeline.CursorTime = Math.Clamp(MovieTimeline.CursorTime, 0, MovieTimeline.TotalDuration);
@@ -5693,7 +5422,7 @@ namespace ServoAnimator
             if (MovieScroll == null || MovieTimeline == null) return;
             double visible = Math.Max(0.001, MovieTimeline.VisibleSeconds);
             MovieScroll.Minimum = 0;
-            MovieScroll.Maximum = Math.Max(0, MovieTimeline.TotalDuration - visible);
+            MovieScroll.Maximum = Math.Max(0, MovieTimeline.ScrollableDuration - visible);
             MovieScroll.ViewportSize = visible;
             MovieScroll.LargeChange = visible * 0.9;
             MovieScroll.SmallChange = visible * 0.1;
@@ -5771,6 +5500,7 @@ namespace ServoAnimator
                         DurationSeconds = File.Exists(path) ? SequenceDurationFromPath(path) : 1.0,
                         Description = SequenceDescriptionFromPath(path),
                         IsLooping = i < movie.SequenceLoops.Count && movie.SequenceLoops[i],
+                        Trigger = i < movie.SequenceTriggers.Count ? movie.SequenceTriggers[i] ?? "" : "",
                     });
                 }
 
@@ -5780,15 +5510,14 @@ namespace ServoAnimator
                 _movieItems.Clear();
                 _movieItems.AddRange(loaded);
                 _moviePath = moviePath;
+                _pendingMovieSequence = null;
                 _activeDocumentKind = ActiveDocumentKind.Movie;
                 _movieDescription = movie.Description ?? "";
                 _movieCreatedDate = string.IsNullOrWhiteSpace(movie.CreatedDate)
                     ? DateTime.Today.ToString("yyyy-MM-dd") : movie.CreatedDate;
                 SetMovieDescriptionText(_movieDescription);
-                RefreshMovieMetadataView();
                 _movieSelectedIndex = -1;
                 MovieTimeline.CursorTime = 0;
-                MovieTimelineToggle.IsChecked = true;
                 _savedMovieFingerprint = CurrentMovieFingerprint();
                 RefreshMovieTimelineView();
                 RecordRecentFile(moviePath, ActiveDocumentKind.Movie, setActive: true);
@@ -5866,7 +5595,7 @@ namespace ServoAnimator
             if (!RequireConfigPath(savePath, "movie")) return false;
             try
             {
-                _movieDescription = MovieDescriptionBox?.Text ?? _movieDescription ?? "";
+                _movieDescription ??= "";
                 if (string.IsNullOrWhiteSpace(_movieCreatedDate))
                     _movieCreatedDate = DateTime.Today.ToString("yyyy-MM-dd");
 
@@ -5876,9 +5605,11 @@ namespace ServoAnimator
                     CreatedDate = _movieCreatedDate,
                     Sequences = _movieItems.Select(i => MovieStoredSequencePath(i.FilePath)).ToList(),
                     SequenceLoops = _movieItems.Select(i => i.IsLooping).ToList(),
+                    SequenceTriggers = _movieItems.Select(i => i.Trigger).ToList(),
                 };
 
                 movie.Save(savePath);
+                if (CurrentMovieDraft != null) CurrentMovieDraft.MoviePath = savePath;
                 _moviePath = savePath;
                 _activeDocumentKind = ActiveDocumentKind.Movie;
                 RecordRecentFile(savePath, ActiveDocumentKind.Movie, setActive: true);
@@ -5959,6 +5690,16 @@ namespace ServoAnimator
             ShowStatus($"Removed {name} from movie");
         }
 
+        private void MovieTimeline_AssignTriggerRequested(int index)
+        {
+            if (index < 0 || index >= _movieItems.Count) return;
+            var dialog = new SequenceTriggerWindow(this, _movieItems[index].Trigger,
+                trigger => _movieItems.Where((item, i) => i != index).Any(item => item.Trigger == trigger));
+            if (dialog.ShowDialog() != true) return;
+            _movieItems[index].Trigger = dialog.Trigger;
+            RefreshMovieTimelineView();
+        }
+
         private void MovieTimeline_LoopToggleRequested(int index)
         {
             if (index < 0 || index >= _movieItems.Count) return;
@@ -6012,7 +5753,7 @@ namespace ServoAnimator
         /// only commands reached in that sequence replace carried values.</summary>
         private void CaptureMovieCarryPose()
         {
-            UpdateServoGrid(_cursorTime);
+            UpdateServoState(_cursorTime);
             var pose = new MovieCarryPose();
             foreach (var row in _rows)
             {
@@ -6023,14 +5764,11 @@ namespace ServoAnimator
 
                 foreach (var control in ServoConfiguration.ControlsFor(row.Servo))
                 {
-                    ServoCommand child = _doc.Commands
-                        .Where(c => c.Servo == row.Servo && c.Control == control &&
-                                    !c.Disable && c.OffsetSeconds <= _cursorTime + 1e-9)
-                        .OrderBy(c => c.OffsetSeconds)
-                        .LastOrDefault();
-                    double value = child != null &&
-                                   (!row.Offset.HasValue || child.OffsetSeconds > row.Offset.Value)
-                        ? child.NumericValue : row.Value;
+                    _childCommandIndex.TryGetValue((row.Servo, control), out ServoCommand[] childCommands);
+                    ServoCommand child = LastCommandAtOrBefore(childCommands, _cursorTime + 1e-9);
+                    double value = MoviePoseContinuity.ChildValue(row.Value, row.Offset, child,
+                        _movieCarryPose?.ChildValues.TryGetValue((row.Servo, control), out double carried) == true
+                            ? carried : null);
                     pose.ChildValues[(row.Servo, control)] = value;
                 }
             }
@@ -6161,6 +5899,11 @@ namespace ServoAnimator
             }
             if (next < 0 || next >= _movieItems.Count) return;
 
+            StartMovieCue(next);
+        }
+
+        private void StartMovieCue(int next)
+        {
             double start = MovieTimeline.StartOf(next);
             MovieTimeline.CursorTime = start;
             if (!SelectMovieSequence(next, 0, preservePose: true)) return;
@@ -6357,6 +6100,20 @@ namespace ServoAnimator
                 return;
             }
 
+            if (!FocusNeedsNavigationKeys(Keyboard.FocusedElement as DependencyObject) &&
+                MovieTimelinePanel.Visibility == Visibility.Visible &&
+                (MovieTimelinePanel.IsKeyboardFocusWithin || _moviePlaybackActive))
+            {
+                string trigger = SequenceTrigger.FromKey(e.Key == Key.System ? e.SystemKey : e.Key, Keyboard.Modifiers);
+                int target = string.IsNullOrEmpty(trigger) ? -1 : _movieItems.FindIndex(item => item.Trigger == trigger);
+                if (target >= 0)
+                {
+                    e.Handled = true;
+                    if (!e.IsRepeat) StartMovieCue(target);
+                    return;
+                }
+            }
+
             if (Keyboard.Modifiers != ModifierKeys.None ||
                 FocusNeedsNavigationKeys(Keyboard.FocusedElement as DependencyObject))
                 return;
@@ -6475,9 +6232,11 @@ namespace ServoAnimator
             double movieTime = MovieTimeline.StartOf(index) +
                 Math.Clamp(localTime, 0, _movieItems[index].DurationSeconds);
             MovieTimeline.CursorTime = movieTime;
+            bool selectionChanged = MovieTimeline.SelectedIndex != index;
             MovieTimeline.SelectedIndex = index;
             MovieTimeline.EnsureVisible(movieTime);
-            MovieTimeline.InvalidateVisual();
+            if (selectionChanged) MovieTimeline.InvalidateVisual();
+            MovieTimeline.InvalidateCursor();
         }
 
         private void RefreshSelectedMovieBlockFromEditor()
@@ -6943,7 +6702,7 @@ namespace ServoAnimator
                     c.OffsetSeconds = ServoCommand.TimeKey(c.OffsetSeconds + at);
                     _doc.Commands.Add(c);
                 }
-                RefreshAfterEdit();
+                if (!RefreshAfterEdit()) return;
                 ShowStatus($"Library sequence inserted: {Path.GetFileNameWithoutExtension(fileName)}");
 
                 if (insWarnings.Count > 0)

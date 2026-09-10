@@ -341,6 +341,9 @@ namespace ServoAnimator
         [JsonPropertyName("description")]
         public string Description { get; set; } = "";
 
+        [JsonPropertyName("category")]
+        public string Category { get; set; } = "none";
+
         [JsonPropertyName("name")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string LegacyName
@@ -371,6 +374,9 @@ namespace ServoAnimator
         public double DurationSeconds { get; set; }
         public string Description { get; set; } = "";
         public bool IsLooping { get; set; }
+        public string Trigger { get; set; } = "";
+        /// <summary>Transient editor status used only for the Movie block label.</summary>
+        public bool IsModified { get; set; }
     }
 
     /// <summary>Movie project format: an ordered list of sequence filenames/pathnames.
@@ -396,6 +402,9 @@ namespace ServoAnimator
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public List<bool> SequenceLoops { get; set; } = new();
 
+        [JsonPropertyName("sequenceTriggers")]
+        public List<string> SequenceTriggers { get; set; } = new();
+
         private static readonly JsonSerializerOptions MovieJsonOpts = new()
         {
             WriteIndented = true,
@@ -411,6 +420,7 @@ namespace ServoAnimator
             movie.Description ??= "";
             movie.Sequences ??= new List<string>();
             movie.SequenceLoops ??= new List<bool>();
+            movie.SequenceTriggers ??= new List<string>();
             if (string.IsNullOrWhiteSpace(movie.CreatedDate))
             {
                 DateTime created = File.Exists(path) ? File.GetCreationTime(path) : DateTime.Today;
@@ -537,8 +547,11 @@ namespace ServoAnimator
         /// <summary>Write this document to disk (sorted by time for readability).</summary>
         public void Save(string path)
         {
-            Commands.Sort((a, b) => a.OffsetSeconds.CompareTo(b.OffsetSeconds));
-            File.WriteAllText(path, JsonSerializer.Serialize(this, JsonOpts));
+            // Stable sorting on a copy preserves authored insertion order in
+            // memory and the earlier-to-later order within each time point.
+            var saved = Clone();
+            saved.Commands = saved.Commands.OrderBy(c => ServoCommand.TimeKey(c.OffsetSeconds)).ToList();
+            File.WriteAllText(path, JsonSerializer.Serialize(saved, JsonOpts));
         }
 
         /// <summary>
@@ -549,11 +562,11 @@ namespace ServoAnimator
         public static void SaveCommandsOnly(string path, List<ServoCommand> commands,
                                             string description = "")
         {
-            commands.Sort((a, b) => a.OffsetSeconds.CompareTo(b.OffsetSeconds));
             var wrapper = new LibraryItemDocument
             {
+                Category = ExistingLibraryCategory(path),
                 Description = description ?? "",
-                Commands = commands,
+                Commands = commands.OrderBy(c => ServoCommand.TimeKey(c.OffsetSeconds)).ToList(),
             };
             File.WriteAllText(path, JsonSerializer.Serialize(wrapper, JsonOpts));
         }
@@ -567,6 +580,7 @@ namespace ServoAnimator
         {
             var wrapper = new LibraryItemDocument
             {
+                Category = ExistingLibraryCategory(path),
                 Description = description ?? "",
                 ImageFile = string.IsNullOrWhiteSpace(imageFile) ? null : imageFile,
                 Commands = commands?.Select(c => c.Clone()).ToList()
@@ -597,6 +611,33 @@ namespace ServoAnimator
                        ?? new LibraryItemDocument();
             item.Commands ??= new List<ServoCommand>();
             return item;
+        }
+
+        private static string ExistingLibraryCategory(string path)
+        {
+            try { return File.Exists(path) ? LibraryCategories.Normalize(LoadLibraryItem(path).Category) : "none"; }
+            catch { return "none"; }
+        }
+
+        public static void UpdateLibraryCategory(string path, string category)
+        {
+            JsonNode node = JsonNode.Parse(File.ReadAllText(path), null, new JsonDocumentOptions
+            {
+                CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true,
+            });
+            var obj = node as JsonObject;
+            if (obj == null)
+                obj = new JsonObject { ["description"] = "", ["commands"] = node?.DeepClone() };
+            foreach (string key in obj.Select(p => p.Key).Where(k => k.Equals("category", StringComparison.OrdinalIgnoreCase)).ToList())
+                obj.Remove(key);
+            obj["category"] = LibraryCategories.Normalize(category);
+            string temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                File.WriteAllText(temporary, obj.ToJsonString(JsonOpts));
+                File.Move(temporary, path, overwrite: true);
+            }
+            finally { if (File.Exists(temporary)) File.Delete(temporary); }
         }
 
         /// <summary>Update only the description header of an existing

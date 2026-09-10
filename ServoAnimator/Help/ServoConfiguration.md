@@ -12,7 +12,7 @@ Changing a shared NeckTilt servo setting in one neck gang updates the correspond
 
 ## Default, Min and Max PWM
 
-Default is the physical home pulse used by Reset. Min and Max define the physical endpoint mapping for the logical servo range. Direction controls whether the physical mapping is normal or reversed.
+Default is the physical home pulse used by Default Positions. Min and Max define the physical endpoint mapping for the logical servo range. Direction controls whether the physical mapping is normal or reversed.
 
 ## Speed and Acceleration profiles
 

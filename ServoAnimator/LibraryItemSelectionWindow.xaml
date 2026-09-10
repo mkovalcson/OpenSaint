@@ -11,6 +11,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <Grid Grid.Row="0" Margin="0,0,0,8">
@@ -18,7 +19,7 @@
             <TextBlock x:Name="ModeText" Grid.Column="0" Foreground="{DynamicResource SecondaryText}" TextWrapping="Wrap" VerticalAlignment="Center"/>
             <TextBlock Grid.Column="1" Text="Search:" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="12,0,6,0"/>
             <TextBox x:Name="SearchBox" Grid.Column="2" Height="34" VerticalAlignment="Center"
-                     ToolTip="Filter by folder, filename, description, or audio filename"
+                     ToolTip="Filter by category, folder, filename, description, or audio filename"
                      TextChanged="SearchBox_TextChanged"/>
         </Grid>
 
@@ -30,6 +31,7 @@
                   Background="{DynamicResource PanelBackground}" Foreground="{DynamicResource PrimaryText}"
                   RowBackground="{DynamicResource PanelBackground}" AlternatingRowBackground="{DynamicResource ElevatedPanelBackground}"
                   BorderBrush="{DynamicResource DividerBrush}"
+                  BeginningEdit="ItemsGrid_BeginningEdit"
                   SelectionChanged="ItemsGrid_SelectionChanged"
                   MouseDoubleClick="ItemsGrid_MouseDoubleClick">
             <DataGrid.Resources>
@@ -43,62 +45,81 @@
                 </Style>
             </DataGrid.Resources>
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Modified" Binding="{Binding ModifiedDisplay}" Width="145"/>
-                <DataGridTextColumn Header="Folder" Binding="{Binding Folder}" Width="180"/>
-                <DataGridTextColumn Header="Filename" Binding="{Binding FileName}" Width="220"/>
-                <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="3*"/>
-                <DataGridTextColumn x:Name="AudioFilesColumn" Header="Audio files" Binding="{Binding AudioFiles}" Width="2*"/>
+                <DataGridTextColumn Header="Modified" Binding="{Binding ModifiedDisplay}" Width="145" IsReadOnly="True"/>
+                <DataGridTextColumn x:Name="FolderColumn" Header="Folder" Binding="{Binding Folder}" Width="180" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="150" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Filename" Binding="{Binding FileName}" Width="220" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Description" Binding="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                    Width="3*" MinWidth="180" IsReadOnly="False">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextWrapping" Value="Wrap"/>
+                            <Setter Property="Margin" Value="6,5"/>
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.EditingElementStyle>
+                        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                            <Setter Property="AcceptsReturn" Value="True"/>
+                            <Setter Property="TextWrapping" Value="Wrap"/>
+                            <Setter Property="MinHeight" Value="34"/>
+                            <Setter Property="VerticalContentAlignment" Value="Top"/>
+                        </Style>
+                    </DataGridTextColumn.EditingElementStyle>
+                </DataGridTextColumn>
+                <DataGridTemplateColumn x:Name="PoseImageColumn" Header="Image" Width="190" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Border Padding="4" Background="{DynamicResource InputBackground}" Margin="4">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid>
+                                    <Image Source="{Binding ImageSource}" Height="140" Stretch="Uniform"/>
+                                    <TextBlock Text="(No image attached)" Foreground="{DynamicResource SecondaryText}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ImageSource}" Value="{x:Null}">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn x:Name="AudioFilesColumn" Header="Audio files" Binding="{Binding AudioFiles}" Width="2*" IsReadOnly="True"/>
             </DataGrid.Columns>
         </DataGrid>
 
-        <Grid x:Name="DescriptionGrid" Grid.Row="2" Margin="0,10,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition x:Name="ImageColumn" Width="*"/>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="190"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <TextBlock x:Name="DescriptionLabel" Grid.Row="0" Grid.Column="0"
-                       Text="Selected Library Sequence description:" Foreground="{DynamicResource HeaderText}"
-                       FontWeight="Bold" Margin="0,0,8,4"/>
-            <TextBox x:Name="DescriptionEditor" Grid.Row="1" Grid.Column="0" Height="190" Margin="0,0,8,0"
-                     AcceptsReturn="True" TextWrapping="Wrap"
-                     VerticalScrollBarVisibility="Auto"
-                     Background="{DynamicResource PanelBackground}" Foreground="{DynamicResource PrimaryText}"
-                     BorderBrush="{DynamicResource DividerBrush}" Padding="8"/>
+        <WrapPanel x:Name="CategoryPanel" Grid.Row="2" Margin="0,10,0,0">
+            <TextBlock Text="Category:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <ComboBox x:Name="CategoryPicker" Width="190" Margin="0,0,8,0"/>
+            <Button x:Name="SaveCategoryButton" Content="Set Category" Padding="10,4" Margin="0,0,8,0" Click="SaveCategory_Click"/>
+            <Button Content="Manage Categories…" Padding="10,4" Click="ManageCategories_Click"/>
+        </WrapPanel>
 
-            <StackPanel x:Name="ImagePanel" Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Margin="8,0,0,0">
-                <TextBlock Text="Attached image:" Foreground="{DynamicResource HeaderText}"
-                           FontWeight="Bold" Margin="0,0,0,4"/>
-                <Border Height="190" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
-                        Background="#101216" Padding="4">
-                    <Grid>
-                        <Image x:Name="CommandImage" Stretch="Uniform"/>
-                        <TextBlock x:Name="NoImageText" Text="(No image attached)"
-                                   Foreground="{DynamicResource SecondaryText}"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Grid>
-                </Border>
-            </StackPanel>
+        <TextBlock x:Name="ErrorText" Grid.Row="3" Foreground="#FF8D8D"
+                   TextWrapping="Wrap" Margin="0,4,0,0"/>
 
-            <TextBlock x:Name="ErrorText" Grid.Row="2" Grid.ColumnSpan="2" Foreground="#FF8D8D"
-                       TextWrapping="Wrap" Margin="0,4,0,0"/>
-        </Grid>
-
-        <StackPanel Grid.Row="3" Orientation="Horizontal"
+        <StackPanel Grid.Row="4" Orientation="Horizontal"
                     HorizontalAlignment="Right" Margin="0,10,0,0">
             <Button x:Name="DeleteButton" Content="Delete Selected"
                     Width="120" Padding="0,4" Margin="0,0,8,0"
                     Click="DeleteSelected_Click"/>
-            <Button x:Name="ImageButton" Content="Add / Change Image…"
-                    Width="145" Padding="0,4" Margin="0,0,8,0"
-                    Click="AddChangeImage_Click"/>
-            <Button x:Name="SaveDescriptionButton" Content="Save Description"
-                    Width="130" Padding="0,4" Margin="0,0,8,0"
-                    Click="SaveDescription_Click"/>
             <Button x:Name="SelectButton" Content="Use Selected Sequence"
                     Width="150" Padding="0,4" Margin="0,0,8,0"
                     IsDefault="True" Click="Select_Click"/>

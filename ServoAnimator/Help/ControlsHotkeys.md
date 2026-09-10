@@ -16,10 +16,11 @@ Movie arrow shortcuts apply when the movie timeline or its transport controls ha
 ## Timeline mouse controls
 
 - Left click: position the cursor.
-- Mouse wheel: zoom.
+- Mouse wheel: zoom around the timeline cursor (also used by the zoom buttons); Fit and timeline boundaries can reposition it.
 - Middle drag: pan.
 - Right click: context actions.
 - Drag a gold downward triangle: move its complete command group.
+- Double-left-click a command triangle: open Edit Commands for that time group.
 
 ## Spline Editor
 
@@ -28,6 +29,8 @@ Movie arrow shortcuts apply when the movie timeline or its transport controls ha
 - Ctrl+left-click or double-left-click a spline line: add a point.
 - Middle-click an already-selected NeckNodUp/NeckTiltRight point: toggle its neck owner.
 - Delete: remove the selected point.
+- Double-left-click a selected point: open Edit Commands at its time.
+- Show all (when displayed): restore every hidden Spline line.
 
 ## Movie blocks
 
