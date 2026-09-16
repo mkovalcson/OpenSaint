@@ -1162,7 +1162,7 @@ namespace ServoAnimator
         private void Playback_Rendering(object sender, EventArgs e)
         {
             // Advance clock, command dispatch and cursor transforms on every display
-            // frame. Only the heavier model/slider work is paced near 60 Hz.
+            // frame. Only the heavier model/slider work is paced near 30 Hz.
             if (e is System.Windows.Media.RenderingEventArgs rendering)
             {
                 if (_lastPlaybackRenderingTime == rendering.RenderingTime) return;
@@ -1387,22 +1387,18 @@ namespace ServoAnimator
         private HashSet<string> EvaluateUrdfCollisionPairsAt(double time)
         {
             if (!PlaybackOutputAllowed(false)) return new HashSet<string>(StringComparer.Ordinal);
+            RobotHeadView view = _urdfUndocked ? _head?.HeadView : EmbeddedHeadView;
+            // Warning annotations are optional. Do not evaluate and push the
+            // entire timeline pose for every command when warnings are off.
+            if (view?.UrdfDriveEnabled != true || !view.CollisionWarningsEnabled)
+                return new HashSet<string>(StringComparer.Ordinal);
             double oldCursor = _cursorTime;
             _cursorTime = time;
             try
             {
                 UpdateServoState(time);
-                RobotHeadView view = _urdfUndocked
-                    ? _head?.HeadView
-                    : EmbeddedHeadView;
-                if (view?.UrdfDriveEnabled != true || !view.CollisionWarningsEnabled)
-                    view = null;
-
-                view?.RefreshCollisionNow();
-
-                return view == null
-                    ? new HashSet<string>(StringComparer.Ordinal)
-                    : view.CollisionPairKeys.ToHashSet(StringComparer.Ordinal);
+                view.RefreshCollisionNow();
+                return view.CollisionPairKeys.ToHashSet(StringComparer.Ordinal);
             }
             finally
             {

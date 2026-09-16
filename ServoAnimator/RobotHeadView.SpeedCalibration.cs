@@ -178,44 +178,57 @@ public sealed partial class RobotHeadView
     internal void AdvanceCalibratedMotion(double seconds)
     {
         if (!UsesCalibratedMotion || CalibratedMotionPaused || _poseEditEnabled || !_urdfDriveEnabled || CalibratedMotionAllowed?.Invoke() == false || seconds <= 0 || _scene == null) return;
+        long revisionBefore = _poseRevision;
         _renderingCalibrated = true; _suppressCollisionRefresh = true;
         try
         {
-            var candidates = new List<CollisionMotionTarget>();
-            var servoBefore = _motionChannels.ToDictionary(p => p.Key, p => p.Value.Motion.Position);
-            var stepperBefore = _stepperMotion.ToDictionary(p => p.Key, p => p.Value.Position);
+            bool guarding = CollisionSafeguardActive?.Invoke() == true;
+            List<CollisionMotionTarget> candidates = null;
+            Dictionary<RobotControls, double> previous = null;
             foreach (var pair in _stepperMotion)
             {
                 if (_motionDisabled.Contains(pair.Key)) continue;
+                if (pair.Value.Position == pair.Value.Target && pair.Value.Velocity == 0) continue;
+                double before = pair.Value.Position;
                 pair.Value.Advance(seconds, new(2000 / _speedCalibration.StepperSeconds(pair.Key, pair.Value.Target >= pair.Value.Position), double.PositiveInfinity), 0, 2000);
+                if (pair.Value.Position == before) continue;
+                if (guarding) (previous ??= new())[pair.Key] = before;
+                candidates ??= new();
                 candidates.Add(new(pair.Key == RobotControls.LeftEyePop ? ServoNames.LeftEyePop : ServoNames.RightEyePop, pair.Key, pair.Value.Position));
             }
             foreach (var pair in _motionChannels)
             {
-                var channel = pair.Value; var entry = _servoConfiguration.Get(pair.Key); if (entry == null) continue;
+                var channel = pair.Value;
                 if (_motionDisabled.Contains(pair.Key)) continue;
+                if (channel.Motion.Position == channel.Motion.Target && channel.Motion.Velocity == 0) continue;
+                var entry = _servoConfiguration.Get(pair.Key); if (entry == null) continue;
+                double before = channel.Motion.Position;
                 var limits = CalibratedLimits(entry, _motionSpeeds.GetValueOrDefault(pair.Key, ServoSpeed.Default), channel.Motion.Target >= channel.Motion.Position);
                 channel.Motion.Advance(seconds, limits, entry.MinPwm, entry.MaxPwm);
+                if (channel.Motion.Position == before) continue;
+                if (guarding) (previous ??= new())[pair.Key] = before;
                 double value = ServoPulseMapping.ToLogical(_servoConfiguration, channel.Parent, entry, channel.Motion.Position);
+                candidates ??= new();
                 candidates.Add(new(channel.Parent, pair.Key, value));
             }
-            if (CollisionSafeguardActive?.Invoke() == true && !ControllerMotionPathClear(candidates, out string reason))
+            // Timeline targets populate every channel. A held pose should not
+            // convert all PWM positions back to controls or touch the scene.
+            if (candidates == null) return;
+            if (guarding && !ControllerMotionPathClear(candidates, out string reason))
             {
-                foreach (var pair in servoBefore) _motionChannels[pair.Key].Motion.Reset(pair.Value);
-                foreach (var pair in stepperBefore) _stepperMotion[pair.Key].Reset(pair.Value);
+                foreach (var pair in previous)
+                    if (_stepperMotion.TryGetValue(pair.Key, out var stepper)) stepper.Reset(pair.Value);
+                    else _motionChannels[pair.Key].Motion.Reset(pair.Value);
                 CollisionSafeguardBlocked?.Invoke(reason); return;
             }
             // Render the exact floating-point state after checking the batch.
-            foreach (var pair in _stepperMotion)
-                SetChildServo(pair.Key == RobotControls.LeftEyePop ? ServoNames.LeftEyePop : ServoNames.RightEyePop, pair.Key, pair.Value.Position);
-            foreach (var pair in _motionChannels)
+            foreach (var candidate in candidates)
             {
-                var entry = _servoConfiguration.Get(pair.Key); if (entry == null) continue;
-                double value = ServoPulseMapping.ToLogical(_servoConfiguration, pair.Value.Parent, entry, pair.Value.Motion.Position);
-                if (pair.Key == RobotControls.NeckTurn) SetServo(ServoNames.NeckTurn, value); else SetChildServo(pair.Value.Parent, pair.Key, value);
+                if (candidate.Control == RobotControls.NeckTurn) SetServo(ServoNames.NeckTurn, candidate.Value);
+                else SetChildServo(candidate.Servo, candidate.Control.Value, candidate.Value);
             }
         }
         finally { _renderingCalibrated = false; _suppressCollisionRefresh = false; }
-        RefreshCollisionState(allowThrottle: true);
+        if (_poseRevision != revisionBefore) RefreshCollisionState(allowThrottle: true);
     }
 }

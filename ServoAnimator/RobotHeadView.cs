@@ -2646,6 +2646,7 @@ namespace ServoAnimator
                 RefreshCollisionState();
             else
             {
+                _deferredCollisionTimer.Stop();
                 _scene?.ClearCollisionState();
                 ShowNormalStatus();
             }
@@ -2692,20 +2693,29 @@ namespace ServoAnimator
                 ? Array.Empty<string>()
                 : _scene?.ActiveCollisionPairs ?? Array.Empty<string>();
 
+        private static readonly Brush NormalStatusBrush = CreateStatusBrush(Color.FromArgb(205, 225, 232, 242));
+        private static readonly Brush CollisionStatusBrush = CreateStatusBrush(Color.FromRgb(255, 40, 40));
+        private static Brush CreateStatusBrush(Color color)
+        {
+            var brush = new SolidColorBrush(color); brush.Freeze(); return brush;
+        }
+
         private void ShowNormalStatus()
         {
             _status.Text = "URDF 3-D head\nDrag to orbit\nMouse wheel to zoom\nDouble-click to reset";
-            _status.Foreground = new SolidColorBrush(Color.FromArgb(205, 225, 232, 242));
+            if (!ReferenceEquals(_status.Foreground, NormalStatusBrush)) _status.Foreground = NormalStatusBrush;
         }
 
         public void RefreshCollisionNow() => RefreshCollisionState();
 
         private void RefreshCollisionState(bool allowThrottle = false)
         {
-            if (_scene == null || _suppressCollisionRefresh) return;
+            // Disabling warnings clears them once in the toggle handler. No
+            // collision work or legend invalidation is needed on later frames.
+            if (_scene == null || _suppressCollisionRefresh || !_collisionWarningsEnabled) return;
 
             long now = Environment.TickCount64;
-            if (allowThrottle && _collisionWarningsEnabled &&
+            if (allowThrottle &&
                 now - _lastCollisionRefreshMs < 67)
             {
                 _deferredCollisionTimer.Stop();
@@ -2718,13 +2728,6 @@ namespace ServoAnimator
             _deferredCollisionTimer.Stop();
             _lastCollisionRefreshMs = now;
 
-            if (!_collisionWarningsEnabled)
-            {
-                _scene.ClearCollisionState();
-                ShowNormalStatus();
-                return;
-            }
-
             _scene.UpdateCollisionState(_leftEyePopLogical > 0.0001,
                                         _rightEyePopLogical > 0.0001);
 
@@ -2734,7 +2737,7 @@ namespace ServoAnimator
                 _status.Text = string.IsNullOrWhiteSpace(links)
                     ? "COLLISION"
                     : "COLLISION\n" + links;
-                _status.Foreground = new SolidColorBrush(Color.FromRgb(255, 40, 40));
+                if (!ReferenceEquals(_status.Foreground, CollisionStatusBrush)) _status.Foreground = CollisionStatusBrush;
             }
             else
             {
@@ -4796,19 +4799,20 @@ namespace ServoAnimator
                 if (_openBackVisuals.TryGetValue(visual, out var back)) desired.Add(back);
             foreach (var visual in _highlightedVisuals.ToArray())
             {
+                if (desired.Contains(visual)) continue;
                 if (_originalMaterials.TryGetValue(visual, out var original))
                 {
                     visual.Material = original.Front;
                     visual.BackMaterial = original.Back;
                 }
+                _highlightedVisuals.Remove(visual);
             }
-            _highlightedVisuals.Clear();
 
             foreach (var visual in desired)
             {
+                if (!_highlightedVisuals.Add(visual)) continue;
                 if (visual.Material != null) visual.Material = CollisionHighlightMaterial;
                 if (visual.BackMaterial != null) visual.BackMaterial = CollisionHighlightMaterial;
-                _highlightedVisuals.Add(visual);
             }
         }
 

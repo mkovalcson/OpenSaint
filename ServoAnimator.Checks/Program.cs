@@ -18,7 +18,12 @@ internal static partial class Program
     {
         try
         {
-            if (args.Contains("--controller-feedback"))
+            if (args.Contains("--playback-performance"))
+            {
+                PlaybackPerformanceChecks(args.Contains("--baseline"));
+                Console.WriteLine($"PASS: {_checks} focused playback performance assertions.");
+            }
+            else if (args.Contains("--controller-feedback"))
             {
                 ControllerFeedbackChecks();
                 Console.WriteLine($"PASS: {_checks} focused controller feedback assertions.");

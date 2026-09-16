@@ -1,5 +1,5 @@
 {
-    "version":  "1.26.5",
+    "version":  "1.26.7",
     "generatedDate":  "2026-09-16",
     "rule":  "patch increments for each project generation on the same day; minor increments and patch resets to 0 on the first generation of a new day; major changes only on explicit user request",
     "notes":  "Updated automatically after a successful Animation Editor build."
