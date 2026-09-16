@@ -1,6 +1,6 @@
 # Collision Warning
 
-Collision Warning is a diagnostic URDF feature. It does not currently clamp, reject or alter commands sent to the physical robot.
+Collision Warning is a diagnostic URDF feature. The separate Collision Safeguard toggle below Focus Control can reject X-Box/Steam commands using these same modeled contact areas. See Controllers help for its scope and physical limitations.
 
 ## Checked collisions
 

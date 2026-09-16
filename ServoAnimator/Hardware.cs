@@ -39,6 +39,7 @@ namespace ServoAnimator
         private readonly object _gate = new();
         private SerialPort _port;
         private bool _disposed;
+        private int _exclusive;
 
         public SerialPortWriter(string portName, int baudRate)
         {
@@ -48,8 +49,10 @@ namespace ServoAnimator
 
         public void Write(byte[] bytes)
         {
+            if (Volatile.Read(ref _exclusive) != 0) throw new InvalidOperationException("Maestro is reserved for speed calibration.");
             lock (_gate)
             {
+                if (Volatile.Read(ref _exclusive) != 0) throw new InvalidOperationException("Maestro is reserved for speed calibration.");
                 try
                 {
                     EnsureOpen();
@@ -65,8 +68,10 @@ namespace ServoAnimator
 
         public void WriteLine(string text)
         {
+            if (Volatile.Read(ref _exclusive) != 0) throw new InvalidOperationException("Serial port is reserved for calibration.");
             lock (_gate)
             {
+                if (Volatile.Read(ref _exclusive) != 0) throw new InvalidOperationException("Serial port is reserved for calibration.");
                 try
                 {
                     EnsureOpen();
@@ -85,7 +90,26 @@ namespace ServoAnimator
             ObjectDisposedException.ThrowIf(_disposed, this);
             if (_port?.IsOpen == true) return;
             _port = new SerialPort(_portName, _baudRate, Parity.None, 8, StopBits.One);
+            _port.ReadTimeout = 250; _port.WriteTimeout = 250;
             _port.Open();
+        }
+
+        internal Task<T> Exclusive<T>(Func<IMaestroCalibrationPort, T> action)
+        {
+            if (Interlocked.CompareExchange(ref _exclusive, 1, 0) != 0) throw new InvalidOperationException("Calibration already owns this port.");
+            return Task.Run(() =>
+            {
+                try
+                {
+                    lock (_gate)
+                    {
+                        EnsureOpen(); _port.DiscardInBuffer();
+                        try { return action(new MaestroCalibrationPort(_port)); }
+                        catch { ClosePort(); throw; }
+                    }
+                }
+                finally { Volatile.Write(ref _exclusive, 0); }
+            });
         }
 
         private void ClosePort()
@@ -227,7 +251,7 @@ namespace ServoAnimator
         }
 
         public void DisableServo() =>
-            Write(new byte[] { 0xAA, 0x0C, 0x0F, (byte)Channel });
+            Write(new byte[] { 0x84, (byte)Channel, 0, 0 });
 
         private void Write(byte[] cmd)
         {
@@ -269,6 +293,17 @@ namespace ServoAnimator
         {
             CurrentValue = Math.Clamp(position, MinValue, MaxValue);
             Run($"--serial {SerialNumber} --exit-safe-start --position {CurrentValue}");
+        }
+
+        public void HaltAndHold()
+        {
+            var start = new ProcessStartInfo { FileName = _ticCmd, UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
+            start.ArgumentList.Add("--serial"); start.ArgumentList.Add(SerialNumber); start.ArgumentList.Add("--halt-and-hold");
+            using var process = Process.Start(start) ?? throw new InvalidOperationException("Could not start Tic hold command.");
+            var error = process.StandardError.ReadToEndAsync(); var output = process.StandardOutput.ReadToEndAsync();
+            if (!process.WaitForExit(3000)) { process.Kill(); throw new TimeoutException("Tic hold command timed out."); }
+            string message = error.GetAwaiter().GetResult(); output.GetAwaiter().GetResult();
+            if (process.ExitCode != 0) throw new InvalidOperationException("Tic hold failed: " + message);
         }
 
         private void Run(string args)

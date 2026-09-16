@@ -34,6 +34,7 @@ namespace ServoAnimator
         private readonly Action<ServoNames, int> _driveGang;
         private readonly Action _configChanged;
         private readonly Action _configSaved;
+        private readonly Action<Window> _calibrateSpeeds;
         private readonly string _configFolder;
         private string _path;
         private readonly List<ServoConfigVM> _allConfigVms = new();
@@ -44,7 +45,7 @@ namespace ServoAnimator
                                  Action<ServoNames, int> driveGang,
                                  Action configChanged,
                                  string configFolder,
-                                 Action configSaved = null)
+                                 Action configSaved = null, Action<Window> calibrateSpeeds = null)
         {
             InitializeComponent();
             HelpSystem.EnableContextHelp(this, "servo-configuration");
@@ -56,6 +57,8 @@ namespace ServoAnimator
             _driveGang = driveGang;
             _configChanged = configChanged;
             _configSaved = configSaved;
+            _calibrateSpeeds = calibrateSpeeds;
+            CalibrateSpeedsButton.IsEnabled = calibrateSpeeds != null;
             _configFolder = configFolder;
             LeftTicBox.Text = config.LeftTicSerialNumber ?? "";
 
@@ -73,6 +76,8 @@ namespace ServoAnimator
             Loaded += (_, _) => MainScroll.ScrollToVerticalOffset(_sessionScrollOffset);
             Closed += (_, _) => _sessionScrollOffset = MainScroll.VerticalOffset;
         }
+
+        private void CalibrateSpeeds_Click(object sender, RoutedEventArgs e) => _calibrateSpeeds?.Invoke(this);
 
         private void LeftTic_LostFocus(object sender, RoutedEventArgs e) =>
             _config.LeftTicSerialNumber = LeftTicBox.Text?.Trim() ?? "";

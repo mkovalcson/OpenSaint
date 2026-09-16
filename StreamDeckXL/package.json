@@ -1,0 +1,21 @@
+{
+  "name": "johnny5-animation-editor-streamdeck",
+  "version": "1.0.3",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.mjs",
+    "validate": "streamdeck validate com.johnny5.animationeditor.sdPlugin",
+    "pack": "streamdeck pack com.johnny5.animationeditor.sdPlugin --output dist"
+  },
+  "dependencies": {
+    "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "@elgato/cli": "^1.9.0",
+    "esbuild": "^0.28.2",
+    "playwright": "^1.63.0",
+    "sharp": "^0.35.4"
+  }
+}

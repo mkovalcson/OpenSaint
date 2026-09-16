@@ -55,7 +55,7 @@ namespace ServoAnimator
                 (_isCommandMode ? "Insert Selected Pose" : "Insert Selected Sequence");
             ModeText.Text = manageMode
                 ? "Double-click a Description cell to edit it. Descriptions save automatically when this window closes. " +
-                  "Select a row to set its category or delete the file."
+                  (_isCommandMode ? "Select a row to set its category, choose an image, or delete the file." : "Select a row to set its category or delete the file.")
                 : $"Select a row and click {selectAction} (or double-click it). " +
                   $"The list contains {plural.ToLowerInvariant()} sorted by category, then filename.";
             SelectButton.Content = selectAction;
@@ -66,6 +66,7 @@ namespace ServoAnimator
 
             ItemsGrid.IsReadOnly = !manageMode;
             PoseImageColumn.Visibility = _isCommandMode ? Visibility.Visible : Visibility.Collapsed;
+            ChooseImageButton.Visibility = manageMode && _isCommandMode ? Visibility.Visible : Visibility.Collapsed;
             DeleteButton.Visibility = manageMode ? Visibility.Visible : Visibility.Collapsed;
             SelectButton.Visibility = manageMode ? Visibility.Collapsed : Visibility.Visible;
 
@@ -109,6 +110,7 @@ namespace ServoAnimator
             var item = Current;
             CategoryPicker.SelectedItem = _categories?.Names.FirstOrDefault(n => n.Equals(item?.Category ?? "none", StringComparison.OrdinalIgnoreCase));
             CategoryPicker.IsEnabled = SaveCategoryButton.IsEnabled = _manageMode && item?.IsValid == true;
+            ChooseImageButton.IsEnabled = _manageMode && _isCommandMode && item?.IsValid == true;
             ErrorText.Foreground = Brushes.IndianRed;
             ErrorText.Text = item?.ReadError ?? "";
             DeleteButton.IsEnabled = _manageMode && item != null;
@@ -239,6 +241,7 @@ namespace ServoAnimator
 
         private void SetEmptyState(string message)
         {
+            ChooseImageButton.IsEnabled = false;
             CategoryPicker.IsEnabled = SaveCategoryButton.IsEnabled = false;
             DeleteButton.IsEnabled = false;
             SelectButton.IsEnabled = false;
@@ -269,6 +272,31 @@ namespace ServoAnimator
             CategoryPicker.ItemsSource = _categories.Names.ToList();
             CategoryPicker.SelectedItem = _categories.Names.FirstOrDefault(n => n.Equals(Current?.Category ?? "none", StringComparison.OrdinalIgnoreCase));
             _view.Refresh();
+        }
+
+        private void ChooseImage_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_manageMode || !_isCommandMode || !CommitDescriptionEdit() || Current?.IsValid != true) return;
+            var item = Current;
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Choose Image for " + item.FileName,
+                Filter = "Image files|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.tif;*.tiff",
+                CheckFileExists = true,
+                Multiselect = false
+            };
+            if (dialog.ShowDialog(this) != true) return;
+            try
+            {
+                LibraryPoseImages.Attach(item, dialog.FileName);
+                ErrorText.Foreground = Brushes.LightGreen;
+                ErrorText.Text = "Image saved for " + item.FileName + ".";
+            }
+            catch (Exception error)
+            {
+                MessageBox.Show(this, "Could not attach the image:\n" + error.Message,
+                    "Pose image", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

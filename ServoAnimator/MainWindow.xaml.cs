@@ -216,12 +216,13 @@ namespace ServoAnimator
         private bool _repairWindowOpen;
         private bool _repairOfferQueued;
 
-        // Versioning starts with the first generated project that contains
-        // this rule. Future project generations increment patch on the same
-        // day, increment minor/reset patch on a new day, and major only on
-        // explicit user request.
+        // Both values come from the build, so About agrees with the executable
+        // and never substitutes the date the user happens to launch it.
         private const string AppDisplayName = "Animation Editor & Player";
-        private const string AppVersion = "1.23.2";
+        private static string AppVersion => typeof(MainWindow).Assembly.GetName().Version.ToString(3);
+        private static string AppGenerationDate => typeof(MainWindow).Assembly
+            .GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
+            .Cast<System.Reflection.AssemblyMetadataAttribute>().FirstOrDefault(a => a.Key == "GenerationDate")?.Value ?? "Unknown";
 
         /// <summary>Detached URDF preview used when the user presses Undock.
         /// The old View > Robot Head entry has been removed; docking is now
@@ -387,6 +388,8 @@ namespace ServoAnimator
         public MainWindow()
         {
             InitializeComponent();
+            EditorTimelineGrid.LayoutUpdated += (_, _) => FitEditorPanels();
+            foreach (var engine in _controllerEngines.Values) engine.RelativeMotion = AdvanceControllerRelative;
             StateChanged += (_, _) =>
             {
                 if (WindowState != WindowState.Minimized)
@@ -439,6 +442,7 @@ namespace ServoAnimator
             Waveform.MarkerDragged += Waveform_MarkerDragged;
             Waveform.MarkerDragCompleted += Waveform_MarkerDragCompleted;
             InitializeCommandGroups();
+            Loaded += (_, _) => InitializeEditorApi();
             Waveform.ClipMoveRequested += Waveform_ClipMoveRequested;
             Waveform.ClipDragCompleted += Waveform_ClipDragCompleted;
             Waveform.ClipOffsetDialogRequested += Waveform_ClipOffsetDialog;
@@ -558,6 +562,8 @@ namespace ServoAnimator
                 Dispatcher.BeginInvoke(new Action(FinishRestoringEditorLayout),
                     System.Windows.Threading.DispatcherPriority.ContextIdle);
                 _recoveryTimer.Start();
+                InitializeFocusControl();
+                InitializeControllers();
             };
         }
 
@@ -577,6 +583,14 @@ namespace ServoAnimator
 
         protected override void OnClosed(EventArgs e)
         {
+            _focusControlTimer.Stop();
+            _backgroundMovieKeys?.Dispose();
+            _controllerTimer.Stop();
+            UrdfRenderLoop.Current.RemoveTargets(RenderControllerPreview);
+            DisableControllerInput();
+            _controllers?.Dispose();
+            _editorApi?.Dispose();
+            _apiLibraryTimer.Stop();
             StopPlaybackRendering();
             _recoveryTimer.Stop();
             SaveRecoverySnapshotIfNeeded();
@@ -925,6 +939,8 @@ namespace ServoAnimator
         /// </summary>
         private void PlayPause_Click(object sender, RoutedEventArgs e)
         {
+            if (!_controllerTransportInvocation) SetPlaybackControlSource(null);
+            EndMovieBackgroundControl();
             // The ordinary sequence transport is independent of the movie
             // transport. Pressing it takes ownership of playback.
             if (_moviePlaybackActive)
@@ -1085,6 +1101,9 @@ namespace ServoAnimator
         /// </summary>
         private void StartPlaybackAt(double t, bool preservePending = false)
         {
+            if (_speedCalibrationBusy) return;
+            StopControllerLibrary();
+            ForEachHeadView(v => v.CalibratedMotionPaused = false);
             if (!preservePending) _hardwarePlaybackQueue.ClearPending();
             // Playback always returns the grid to the authored timeline pose;
             // any manually staged multi-row values are intentionally discarded.
@@ -1155,6 +1174,7 @@ namespace ServoAnimator
 
         private void PausePlayback()
         {
+            ForEachHeadView(v => v.CalibratedMotionPaused = true);
             _hardwarePlaybackQueue.ClearPending();
             // Resume always rebuilds a fresh device at the right source and
             // position, so the paused device is simply torn down.
@@ -1163,19 +1183,20 @@ namespace ServoAnimator
             StopPlaybackRendering();
             _mode = PlayMode.Paused;
             UpdateHelpAvailability();
-            ForEachHeadView(v => v.SetMouth(0));
+            if (PlaybackOutputAllowed(false)) ForEachHeadView(v => v.SetMouth(0));
             PlayPauseBtn.Content = "▶ Resume";
         }
 
         private void StopPlayback(bool cancelPending = true)
         {
+            StopControllerLibrary(cancelPending);
             if (cancelPending) _hardwarePlaybackQueue.ClearPending();
             StopPlaybackRendering();
             DisposeAudioDevice();
             _activeSource = null;
             _mode = PlayMode.Stopped;
             UpdateHelpAvailability();
-            ForEachHeadView(v => v.SetMouth(0));
+            if (PlaybackOutputAllowed(false)) ForEachHeadView(v => v.SetMouth(0));
             PlayPauseBtn.Content = "▶ Sequence";
             if (_moviePlaybackActive)
             {
@@ -1186,7 +1207,7 @@ namespace ServoAnimator
         }
 
         /// <summary>
-        /// Playback heartbeat (every display frame, with heavy preview work paced near 60 fps). The wall clock is the master:
+        /// Playback heartbeat (every display frame, with heavy preview work paced near 30 fps). The wall clock is the master:
         ///   * timeline time advances from the anchor unconditionally, so
         ///     the cursor moves smoothly through the pre-audio region and
         ///     never stalls waiting for the audio device
@@ -1285,7 +1306,7 @@ namespace ServoAnimator
                     : AmplitudeFrom(_activeSource.PeakMin,
                                     _activeSource.PeakMax, at);
             }
-            if (_refreshPreviewThisFrame) ForEachHeadView(v => v.SetMouth(amp));
+            if (_refreshPreviewThisFrame && PlaybackOutputAllowed(false)) ForEachHeadView(v => v.SetMouth(amp));
 
             // Text formatting/layout is informational; 15 Hz is responsive
             // while leaving render frames for cursors, sliders, and the model.
@@ -1365,6 +1386,7 @@ namespace ServoAnimator
         /// be marked red when that command-time pose is unsafe.</summary>
         private HashSet<string> EvaluateUrdfCollisionPairsAt(double time)
         {
+            if (!PlaybackOutputAllowed(false)) return new HashSet<string>(StringComparer.Ordinal);
             double oldCursor = _cursorTime;
             _cursorTime = time;
             try
@@ -1873,6 +1895,7 @@ namespace ServoAnimator
         /// hardware is connected, regardless of the Live Drive state.</summary>
         private void DisableAll_Click(object sender, RoutedEventArgs e)
         {
+            DisableControllerInput();
             StopPlayback();
             if (_hw.Connected)
                 _hardwarePlaybackQueue.EnqueueBarrier(_hw.DisableAll);
@@ -1993,7 +2016,7 @@ namespace ServoAnimator
                 (servo, value) => MoveServoNow(ServoSpeed.NoChange, servo, value),
                 OnServoConfigChanged,
                 _folders?.ConfigFolderOrDefault ?? AppContext.BaseDirectory,
-                MarkConfigurationSaved)
+                ServoConfigurationSaved, OpenSpeedCalibration)
             { Owner = this };
             win.ShowDialog();
         }
@@ -2104,6 +2127,7 @@ namespace ServoAnimator
             {
                 h.SetUrdfConfiguration(_urdfConfig);
                 h.SetServoConfiguration(_servoConfig);
+                ConfigureMotionView(h);
             });
         }
 
@@ -2118,6 +2142,7 @@ namespace ServoAnimator
         /// takes precedence.</summary>
         private void PushHeadPose()
         {
+            if (!PlaybackOutputAllowed(false)) return;
             if (EmbeddedHeadView == null && _head?.HeadView == null) return;
             ServoStateRow Row(ServoNames s) => _rows.First(r => r.Servo == s);
             double RV(ServoNames s) => Row(s).Value;
@@ -2200,7 +2225,10 @@ namespace ServoAnimator
                         ? carriedChild : null);
             }
 
-            void ApplyPose(RobotHeadView headView) => headView.SetPose(
+            void ApplyPose(RobotHeadView headView)
+            {
+                ConfigureTimelineMotion(headView);
+                headView.SetPose(
                 eyeHLeft: Part(ServoNames.EyesHorizontalRight, RobotControls.RightLensHorizontal),
                 eyeHRight: Part(ServoNames.EyesHorizontalRight, RobotControls.LeftLensHorizontal),
                 eyeVLeft: Part(ServoNames.EyesVerticalUp, RobotControls.RightLensVertical),
@@ -2228,6 +2256,7 @@ namespace ServoAnimator
                 rightEyePop: EyePopValue(rightPop),
                 whipRotate: RV(ServoNames.Whip_Antenna_Rotate),
                 mfrRotate: RV(ServoNames.MFR_Rotate));
+            }
 
             if (EmbeddedHeadView != null) ApplyPose(EmbeddedHeadView);
             if (_head?.HeadView != null) ApplyPose(_head.HeadView);
@@ -2241,6 +2270,7 @@ namespace ServoAnimator
 
         private void LiveDrive_Changed(object sender, RoutedEventArgs e)
         {
+            ResetControllerMotion();
             if (!LiveDrive)
                 _hardwarePlaybackQueue.ClearPending();
 
@@ -2377,7 +2407,9 @@ namespace ServoAnimator
             Waveform.InvalidateCursor();
             SyncSplineView();
             UpdateTimeText();
-            UpdateServoState(_cursorTime);
+            ForEachHeadView(v => v.SnapCalibratedMotion = true);
+            try { UpdateServoState(_cursorTime); }
+            finally { ForEachHeadView(v => v.SnapCalibratedMotion = false); }
             UpdateCommandsAtPointList();
         }
 
@@ -2490,6 +2522,7 @@ namespace ServoAnimator
         /// from them for spline-checked servos.</summary>
         private bool RefreshAfterEdit()
         {
+            _apiEditGeneration++;
             bool accepted = true;
             if (CommandConflicts.Find(_doc.Commands).Count > 0)
             {
@@ -2567,7 +2600,10 @@ namespace ServoAnimator
 
         private void SequenceStop_Click(object sender, RoutedEventArgs e)
         {
+            CancelApiLibraryPicker();
+            EndMovieBackgroundControl();
             StopPlayback();
+            SetPlaybackControlSource(null);
             ShowStatus("Sequence playback stopped");
         }
 
@@ -4327,6 +4363,7 @@ namespace ServoAnimator
                 "New project", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (answer != MessageBoxResult.Yes) return;
 
+            EndMovieBackgroundControl(); SetPlaybackControlSource(null);
             StopPlayback();            // disposes the output device
             _reader?.Dispose(); _reader = null;
             _audioPath = null;
@@ -4606,6 +4643,7 @@ namespace ServoAnimator
                 _servoConfig.LeftTicSerialNumber = loaded.LeftTicSerialNumber;
                 OnServoConfigChanged();
                 Debug.WriteLine($"[config] auto-loaded {path}");
+                RefreshSavedSpeedPredictions();
             }
             catch (Exception ex)
             {
@@ -4709,6 +4747,7 @@ namespace ServoAnimator
             }
             _head.HeadView.SetUrdfConfiguration(_urdfConfig);
             _head.HeadView.SetServoConfiguration(_servoConfig);
+            ConfigureMotionView(_head.HeadView);
 
             if (!_savedUrdfWindowBounds.IsEmpty &&
                 EditorLayoutSettings.IsVisibleOnVirtualDesktop(
@@ -4817,6 +4856,10 @@ namespace ServoAnimator
             CommandsAtPointPanel.Margin = new Thickness(6, 5, _urdfUndocked ? 6 : 0, 0);
             DockUrdfButton.Visibility = _urdfUndocked ? Visibility.Visible : Visibility.Collapsed;
             RobotHeadEmbeddedBorder.Visibility = _urdfUndocked ? Visibility.Collapsed : Visibility.Visible;
+            UrdfOverlayHost.Visibility = _urdfUndocked ? Visibility.Collapsed : Visibility.Visible;
+            // Recompute the separate mapping pane after resetting the dock columns.
+            UndockedControllerMappingHost.Visibility = Visibility.Collapsed;
+            RefreshActiveControllerMapping();
             if (_urdfUndocked) RobotHeadEmbeddedBorder.Height = double.NaN;
             else
             {
@@ -4827,7 +4870,7 @@ namespace ServoAnimator
 
         private void About_Click(object sender, RoutedEventArgs e) =>
             MessageBox.Show(this,
-                $"{AppDisplayName}\nVersion {AppVersion}   Date 2026-09-08\nDesigned by Mark Kovalcson\n\n" +
+                $"{AppDisplayName}\nVersion {AppVersion}   Date {AppGenerationDate}\nDesigned by Mark Kovalcson\n\n" +
                 "Edits servo animation timelines against an audio waveform.\n" +
                 "Cubic Hermite spline interpolation, live drive, an animation\n" +
                 "library, and a movie timeline for ordered sequence projects.\n\n" +
@@ -4906,6 +4949,8 @@ namespace ServoAnimator
         private double GetEmbeddedUrdfMaximumHeight()
         {
             if (EditorTimelineGrid == null) return GetEmbeddedUrdfMinimumHeight();
+            double available = EditorPanelViewportHeight();
+            if (available > 0) return Math.Max(GetEmbeddedUrdfMinimumHeight(), available - RobotHeadEmbeddedBorder.Margin.Top);
             double total = 0;
             // The URDF may extend through rows 0..4 (Commands, audio and spline).
             for (int i = 0; i < EditorTimelineGrid.RowDefinitions.Count; i++)
@@ -5477,6 +5522,8 @@ namespace ServoAnimator
             {
                 var movie = MovieDocument.Load(moviePath);
                 if (!alreadyConfirmed && !ConfirmDocumentSwitch(replaceMovie: true)) return false;
+                EndMovieBackgroundControl();
+                SetPlaybackControlSource(null);
                 StopPlayback();
                 string root = ConfigRoot;
                 var sequencePaths = movie.Sequences.Select(p => ResolveMovieSequencePath(p, moviePath))
@@ -5831,6 +5878,7 @@ namespace ServoAnimator
 
         private void MoviePlay_Click(object sender, RoutedEventArgs e)
         {
+            if (!_controllerTransportInvocation && !_handlingMovieArrow) SetPlaybackControlSource(null);
             if (_movieItems.Count == 0)
             {
                 MessageBox.Show(this, "Insert or load at least one sequence first.",
@@ -5849,6 +5897,7 @@ namespace ServoAnimator
             {
                 StartPlaybackAt(_cursorTime);
                 MoviePlayButton.Content = "❚❚ Pause";
+                ArmMovieBackgroundControl();
                 return;
             }
 
@@ -5876,6 +5925,7 @@ namespace ServoAnimator
             _moviePlaybackIndex = index;
             MoviePlayButton.Content = "❚❚ Pause";
             StartPlaybackAt(local);
+            ArmMovieBackgroundControl();
             PrefetchNextMovieSequences();
         }
 
@@ -5904,6 +5954,7 @@ namespace ServoAnimator
 
         private void StartMovieCue(int next)
         {
+            if (!_controllerTransportInvocation && !_handlingMovieArrow) SetPlaybackControlSource(null);
             double start = MovieTimeline.StartOf(next);
             MovieTimeline.CursorTime = start;
             if (!SelectMovieSequence(next, 0, preservePose: true)) return;
@@ -5912,6 +5963,7 @@ namespace ServoAnimator
             _moviePlaybackIndex = next;
             MoviePlayButton.Content = "❚❚ Pause";
             StartPlaybackAt(0);
+            ArmMovieBackgroundControl();
             PrefetchNextMovieSequences();
         }
 
@@ -6132,26 +6184,7 @@ namespace ServoAnimator
             if (e.IsRepeat && (e.Key == Key.Up || e.Key == Key.Down || e.Key == Key.Left || e.Key == Key.Right))
             { e.Handled = true; return; }
 
-            if (e.Key == Key.Up)
-            {
-                MoviePlay_Click(MoviePlayButton, new RoutedEventArgs());
-                e.Handled = true;
-            }
-            else if (e.Key == Key.Right)
-            {
-                MovieNext_Click(MovieNextButton, new RoutedEventArgs());
-                e.Handled = true;
-            }
-            else if (e.Key == Key.Left)
-            {
-                MoviePreviousOrRestart();
-                e.Handled = true;
-            }
-            else if (e.Key == Key.Down)
-            {
-                MovieGoToBeginning();
-                e.Handled = true;
-            }
+            if (HandleMovieArrow(e.Key)) e.Handled = true;
         }
 
         /// <summary>
@@ -6738,10 +6771,11 @@ namespace ServoAnimator
         /// </summary>
         public void MoveServoNow(ServoSpeed speed, ServoNames servo, int value)
         {
+            if (_speedCalibrationBusy) return;
             // If this servo is mapped to a robot-head part, move that part
             // live while the slider is dragged (grid Live Drive sliders and
             // the sliders in the command editor both route through here).
-            ForEachHeadView(v => v.SetServo(servo, value));
+            ForEachHeadView(v => { PrepareDirectMotion(v, servo, null, speed); v.SetServo(servo, value); });
 
             // Physical hardware: drive the ganged servos when Live Drive is
             // on and the devices connected.
@@ -6759,7 +6793,8 @@ namespace ServoAnimator
         public void MoveChildServoNow(ServoSpeed speed, ServoNames gang,
                                       RobotControls control, int value)
         {
-            ForEachHeadView(v => v.SetChildServo(gang, control, value));
+            if (_speedCalibrationBusy) return;
+            ForEachHeadView(v => { PrepareDirectMotion(v, gang, control, speed); v.SetChildServo(gang, control, value); });
 
             bool centered = ServoCommand.RangeFor(gang).Min < 0;
             if (LiveDrive && _hw.Connected)
@@ -6772,6 +6807,8 @@ namespace ServoAnimator
         /// without changing position. Used when Edit Commands changes Speed.</summary>
         public void ConfigureServoSpeedNow(ServoSpeed speed, ServoNames servo)
         {
+            if (_speedCalibrationBusy) return;
+            ForEachHeadView(v => { ConfigureMotionView(v); v.ConfigureCalibratedSpeed(servo, null, speed); });
             if (speed == ServoSpeed.NoChange) return;
             if (LiveDrive && _hw.Connected)
                 _hw.ConfigureGangSpeed(servo, speed);
@@ -6783,6 +6820,8 @@ namespace ServoAnimator
         public void ConfigureChildServoSpeedNow(ServoSpeed speed, ServoNames gang,
                                                 RobotControls control)
         {
+            if (_speedCalibrationBusy) return;
+            ForEachHeadView(v => { ConfigureMotionView(v); v.ConfigureCalibratedSpeed(gang, control, speed); });
             if (speed == ServoSpeed.NoChange) return;
             if (LiveDrive && _hw.Connected)
                 _hw.ConfigureControlSpeed(control, speed);
@@ -6797,6 +6836,7 @@ namespace ServoAnimator
         /// </summary>
         public void MoveRobotControlNow(RobotControls control, int pwm)
         {
+            if (_speedCalibrationBusy) return;
             // Raw PWM to one channel (verify sliders). Live Drive gates it.
             if (LiveDrive && _hw.Connected)
                 _hw.DriveControlPwm(control, pwm);
@@ -6811,6 +6851,7 @@ namespace ServoAnimator
         /// </summary>
         public void MoveServoNow(ServoSpeed speed, ServoNames servo, string textValue)
         {
+            if (_speedCalibrationBusy) return;
             // RGB editor text remains Red,Green,Blue. HardwareManager rotates
             // color-bearing commands to Green,Red,Blue on the Arduino wire.
             if (LiveDrive && _hw.Connected && servo == ServoNames.RGBCommand)
@@ -6835,15 +6876,22 @@ namespace ServoAnimator
         /// </summary>
         public void PlayBackServoValues(ServoCommand[] commandsAtOffset)
         {
+            if (_controllerPlaybackSource.HasValue && !AllowControllerTargets(commandsAtOffset)) { PausePlayback(); return; }
             // Drive the physical robot during playback when Live Drive is On.
-            if (LiveDrive && _hw.Connected)
+            if (LiveDrive && _hw.Connected && PlaybackOutputAllowed(true))
             {
                 // Commands are immutable for the device worker even if the
                 // editor is modified while an output batch is pending.
                 foreach (var command in commandsAtOffset)
                 {
                     var copy = command.Clone();
-                    _hardwarePlaybackQueue.Enqueue(() => DispatchHardwareBatch(new[] { copy }));
+                    bool controllerOwned = _controllerPlaybackSource.HasValue;
+                    long epoch = Interlocked.Read(ref _controllerOutputEpoch);
+                    _hardwarePlaybackQueue.Enqueue(() =>
+                    {
+                        if (!controllerOwned || (_controllerPlaybackPhysicalAllowed && epoch == Interlocked.Read(ref _controllerOutputEpoch)))
+                            DispatchHardwareBatch(new[] { copy });
+                    });
                 }
             }
 

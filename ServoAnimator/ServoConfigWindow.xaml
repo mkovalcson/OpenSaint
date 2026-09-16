@@ -28,6 +28,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <Menu Grid.Column="0" VerticalAlignment="Center"
@@ -46,10 +47,11 @@
                        VerticalAlignment="Center" Margin="12,0,18,0"
                        Text="(unsaved configuration)"/>
 
-            <TextBlock Grid.Column="2" Text="Left Tic SN:" Foreground="{DynamicResource SecondaryText}"
+            <Button Grid.Column="2" x:Name="CalibrateSpeedsButton" Content="Calibrate Speeds…" Click="CalibrateSpeeds_Click" Margin="0,0,16,0" Padding="12,5"/>
+            <TextBlock Grid.Column="3" Text="Left Tic SN:" Foreground="{DynamicResource SecondaryText}"
                        VerticalAlignment="Center" Margin="0,0,4,0"
                        ToolTip="Serial number of the LEFT Tic T249 eye-pop controller (empty = first found is left)"/>
-            <TextBox Grid.Column="3" x:Name="LeftTicBox" Width="110"
+            <TextBox Grid.Column="4" x:Name="LeftTicBox" Width="110"
                      VerticalAlignment="Center" LostFocus="LeftTic_LostFocus"/>
         </Grid>
 

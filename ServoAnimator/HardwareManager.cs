@@ -54,6 +54,52 @@ namespace ServoAnimator
         // so saved speed/acceleration edits take effect immediately.
         private readonly Dictionary<RobotControls, ServoSpeed> _activeSpeedByControl = new();
 
+        internal async Task HoldControllerMotionAsync()
+        {
+            // Hold the current commanded pulse, keeping torque. Never send a
+            // guessed home target or disable pulses as a collision response.
+            var profiles = new Dictionary<RobotControls, ServoSpeed>(_activeSpeedByControl);
+            var maestro = _maestroWriter == null ? Task.CompletedTask : _maestroWriter.Exclusive(port =>
+            { HoldMaestroMotion(port, _config, profiles); return true; });
+            var steppers = Task.Run(() => { _leftTic?.HaltAndHold(); _rightTic?.HaltAndHold(); });
+            await Task.WhenAll(maestro, steppers);
+        }
+
+        internal static void HoldMaestroMotion(IMaestroCalibrationPort port, ServoConfiguration config, IReadOnlyDictionary<RobotControls, ServoSpeed> profiles)
+        {
+            foreach (var entry in config.Servos.Where(s => (int)s.Control is >= 0 and <= 23).DistinctBy(s => s.MaestroPort))
+            {
+                int pulse = port.Position(entry.MaestroPort);
+                if (pulse == 0) continue; // Leave already-disabled channels disabled.
+                if (pulse is < 2000 or > 9600) throw new InvalidOperationException("Invalid Maestro position while holding motion.");
+                int index = (int)profiles.GetValueOrDefault(entry.Control, ServoSpeed.Default);
+                port.Configure(entry.MaestroPort, 0, 0); port.Target(entry.MaestroPort, pulse);
+                port.Configure(entry.MaestroPort, entry.Speeds[index], entry.Accels[index]);
+            }
+        }
+
+        internal Task<List<SpeedCalibrationResult>> CalibrateSpeedsAsync(ServoConfigEntry entry, SpeedCalibrationData data,
+            SpeedCalibrationPlan plan, IProgress<SpeedCalibrationProgress> progress, CancellationToken cancellation)
+        {
+            if (!MaestroConnected || _maestroWriter == null) throw new InvalidOperationException("Connect the Maestro before calibrating.");
+            SpeedCalibrationRunner.Validate(entry, plan);
+            if (!data.MiniMaestro && entry.MaestroPort > 5) throw new InvalidOperationException("Micro Maestro channels are 0–5.");
+            var channels = _config.Servos.Where(s => (int)s.Control is >= 0 and <= 23)
+                .Select(s => s.MaestroPort).Where(ch => data.MiniMaestro || ch < 6).ToArray();
+            if (channels.Distinct().Count() != channels.Length) throw new InvalidOperationException("Resolve duplicate Maestro port assignments before calibrating.");
+            var restore = _activeSpeedByControl.GetValueOrDefault(entry.Control, ServoSpeed.Default);
+            return _maestroWriter.Exclusive(port =>
+            {
+                // Clearing the software queue cannot stop a ramp already accepted by
+                // the Maestro. Require all outputs to have settled before testing.
+                var before = channels.Select(port.Position).ToArray();
+                if (cancellation.WaitHandle.WaitOne(250)) cancellation.ThrowIfCancellationRequested();
+                if (channels.Where((ch, i) => port.Position(ch) != before[i]).Any())
+                    throw new InvalidOperationException("A Maestro output is still moving. Wait for existing moves to finish before calibration.");
+                return SpeedCalibrationRunner.Run(port, entry, data, plan, _maestroPort, restore, progress, cancellation);
+            });
+        }
+
         /// <summary>
         /// Find the devices and build the servo objects from the current
         /// configuration. Returns a list of problems (empty = everything

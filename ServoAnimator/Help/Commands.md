@@ -51,6 +51,8 @@ Speed defaults to **N/C** meaning No Change. An N/C position command does not se
 
 An explicit Default, Slow, Fast or Crawl selection sends the matching configured Speed and Acceleration before the target. For ganged commands the profile is sent to every physical child servo in the gang.
 
+At the top of **Edit Commands**, choose **Speed for all commands** and click **Set All Speeds** to update every speed-capable command currently in that window. Choices are N/C, Default, Fast, Slow and Crawl. Individual speeds can still be adjusted afterward. Apply and Close saves the draft changes; Cancel discards them. Like individual speed edits, explicit profiles can preview immediately when Live Drive is enabled. RGB, audio and Tic eye-pop commands are skipped.
+
 Use Insert Pose from the timeline menu to capture a pose arranged in the URDF pose editor.
 
 ## Individual child commands

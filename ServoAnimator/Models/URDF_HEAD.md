@@ -150,3 +150,18 @@ The neck source is the user-supplied `NeckforURDFColors2.step`, stored in the pr
 The calibrated baseline now lives in the URDF as `<servo_animator_calibration>` metadata. An external `URDFconfig.json` remains an optional higher-precedence override.
 
 The EyeMechanism hierarchy is corrected to match the physical gimbal: `Left/RightLensHorizontal` rotates the outer Gimbal Ring and its Gimbal Spacers about URDF Z. `Left/RightLensVertical` is a child joint inside that ring and rotates the Wollensak Raptar lens/iris assembly about local URDF Y through the two Gimbal Spacers.
+
+
+## Simplified visible-surface meshes
+
+Head visual meshes contain only triangles that can be seen from outside the head, found by rendering
+every head visual from 600 + 700 directions in 24 joint poses (neutral, all-min, all-max, mid, 20 random;
+iris fully open and pupil backing transparent). The louvre slots behind each eye tube are backed by a
+black occluder (`Meshes/SlotBlackout/slot_blackout_*.stl`) and the rear of each eye tube is closed by a
+black disc (`eye_tube_rear_cap_*.stl`), so the interior behind them is treated as not visible. The kept set
+is the union of two sweeps (1400 px at 0.55 m and 2048 px at 0.42 m, different poses), and each mesh keeps the triangles defining its original
+bounds (LED halo placement and pose framing use mesh bounds).
+
+The trimmed meshes are open shells, so wherever a collision entry used the same file it now references
+an unmodified `*_collision_full.stl` copy and collision proxies are unchanged. Neck meshes are unchanged.
+Triangle counts in the per-folder `manifest.json` files describe the original tessellation.

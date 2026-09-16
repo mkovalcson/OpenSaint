@@ -578,10 +578,16 @@ block changes its order, and right-click inserts at a sequence boundary or
 removes a block. Movie Play plays only the current sequence; the arrow button
 loads and plays the next sequence.
 
-Version generation metadata is recorded in `PROJECT_VERSION.json`. The patch
+Version generation metadata is recorded in `../internalDocumentation/PROJECT_VERSION.json`. The patch
 component increments for each generated project on the same day; the minor
 component increments on the first generation of a new day and resets patch to
 zero; major changes only when explicitly requested.
+
+Normal `dotnet build` runs generate the assembly version and About date through
+`BuildVersion.targets` and `../tools/Stamp-AnimationEditor.ps1`. The date uses the
+build computer's local calendar day. WPF temporary/design-time builds do not
+allocate an iteration, and failed editor builds do not commit the version record.
+Build the editor sequentially. About reads its stamp from the built assembly.
 
 ### Movie timeline layout and keyboard shortcuts (v1.0.1)
 
@@ -859,3 +865,27 @@ URDF Range Calibration Minimum/Maximum Extent values can now be typed directly i
 
 ### Library Poses
 Edit Commands now provides **Create Library Pose**, which saves the commands in that dialog as a single-time-point JSON item under `Library\Commands` with a name and description. Audio Timeline right-click provides **Insert Library Pose**, which browses those items and inserts every selected command at the current cursor time. The older **Insert commands from JSON file** remains a generic relative-time importer.
+# Create a movie from numbered audio files
+
+Choose **File > Create Movie from Audio Files**, enter a movie name, and browse to
+the project folder containing the audio files. The folder must be inside the
+active Configuration folder. Supported files are MP3, WAV, AIFF, WMA, and M4A.
+
+Files beginning with digits are imported in numeric order: `01 Intro.wav`,
+`2 Welcome.wav`, then `10 Ending.wav`. Equal numeric prefixes are ordered by
+filename. Unnumbered files and subfolders are ignored.
+
+The editor saves `<movie name>.json` in the selected folder and creates one
+sequence per audio file in `<movie name>.Sequences`. Each sequence references its
+original audio at time zero, uses its duration, and starts without animation
+commands. Audio files are not moved or copied. The completed movie opens with its
+first sequence selected. Existing movie files and sequence folders are never
+overwritten; choose a different movie name if either already exists.
+
+## Servo speed calibration
+
+Full-range predictions for all four Maestro profiles and both directions are populated automatically. URDF motion timing defaults on; saving Servo Configuration regenerates predictions and refreshes the preview. Recorded measurements and physical timing overrides remain distinct from generated predictions.
+
+Profiles with Speed = 0 and Acceleration = 0 use default physical estimates of 0.10 s / 60° for Nose Body/Basket, 0.11 s / 60° for iris/vent servos, and 0.15 s / 60° for other servos for predictions and URDF motion. The editable assumed servo shaft travel defaults to 180° across Min–Max PWM (0.30 s nose, 0.33 s iris/vent, 0.45 s other full travel); entered physical ceilings or times override that assumption. Maestro commands retain their configured values.
+
+**Config > Speed Calibration…** (also available from Servo Configuration) records bidirectional Maestro PWM ramps with selectable profiles, repeats, shorter moves, and an abort policy. Results, raw samples, optional physical traverse times, and estimated speed ceilings live in `SpeedCalibration.json` in the active Configuration folder. **Use calibrated motion in URDF** applies elapsed-time speed/acceleration simulation to playback and live input; existing authored timelines remain unchanged. See [Servo Configuration](Help/ServoConfiguration.md) for preparation, measurement limitations, and seek/pause behavior.

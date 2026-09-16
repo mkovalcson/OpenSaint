@@ -2,6 +2,13 @@
   "version": 1,
   "topics": [
     {
+      "id": "controllers",
+      "title": "Xbox and Steam Controller Mapping",
+      "file": "Controllers.md",
+      "keywords": ["xbox", "steam", "controller", "shoulder", "multiplex", "gyro", "accelerometer", "gamepad"],
+      "related": ["live-drive-hardware", "servo-configuration", "urdf-viewer"]
+    },
+    {
       "id": "getting-started",
       "title": "Getting Started",
       "file": "GettingStarted.md",

@@ -59,3 +59,25 @@ The **Pose** button is positioned between the camera-right control and the botto
 - While Pose mode is active, **Library +** and **Library Load** appear above Collision Warning. **Library +** saves the complete current URDF pose (including an optional Pose RGB command) as a reusable Library Pose. Unless you attach a custom image, it also automatically captures a clean centered URDF PNG with Pose controls hidden and crops it around the head, flaps, and neck. **Library Load** selects a saved Library Pose and applies it directly to the URDF Pose editor without inserting anything on the timeline.
 - Each visible eye-gimbal target circle has a small **↺** reset just outside the circle on its inner-facing edge. Joined mode resets both eye axes together; LR Split provides an independent reset for each eye.
 - Vent quarter-arcs are projected from the actual 44.45 mm-radius CAD outer eye-tube edge, so the arc and handle remain attached to the tube under camera orbit and head motion.
+## Rendering performance
+
+The viewer skips the hidden back sides of closed, opaque CAD parts. Exterior
+surfaces and moving parts retain their original detail. Open and transparent
+surfaces keep both sides, and collision checks continue to use the original meshes.
+The optimization is automatic; changed model files fall back to full-detail rendering.
+
+Timeline playback and controller-driven previews target **30 URDF pose updates per second**. Audio, timeline
+cursor updates, controller polling, and hardware command dispatch retain their
+independent timing. Delayed preview frames skip ahead to the current playback
+position rather than replaying a backlog. Command-time collision checks are retained.
+Controller visuals coalesce the latest values between frames, including Library
+poses/sequences and config testing. Controller polling and hardware dispatch are
+not throttled by the visual update queue.
+
+The `fps:` indicator above the legend counts rendered frames with changed URDF
+poses or lighting, rather than unrelated WPF redraws. It shows a whole-number
+rate over the last second and refreshes every quarter second. A stationary model
+can read zero; this measures model animation updates, not the monitor refresh rate.
+If rendering stalls, the next refresh includes that delay.
+Actual speed depends on the graphics hardware,
+window size, and other editor activity.

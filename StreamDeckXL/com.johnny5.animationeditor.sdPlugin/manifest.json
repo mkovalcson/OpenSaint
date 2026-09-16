@@ -1,0 +1,104 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+  "UUID": "com.johnny5.animationeditor",
+  "Name": "Animation Editor",
+  "Category": "Animation Editor",
+  "CategoryIcon": "images/category",
+  "Author": "Mark Kovalcson",
+  "Description": "Control Johnny 5 Library poses and sequences directly from Stream Deck XL. Includes looping, immediate replacement, Library pickers, and Stop.",
+  "Version": "1.0.3.0",
+  "Icon": "images/plugin",
+  "CodePath": "bin/plugin.js",
+  "Nodejs": {
+    "Version": "20"
+  },
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "6.6"
+  },
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "PropertyInspectorPath": "ui/index.html",
+  "Actions": [
+    {
+      "UUID": "com.johnny5.animationeditor.apply-pose",
+      "Name": "Apply Library Pose",
+      "Icon": "images/pose",
+      "Controllers": [
+        "Keypad"
+      ],
+      "Tooltip": "Replace playback with a selected Library pose.",
+      "States": [
+        {
+          "Image": "images/pose",
+          "Title": "Apply Pose",
+          "TitleAlignment": "bottom",
+          "FontSize": 10
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.johnny5.animationeditor.play-sequence",
+      "Name": "Play Library Sequence",
+      "Icon": "images/sequence",
+      "Controllers": [
+        "Keypad"
+      ],
+      "Tooltip": "Start or loop a selected Library sequence; replace the current performance.",
+      "States": [
+        {
+          "Image": "images/sequence",
+          "Title": "Play Sequence",
+          "TitleAlignment": "bottom",
+          "FontSize": 10
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.johnny5.animationeditor.choose-library",
+      "Name": "Choose Pose / Sequence",
+      "Icon": "images/choose",
+      "Controllers": [
+        "Keypad"
+      ],
+      "Tooltip": "Open the Animation Editor Library picker, then apply or play your selection.",
+      "States": [
+        {
+          "Image": "images/choose",
+          "Title": "Choose…",
+          "TitleAlignment": "bottom",
+          "FontSize": 10
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false
+    },
+    {
+      "UUID": "com.johnny5.animationeditor.stop",
+      "Name": "Stop Playback",
+      "Icon": "images/stop",
+      "Controllers": [
+        "Keypad"
+      ],
+      "Tooltip": "Stop Library and timeline playback and cancel any pending Library picker.",
+      "States": [
+        {
+          "Image": "images/stop",
+          "Title": "Stop",
+          "TitleAlignment": "bottom",
+          "FontSize": 10
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "UserTitleEnabled": false
+    }
+  ]
+}

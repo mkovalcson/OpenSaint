@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Animation Editor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header><div class="eyebrow">JOHNNY 5</div><h1 id="heading">Animation Editor</h1><p>Library control from your Stream Deck.</p></header>
+  <div id="connection" class="status" role="status"><span class="dot"></span><span id="connectionText">Connecting to Stream Deck…</span></div>
+  <label for="processId">Animation Editor instance</label>
+  <select id="processId"><option value="">Automatic · only open editor</option></select>
+  <div class="row"><button id="refresh" type="button">Refresh connection & Library</button></div>
+  <section id="chooseSection" hidden>
+    <label for="kind">Open this Library</label>
+    <select id="kind"><option value="sequence">Sequences</option><option value="pose">Poses</option></select>
+    <p class="hint">Press the physical key to open the editor’s picker. Selecting an item applies or starts it.</p>
+  </section>
+  <section id="librarySection">
+    <label for="filter">Find a Library item</label><input id="filter" type="search" placeholder="Filter by name or folder…" autocomplete="off">
+    <label for="name" id="libraryLabel">Library item</label><select id="name"><option value="">Choose an item…</option></select>
+    <p id="description" class="hint"></p>
+  </section>
+  <label for="label">Button label <span class="muted">optional</span></label><input id="label" type="text" maxlength="60" placeholder="Uses the Library item name" autocomplete="off">
+  <section id="playbackSection">
+    <label class="check" id="loopRow"><input id="loop" type="checkbox">Loop selected sequence</label>
+    <p class="hint">Drives the URDF and connected Physical Model using the editor’s settings. Physical output requires Drive HW enabled. Background permissions are set in Config → Focus Control → Stream Deck / Library API.</p>
+  </section>
+  <p id="stopHelp" class="hint" hidden>Stops Library and timeline playback. Also closes a pending Library picker.</p>
+  <footer><p id="activity">Open Animation Editor with File → Enable Codex Connection checked.</p><p>Green dot: connected · amber: sequence running · red: unavailable. Each new pose or sequence replaces the previous performance.</p></footer>
+  <script src="inspector.js"></script>
+</body>
+</html>

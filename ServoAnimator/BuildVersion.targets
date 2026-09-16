@@ -1,0 +1,34 @@
+<Project>
+  <!-- WPF's temporary compiler project must reuse the outer build's assembly
+       attributes, not allocate another daily iteration. Design-time builds do
+       not generate a release stamp either. -->
+  <Target Name="PrepareAnimationEditorVersion" BeforeTargets="GetAssemblyVersion"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(MSBuildProjectName)' == 'ServoAnimator'">
+    <PropertyGroup>
+      <_EditorVersionRecord>$(MSBuildProjectDirectory)\..\internalDocumentation\PROJECT_VERSION.json</_EditorVersionRecord>
+      <_EditorVersionScript>$(MSBuildProjectDirectory)\..\tools\Stamp-AnimationEditor.ps1</_EditorVersionScript>
+      <_EditorVersionStamp>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\$(IntermediateOutputPath)BuildVersion.props'))</_EditorVersionStamp>
+    </PropertyGroup>
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(_EditorVersionScript)&quot; -Phase Prepare -MetadataPath &quot;$(_EditorVersionRecord)&quot; -StampPath &quot;$(_EditorVersionStamp)&quot;" />
+    <XmlPeek XmlInputPath="$(_EditorVersionStamp)" Query="/Project/PropertyGroup/GeneratedVersion/text()">
+      <Output TaskParameter="Result" PropertyName="Version" />
+    </XmlPeek>
+    <XmlPeek XmlInputPath="$(_EditorVersionStamp)" Query="/Project/PropertyGroup/GeneratedDate/text()">
+      <Output TaskParameter="Result" PropertyName="EditorGenerationDate" />
+    </XmlPeek>
+    <PropertyGroup>
+      <AssemblyVersion>$(Version).0</AssemblyVersion>
+      <FileVersion>$(Version).0</FileVersion>
+      <InformationalVersion>$(Version)</InformationalVersion>
+      <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+      <_EditorVersionPrepared>true</_EditorVersionPrepared>
+    </PropertyGroup>
+    <ItemGroup>
+      <AssemblyMetadata Include="GenerationDate" Value="$(EditorGenerationDate)" />
+    </ItemGroup>
+  </Target>
+  <Target Name="CommitAnimationEditorVersion" AfterTargets="Build"
+          Condition="'$(_EditorVersionPrepared)' == 'true' and '$(MSBuildProjectName)' == 'ServoAnimator'">
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(_EditorVersionScript)&quot; -Phase Commit -MetadataPath &quot;$(_EditorVersionRecord)&quot; -StampPath &quot;$(_EditorVersionStamp)&quot;" />
+  </Target>
+</Project>

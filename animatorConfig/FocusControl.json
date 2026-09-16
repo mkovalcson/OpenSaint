@@ -1,0 +1,13 @@
+{
+  "CollisionSafeguard": false,
+  "XboxController": true,
+  "SteamController": true,
+  "MoviePlayback": true,
+  "XboxUrdf": true,
+  "XboxPhysical": true,
+  "SteamUrdf": true,
+  "SteamPhysical": true,
+  "StreamDeck": true,
+  "StreamDeckUrdf": true,
+  "StreamDeckPhysical": true
+}

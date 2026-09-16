@@ -180,7 +180,7 @@
       "control": "NoseBody",
       "minExtent": -19.174061433447143,
       "maxExtent": 15.843003412969232,
-      "zeroExtent": 0,
+      "zeroExtent": -2.960626473895265,
       "unit": "deg",
       "reverseOverride": true
     },

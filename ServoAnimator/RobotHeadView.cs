@@ -63,7 +63,7 @@ namespace ServoAnimator
         public RobotPoseSnapshot Clone() => (RobotPoseSnapshot)MemberwiseClone();
     }
 
-    public sealed class RobotHeadView : Grid
+    public sealed partial class RobotHeadView : Grid
     {
         private const double Deg = Math.PI / 180.0;
 
@@ -104,6 +104,14 @@ namespace ServoAnimator
         private readonly Viewport3D _viewport = new();
         private readonly PerspectiveCamera _camera = new();
         private readonly TextBlock _status = new();
+        private readonly TextBlock _fps = new() { Text = "fps: 0", IsHitTestVisible = false };
+        private bool _fpsSubscribed;
+        private TimeSpan _fpsLastFrame = TimeSpan.MinValue;
+        private readonly System.Diagnostics.Stopwatch _fpsClock = new();
+        private readonly System.Windows.Threading.DispatcherTimer _fpsTimer = new(System.Windows.Threading.DispatcherPriority.Render)
+        { Interval = TimeSpan.FromMilliseconds(250) };
+        private readonly Queue<double> _fpsFrameTimes = new();
+        private (long Pose, int Mouth, int Rgb, bool HasRgb) _fpsLastVisualState;
         private readonly StackPanel _bottomControls = new();
         private readonly Button _recenterButton = new();
         private readonly Button _cameraMinus90Button = new();
@@ -390,8 +398,20 @@ namespace ServoAnimator
             // Keep the URDF legend at the lower-right, independent of the controls.
             _status.HorizontalAlignment = HorizontalAlignment.Right;
             _status.VerticalAlignment = VerticalAlignment.Bottom;
-            _status.Margin = new Thickness(10);
-            Children.Add(_status);
+            _status.Margin = new Thickness(0);
+            _fps.Foreground = _status.Foreground;
+            _fps.Background = _status.Background;
+            _fps.Padding = new Thickness(9, 3, 9, 3);
+            _fps.Margin = new Thickness(0, 0, 0, 3);
+            _fps.HorizontalAlignment = HorizontalAlignment.Right;
+            _fps.TextAlignment = TextAlignment.Right;
+            var legend = new StackPanel
+            {
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                Margin = new Thickness(10), IsHitTestVisible = false
+            };
+            legend.Children.Add(_fps); legend.Children.Add(_status); Children.Add(legend);
 
             // Small bottom-center drag handle for continuously resizing the
             // embedded URDF pane downward. It is hidden in the detached window,
@@ -430,7 +450,53 @@ namespace ServoAnimator
                 UpdateCamera();
                 UpdatePoseOverlayLayout();
                 CaptureOpeningCameraIfNeeded();
+                UpdateFpsSubscription();
             };
+            IsVisibleChanged += (_, _) => UpdateFpsSubscription();
+            Unloaded += (_, _) => StopFpsCounter();
+        }
+
+        private void UpdateFpsSubscription()
+        {
+            if (!IsLoaded || !IsVisible) { StopFpsCounter(); return; }
+            if (_fpsSubscribed) return;
+            _fpsSubscribed = true;
+            _fpsLastVisualState = (_poseRevision, _lastMouthStep, _lastRgbFrameHash, _hasRgbFrameHash);
+            _fpsClock.Restart();
+            _fpsTimer.Tick += RefreshFps;
+            _fpsTimer.Start();
+            CompositionTarget.Rendering += MeasureFps;
+        }
+
+        private void StopFpsCounter()
+        {
+            if (_fpsSubscribed) CompositionTarget.Rendering -= MeasureFps;
+            _fpsSubscribed = false; _fpsFrameTimes.Clear();
+            _fpsTimer.Stop(); _fpsTimer.Tick -= RefreshFps; _fpsClock.Reset();
+            _fpsLastFrame = TimeSpan.MinValue; _fps.Text = "fps: 0";
+        }
+
+        private void MeasureFps(object sender, EventArgs e)
+        {
+            // WPF can raise Rendering more than once for the same frame.
+            if (e is not RenderingEventArgs frame || frame.RenderingTime == _fpsLastFrame) return;
+            _fpsLastFrame = frame.RenderingTime;
+            // Count a changed URDF frame once, regardless of how many joints
+            // changed or how often the rest of the WPF editor renders.
+            var state = (_poseRevision, _lastMouthStep, _lastRgbFrameHash, _hasRgbFrameHash);
+            if (state == _fpsLastVisualState) return;
+            _fpsLastVisualState = state;
+            _fpsFrameTimes.Enqueue(_fpsClock.Elapsed.TotalSeconds);
+        }
+
+        private void RefreshFps(object sender, EventArgs e)
+        {
+            double seconds = _fpsClock.Elapsed.TotalSeconds;
+            if (seconds <= 0) return;
+            while (_fpsFrameTimes.TryPeek(out double at) && at <= seconds - 1) _fpsFrameTimes.Dequeue();
+            // A rolling second avoids 28/32 oscillation when 30 updates are
+            // displayed in quarter-second reporting intervals.
+            _fps.Text = "fps: " + Math.Round(_fpsFrameTimes.Count / Math.Min(seconds, 1)).ToString("0", CultureInfo.InvariantCulture);
         }
 
         // ================================================================
@@ -1910,6 +1976,16 @@ namespace ServoAnimator
         {
             switch (control)
             {
+                case RobotControls.NeckTurn: _pose.NeckTurn = value; break;
+                case RobotControls.LeftEyePop: _pose.LeftEyePop = value; break;
+                case RobotControls.RightEyePop: _pose.RightEyePop = value; break;
+                case RobotControls.NoseBody: _pose.NoseBody = value; break;
+                case RobotControls.NoseBasket: _pose.NoseBasket = value; break;
+                case RobotControls.Whip_Antenna_RaiseLower: _pose.WhipRaiseLower = value; break;
+                case RobotControls.Whip_Antenna_Rotate: _pose.WhipRotate = value; break;
+                case RobotControls.MFR_UpDown: _pose.MfrUpDown = value; break;
+                case RobotControls.MFR_Rotate: _pose.MfrRotate = value; break;
+                case RobotControls.Microphone_RaiseLower: _pose.MicrophoneRaiseLower = value; break;
                 case RobotControls.LeftLensHorizontal: _pose.LeftEyeHorizontal = value; break;
                 case RobotControls.RightLensHorizontal: _pose.RightEyeHorizontal = value; break;
                 case RobotControls.LeftLensVertical: _pose.LeftEyeVertical = value; break;
@@ -2514,9 +2590,11 @@ namespace ServoAnimator
                 if (_activeNeckMode != parentServo)
                 {
                     _activeNeckMode = parentServo;
-                    _neckLeft = _neckRight = 0;
+                    _neckLeft = UsesCalibratedMotion ? CurrentNeckMotion(parentServo, RobotControls.NeckTiltLeft) : 0;
+                    _neckRight = UsesCalibratedMotion ? CurrentNeckMotion(parentServo, RobotControls.NeckTiltRight) : 0;
                 }
 
+                value = CalibratedControlValue(parentServo, control, value);
                 if (control == RobotControls.NeckTiltLeft) _neckLeft = value;
                 else _neckRight = value;
                 ApplyNeckPose(null);
@@ -2544,6 +2622,7 @@ namespace ServoAnimator
         public void SetServoConfiguration(ServoConfiguration configuration)
         {
             _servoConfiguration = configuration ?? ServoConfiguration.CreateDefault();
+            _motionLimits.Clear(); _motionChannels.Clear(); _stepperMotion.Clear();
             InvalidatePoseCaches();
             RebuildCollisionBaseline();
         }
@@ -2556,6 +2635,7 @@ namespace ServoAnimator
         /// <summary>Whether this URDF preview is actively performing collision
         /// warning checks.  The toggle is independent of URDF Drive.</summary>
         public bool CollisionWarningsEnabled => _collisionWarningsEnabled;
+        public bool CollisionModelAvailable => _scene != null;
 
         public void SetCollisionWarningsEnabled(bool enabled)
         {
@@ -2678,9 +2758,11 @@ namespace ServoAnimator
             double oldRightEyePop = _rightEyePopLogical;
             bool oldDrive = _urdfDriveEnabled;
             bool oldSuppress = _suppressCollisionRefresh;
+            bool oldInternalUpdate = _poseInternalUpdate;
 
             _urdfDriveEnabled = true;
             _suppressCollisionRefresh = true;
+            _poseInternalUpdate = true;
             try
             {
                 _neckLeft = _neckRight = 0;
@@ -2719,6 +2801,7 @@ namespace ServoAnimator
                 _rightEyePopLogical = oldRightEyePop;
                 _urdfDriveEnabled = oldDrive;
                 _suppressCollisionRefresh = oldSuppress;
+                _poseInternalUpdate = oldInternalUpdate;
                 InvalidatePoseCaches();
             }
 
@@ -2827,7 +2910,8 @@ namespace ServoAnimator
                 case ServoNames.NeckNodUp:
                 case ServoNames.NeckTiltRight:
                     _activeNeckMode = servo;
-                    _neckLeft = _neckRight = value;
+                    _neckLeft = CalibratedControlValue(servo, RobotControls.NeckTiltLeft, value);
+                    _neckRight = CalibratedControlValue(servo, RobotControls.NeckTiltRight, value);
                     ApplyNeckPose(null);
                     break;
 
@@ -2892,7 +2976,8 @@ namespace ServoAnimator
             {
                 _activeNeckMode = owner;
                 double value = owner == ServoNames.NeckNodUp ? nodValue : tiltValue;
-                _neckLeft = _neckRight = value;
+                _neckLeft = CalibratedControlValue(owner.Value, RobotControls.NeckTiltLeft, value);
+                _neckRight = CalibratedControlValue(owner.Value, RobotControls.NeckTiltRight, value);
             }
             else
             {
@@ -2906,7 +2991,7 @@ namespace ServoAnimator
         private void ApplyNeckPose(double? neckTurn)
         {
             if (_scene == null || (!_urdfDriveEnabled && !_poseInternalUpdate)) return;
-            if (neckTurn.HasValue) _lastNeckTurn = neckTurn.Value;
+            if (neckTurn.HasValue) _lastNeckTurn = CalibratedControlValue(ServoNames.NeckTurn, RobotControls.NeckTurn, neckTurn.Value);
 
             if (_lastAppliedNeckMode == _activeNeckMode &&
                 Math.Abs(_lastAppliedNeckLeft - _neckLeft) < 1e-6 &&
@@ -3021,6 +3106,15 @@ namespace ServoAnimator
         private void SetControl(ServoNames parentServo, RobotControls control, double value)
         {
             if (_scene == null || (!_urdfDriveEnabled && !_poseInternalUpdate)) return;
+            if (control == RobotControls.LeftEyePop) parentServo = ServoNames.LeftEyePop;
+            if (control == RobotControls.RightEyePop) parentServo = ServoNames.RightEyePop;
+            if (!_poseInternalUpdate && !_renderingCalibrated && !UsesCalibratedMotion && CollisionSafeguardActive?.Invoke() == true &&
+                !ControllerMotionPathClear(new[] { new CollisionMotionTarget(parentServo, control, value) }, out string reason))
+            {
+                UpdatePoseStateForChild(parentServo, control, _lastControlValues.GetValueOrDefault((parentServo, control)));
+                CollisionSafeguardBlocked?.Invoke(reason); return;
+            }
+            value = CalibratedControlValue(parentServo, control, value);
 
             var cacheKey = (parentServo, control);
             if (_lastControlValues.TryGetValue(cacheKey, out double previous) &&
@@ -3376,6 +3470,7 @@ namespace ServoAnimator
             Visibility poseVisibility = _poseOverlay.Visibility;
             Visibility controlsVisibility = _bottomControls.Visibility;
             Visibility statusVisibility = _status.Visibility;
+            Visibility fpsVisibility = _fps.Visibility;
             Visibility resizeVisibility = _verticalResizeHandle.Visibility;
 
             try
@@ -3386,6 +3481,7 @@ namespace ServoAnimator
                 _poseOverlay.Visibility = Visibility.Collapsed;
                 _bottomControls.Visibility = Visibility.Collapsed;
                 _status.Visibility = Visibility.Collapsed;
+                _fps.Visibility = Visibility.Collapsed;
                 _verticalResizeHandle.Visibility = Visibility.Collapsed;
 
                 double minX = framingPoints.Min(p => p.X);
@@ -3480,6 +3576,7 @@ namespace ServoAnimator
                 _poseOverlay.Visibility = poseVisibility;
                 _bottomControls.Visibility = controlsVisibility;
                 _status.Visibility = statusVisibility;
+                _fps.Visibility = fpsVisibility;
                 _verticalResizeHandle.Visibility = resizeVisibility;
 
                 // Logical camera values were never changed. Reapply them now so
@@ -3606,7 +3703,7 @@ namespace ServoAnimator
         }
     }
 
-    internal sealed class UrdfScene
+    internal sealed partial class UrdfScene
     {
         private const double Deg = Math.PI / 180.0;
 
@@ -3636,6 +3733,8 @@ namespace ServoAnimator
         private readonly HashSet<string> _activeCollidingLinks = new(StringComparer.Ordinal);
         private readonly HashSet<GeometryModel3D> _highlightedVisuals = new();
         private string _baseDirectory = AppContext.BaseDirectory;
+        private UrdfExteriorMeshes _exteriorMeshes = new();
+        private readonly Dictionary<GeometryModel3D, GeometryModel3D> _openBackVisuals = new();
         private string _rootLinkName = "";
         private bool _collisionBaselineInitialized;
 
@@ -3643,10 +3742,12 @@ namespace ServoAnimator
 
         public Model3DGroup RootModel { get; private set; }
         public bool HasActiveCollision => _activeCollisionPairs.Count > 0;
+        internal bool SafeguardAvailable => _collisionBaselineInitialized && _collisionProxies.Count >= 2;
+        internal bool HasSafeguardCollision(bool left, bool right) => DetectCollisionPairs(true, left, right).Any();
         public IReadOnlyCollection<string> ActiveCollisionPairs => _activeCollisionPairs.ToArray();
         public IReadOnlyCollection<string> CollidingLinks => _activeCollidingLinks.ToArray();
 
-        public static UrdfScene Load(string path)
+        public static UrdfScene Load(string path, bool optimizeExterior = true)
         {
             if (!File.Exists(path))
                 throw new FileNotFoundException("URDF file not found", path);
@@ -3657,6 +3758,7 @@ namespace ServoAnimator
             {
                 _baseDirectory = Path.GetDirectoryName(Path.GetFullPath(path)) ?? AppContext.BaseDirectory
             };
+            if (optimizeExterior) scene._exteriorMeshes = UrdfExteriorMeshes.Load(path);
             scene.ReadMaterials(robot);
             scene.ReadLinks(robot);
             scene.ReadJoints(robot);
@@ -4079,7 +4181,7 @@ namespace ServoAnimator
             public int Station { get; }
             public bool IsRed { get; }
             public string MaterialName { get; }
-            public Point3D Center { get; }
+            public Point3D Center { get; set; }
             public SolidColorBrush HaloBrush { get; }
             public double Level { get; set; }
         }
@@ -4608,6 +4710,8 @@ namespace ServoAnimator
             foreach (var hit in DetectCollisionPairs(ignoreBaseline: false, leftEyePoppedOut: false, rightEyePoppedOut: false))
                 _baselineCollisionPairs.Add(hit.PairKey);
             _collisionBaselineInitialized = true;
+            _collisionModel = null; // Rebuild cached baseline exclusions after calibration changes.
+            _warningCollisionSession = null;
             ClearCollisionHighlights();
             _activeCollisionPairs.Clear();
             _activeCollidingLinks.Clear();
@@ -4688,6 +4792,8 @@ namespace ServoAnimator
 
         private void ApplyCollisionHighlights(HashSet<GeometryModel3D> desired)
         {
+            foreach (var visual in desired.ToArray())
+                if (_openBackVisuals.TryGetValue(visual, out var back)) desired.Add(back);
             foreach (var visual in _highlightedVisuals.ToArray())
             {
                 if (_originalMaterials.TryGetValue(visual, out var original))
@@ -4700,8 +4806,8 @@ namespace ServoAnimator
 
             foreach (var visual in desired)
             {
-                visual.Material = CollisionHighlightMaterial;
-                visual.BackMaterial = CollisionHighlightMaterial;
+                if (visual.Material != null) visual.Material = CollisionHighlightMaterial;
+                if (visual.BackMaterial != null) visual.BackMaterial = CollisionHighlightMaterial;
                 _highlightedVisuals.Add(visual);
             }
         }
@@ -4729,12 +4835,18 @@ namespace ServoAnimator
 
                 foreach (var visual in e.Elements("visual"))
                 {
-                    var model = CreateVisual(visual);
+                    var model = CreateVisual(visual, name, out var openBack);
                     if (model != null)
                     {
                         group.Children.Add(model);
                         linkVisuals.Add(model);
                         _originalMaterials[model] = (model.Material, model.BackMaterial);
+                        if (openBack != null)
+                        {
+                            group.Children.Add(openBack); linkVisuals.Add(openBack);
+                            _originalMaterials[openBack] = (openBack.Material, openBack.BackMaterial);
+                            _openBackVisuals[model] = openBack;
+                        }
 
                         string visualName = visual.Attribute("name")?.Value ?? "";
                         if (!string.IsNullOrWhiteSpace(visualName))
@@ -4754,8 +4866,9 @@ namespace ServoAnimator
             }
         }
 
-        private GeometryModel3D CreateVisual(XElement visual)
+        private GeometryModel3D CreateVisual(XElement visual, string linkName, out GeometryModel3D openBack)
         {
+            openBack = null;
             var geometry = visual.Element("geometry");
             if (geometry == null) return null;
 
@@ -4799,6 +4912,14 @@ namespace ServoAnimator
 
             var model = new GeometryModel3D(mesh, materials) { BackMaterial = materials };
             model.Transform = ParseOriginTransform(visual.Element("origin"));
+            string source = geometry.Element("mesh")?.Attribute("filename")?.Value;
+            string key = linkName + "/" + (visual.Attribute("name")?.Value ?? "");
+            if (_exteriorMeshes.TryBackFaces(key, source, mesh, out var backMesh))
+            {
+                model.BackMaterial = null;
+                if (backMesh != null) openBack = new GeometryModel3D(backMesh, null)
+                { BackMaterial = materials, Transform = model.Transform };
+            }
             return model;
         }
 
@@ -5147,29 +5268,29 @@ namespace ServoAnimator
         /// collision-active; its separately rendered arm and hardware deliberately
         /// have no collision proxy and are therefore excluded.
         /// </summary>
-        private List<CollisionCandidate> BuildRelevantCollisionCandidates()
+        private List<CollisionShape> BuildCollisionShapes()
         {
             const double GimbalSelectionBand = 0.006; // 6 mm near top/bottom
             const double GimbalContactBand = 0.004;   // outermost 4 mm surface
             const double LensSelectionBand = 0.006;   // 6 mm from front-most CAD
             const double LensContactBand = 0.004;     // front-most 4 mm face
 
-            var result = new List<CollisionCandidate>();
+            var result = new List<CollisionShape>();
 
             foreach (var proxy in _collisionProxies)
             {
                 if (IsUpperFlapCollisionProxy(proxy))
-                    result.Add(new CollisionCandidate(proxy, BuildOrientedBox(proxy),
+                    result.Add(new CollisionShape(proxy, proxy.LocalBounds,
                                                       CollisionKind.UpperFlap));
                 else if (IsLowerFlapCollisionProxy(proxy))
-                    result.Add(new CollisionCandidate(proxy, BuildOrientedBox(proxy),
+                    result.Add(new CollisionShape(proxy, proxy.LocalBounds,
                                                       CollisionKind.LowerFlap));
                 else
                 {
                     CollisionEyeSide tubeSide = GetEyeTubeSide(proxy);
                     if (tubeSide != CollisionEyeSide.None)
                     {
-                        result.Add(new CollisionCandidate(proxy, BuildOrientedBox(proxy),
+                        result.Add(new CollisionShape(proxy, proxy.LocalBounds,
                                                           CollisionKind.EyeTube, tubeSide));
                         continue;
                     }
@@ -5178,7 +5299,7 @@ namespace ServoAnimator
                     CollisionKind? barKind = GetGimbalBarKind(proxy);
                     if (barSide != CollisionEyeSide.None && barKind.HasValue)
                     {
-                        result.Add(new CollisionCandidate(proxy, BuildOrientedBox(proxy),
+                        result.Add(new CollisionShape(proxy, proxy.LocalBounds,
                                                           barKind.Value, barSide));
                     }
                 }
@@ -5198,15 +5319,15 @@ namespace ServoAnimator
                         if (proxyTop >= top - GimbalSelectionBand &&
                             TryClipY(proxy.LocalBounds, top - GimbalContactBand, top, out Rect3D topBounds))
                         {
-                            result.Add(new CollisionCandidate(proxy,
-                                BuildOrientedBox(proxy, topBounds), CollisionKind.GimbalTop, side));
+                            result.Add(new CollisionShape(proxy,
+                                topBounds, CollisionKind.GimbalTop, side));
                         }
 
                         if (proxy.LocalBounds.Y <= bottom + GimbalSelectionBand &&
                             TryClipY(proxy.LocalBounds, bottom, bottom + GimbalContactBand, out Rect3D bottomBounds))
                         {
-                            result.Add(new CollisionCandidate(proxy,
-                                BuildOrientedBox(proxy, bottomBounds), CollisionKind.GimbalBottom, side));
+                            result.Add(new CollisionShape(proxy,
+                                bottomBounds, CollisionKind.GimbalBottom, side));
                         }
                     }
                 }
@@ -5224,8 +5345,8 @@ namespace ServoAnimator
                         if (!TryClipZ(proxy.LocalBounds, front - LensContactBand, front,
                                       out Rect3D frontBounds)) continue;
 
-                        result.Add(new CollisionCandidate(proxy,
-                            BuildOrientedBox(proxy, frontBounds), CollisionKind.FrontLens, side));
+                        result.Add(new CollisionShape(proxy,
+                            frontBounds, CollisionKind.FrontLens, side));
                     }
                 }
             }
@@ -5294,7 +5415,7 @@ namespace ServoAnimator
             return false;
         }
 
-        private List<CollisionHit> DetectCollisionPairs(bool ignoreBaseline,
+        private List<CollisionHit> DetectCollisionPairsReference(bool ignoreBaseline,
                                                         bool leftEyePoppedOut,
                                                         bool rightEyePoppedOut)
         {
@@ -5307,7 +5428,7 @@ namespace ServoAnimator
             //   full lower flap panel ↔ front-most lens face
             // Lower flap arms/hardware, upper-flap Hitec HS-85BB servo carriers,
             // and all other robot geometry are excluded.
-            var boxes = BuildRelevantCollisionCandidates();
+            var boxes = BuildCollisionShapes().Select(s => new CollisionCandidate(s.Proxy, BuildOrientedBox(s.Proxy, s.Bounds), s.Kind, s.EyeSide)).ToList();
 
             // Broad phase: sweep along world X. Only boxes whose X spans
             // overlap reach the Y/Z AABB and oriented-box tests.
@@ -5433,17 +5554,17 @@ namespace ServoAnimator
         private static bool OrientedBoxesIntersect(OrientedBox a, OrientedBox b)
         {
             const double eps = 1e-9;
-            double[,] r = new double[3, 3];
-            double[,] ar = new double[3, 3];
+            Span<double> r = stackalloc double[9];
+            Span<double> ar = stackalloc double[9];
             for (int i = 0; i < 3; i++)
                 for (int j = 0; j < 3; j++)
                 {
-                    r[i, j] = Vector3D.DotProduct(a.Axis[i], b.Axis[j]);
-                    ar[i, j] = Math.Abs(r[i, j]) + eps;
+                    r[i * 3 + j] = Vector3D.DotProduct(a.Axis[i], b.Axis[j]);
+                    ar[i * 3 + j] = Math.Abs(r[i * 3 + j]) + eps;
                 }
 
             Vector3D between = b.Center - a.Center;
-            double[] t =
+            Span<double> t = stackalloc double[]
             {
                 Vector3D.DotProduct(between, a.Axis[0]),
                 Vector3D.DotProduct(between, a.Axis[1]),
@@ -5454,54 +5575,54 @@ namespace ServoAnimator
             for (int i = 0; i < 3; i++)
             {
                 ra = a.Half[i];
-                rb = b.Half[0] * ar[i, 0] + b.Half[1] * ar[i, 1] + b.Half[2] * ar[i, 2];
+                rb = b.Half[0] * ar[i * 3 + 0] + b.Half[1] * ar[i * 3 + 1] + b.Half[2] * ar[i * 3 + 2];
                 if (Math.Abs(t[i]) > ra + rb) return false;
             }
 
             for (int j = 0; j < 3; j++)
             {
-                ra = a.Half[0] * ar[0, j] + a.Half[1] * ar[1, j] + a.Half[2] * ar[2, j];
+                ra = a.Half[0] * ar[0 * 3 + j] + a.Half[1] * ar[1 * 3 + j] + a.Half[2] * ar[2 * 3 + j];
                 rb = b.Half[j];
-                double projected = Math.Abs(t[0] * r[0, j] + t[1] * r[1, j] + t[2] * r[2, j]);
+                double projected = Math.Abs(t[0] * r[0 * 3 + j] + t[1] * r[1 * 3 + j] + t[2] * r[2 * 3 + j]);
                 if (projected > ra + rb) return false;
             }
 
             // Cross-product axes A0 x B0 ... A2 x B2.
-            ra = a.Half[1] * ar[2, 0] + a.Half[2] * ar[1, 0];
-            rb = b.Half[1] * ar[0, 2] + b.Half[2] * ar[0, 1];
-            if (Math.Abs(t[2] * r[1, 0] - t[1] * r[2, 0]) > ra + rb) return false;
+            ra = a.Half[1] * ar[2 * 3 + 0] + a.Half[2] * ar[1 * 3 + 0];
+            rb = b.Half[1] * ar[0 * 3 + 2] + b.Half[2] * ar[0 * 3 + 1];
+            if (Math.Abs(t[2] * r[1 * 3 + 0] - t[1] * r[2 * 3 + 0]) > ra + rb) return false;
 
-            ra = a.Half[1] * ar[2, 1] + a.Half[2] * ar[1, 1];
-            rb = b.Half[0] * ar[0, 2] + b.Half[2] * ar[0, 0];
-            if (Math.Abs(t[2] * r[1, 1] - t[1] * r[2, 1]) > ra + rb) return false;
+            ra = a.Half[1] * ar[2 * 3 + 1] + a.Half[2] * ar[1 * 3 + 1];
+            rb = b.Half[0] * ar[0 * 3 + 2] + b.Half[2] * ar[0 * 3 + 0];
+            if (Math.Abs(t[2] * r[1 * 3 + 1] - t[1] * r[2 * 3 + 1]) > ra + rb) return false;
 
-            ra = a.Half[1] * ar[2, 2] + a.Half[2] * ar[1, 2];
-            rb = b.Half[0] * ar[0, 1] + b.Half[1] * ar[0, 0];
-            if (Math.Abs(t[2] * r[1, 2] - t[1] * r[2, 2]) > ra + rb) return false;
+            ra = a.Half[1] * ar[2 * 3 + 2] + a.Half[2] * ar[1 * 3 + 2];
+            rb = b.Half[0] * ar[0 * 3 + 1] + b.Half[1] * ar[0 * 3 + 0];
+            if (Math.Abs(t[2] * r[1 * 3 + 2] - t[1] * r[2 * 3 + 2]) > ra + rb) return false;
 
-            ra = a.Half[0] * ar[2, 0] + a.Half[2] * ar[0, 0];
-            rb = b.Half[1] * ar[1, 2] + b.Half[2] * ar[1, 1];
-            if (Math.Abs(t[0] * r[2, 0] - t[2] * r[0, 0]) > ra + rb) return false;
+            ra = a.Half[0] * ar[2 * 3 + 0] + a.Half[2] * ar[0 * 3 + 0];
+            rb = b.Half[1] * ar[1 * 3 + 2] + b.Half[2] * ar[1 * 3 + 1];
+            if (Math.Abs(t[0] * r[2 * 3 + 0] - t[2] * r[0 * 3 + 0]) > ra + rb) return false;
 
-            ra = a.Half[0] * ar[2, 1] + a.Half[2] * ar[0, 1];
-            rb = b.Half[0] * ar[1, 2] + b.Half[2] * ar[1, 0];
-            if (Math.Abs(t[0] * r[2, 1] - t[2] * r[0, 1]) > ra + rb) return false;
+            ra = a.Half[0] * ar[2 * 3 + 1] + a.Half[2] * ar[0 * 3 + 1];
+            rb = b.Half[0] * ar[1 * 3 + 2] + b.Half[2] * ar[1 * 3 + 0];
+            if (Math.Abs(t[0] * r[2 * 3 + 1] - t[2] * r[0 * 3 + 1]) > ra + rb) return false;
 
-            ra = a.Half[0] * ar[2, 2] + a.Half[2] * ar[0, 2];
-            rb = b.Half[0] * ar[1, 1] + b.Half[1] * ar[1, 0];
-            if (Math.Abs(t[0] * r[2, 2] - t[2] * r[0, 2]) > ra + rb) return false;
+            ra = a.Half[0] * ar[2 * 3 + 2] + a.Half[2] * ar[0 * 3 + 2];
+            rb = b.Half[0] * ar[1 * 3 + 1] + b.Half[1] * ar[1 * 3 + 0];
+            if (Math.Abs(t[0] * r[2 * 3 + 2] - t[2] * r[0 * 3 + 2]) > ra + rb) return false;
 
-            ra = a.Half[0] * ar[1, 0] + a.Half[1] * ar[0, 0];
-            rb = b.Half[1] * ar[2, 2] + b.Half[2] * ar[2, 1];
-            if (Math.Abs(t[1] * r[0, 0] - t[0] * r[1, 0]) > ra + rb) return false;
+            ra = a.Half[0] * ar[1 * 3 + 0] + a.Half[1] * ar[0 * 3 + 0];
+            rb = b.Half[1] * ar[2 * 3 + 2] + b.Half[2] * ar[2 * 3 + 1];
+            if (Math.Abs(t[1] * r[0 * 3 + 0] - t[0] * r[1 * 3 + 0]) > ra + rb) return false;
 
-            ra = a.Half[0] * ar[1, 1] + a.Half[1] * ar[0, 1];
-            rb = b.Half[0] * ar[2, 2] + b.Half[2] * ar[2, 0];
-            if (Math.Abs(t[1] * r[0, 1] - t[0] * r[1, 1]) > ra + rb) return false;
+            ra = a.Half[0] * ar[1 * 3 + 1] + a.Half[1] * ar[0 * 3 + 1];
+            rb = b.Half[0] * ar[2 * 3 + 2] + b.Half[2] * ar[2 * 3 + 0];
+            if (Math.Abs(t[1] * r[0 * 3 + 1] - t[0] * r[1 * 3 + 1]) > ra + rb) return false;
 
-            ra = a.Half[0] * ar[1, 2] + a.Half[1] * ar[0, 2];
-            rb = b.Half[0] * ar[2, 1] + b.Half[1] * ar[2, 0];
-            if (Math.Abs(t[1] * r[0, 2] - t[0] * r[1, 2]) > ra + rb) return false;
+            ra = a.Half[0] * ar[1 * 3 + 2] + a.Half[1] * ar[0 * 3 + 2];
+            rb = b.Half[0] * ar[2 * 3 + 1] + b.Half[1] * ar[2 * 3 + 0];
+            if (Math.Abs(t[1] * r[0 * 3 + 2] - t[0] * r[1 * 3 + 2]) > ra + rb) return false;
 
             return true;
         }
@@ -5624,10 +5745,10 @@ namespace ServoAnimator
 
         private sealed class OrientedBox
         {
-            public Point3D Center { get; }
+            public Point3D Center { get; set; }
             public Vector3D[] Axis { get; }
             public double[] Half { get; }
-            public Rect3D Aabb { get; }
+            public Rect3D Aabb { get; set; }
 
             public OrientedBox(Point3D center, Vector3D[] axis, double[] half, Rect3D aabb)
             {
@@ -5652,6 +5773,9 @@ namespace ServoAnimator
             public string ChildLink { get; }
             public Model3DGroup Node { get; } = new();
             public double Position { get; private set; }
+            public Matrix3D OriginMatrix { get; private set; }
+            public string JointType => _type;
+            public Vector3D Axis => _axis;
 
             public UrdfJoint(string name, string type, string parent, string child,
                              Vector3D axis, (Vector3D xyz, Vector3D rpy) origin,
@@ -5681,6 +5805,7 @@ namespace ServoAnimator
                 // Child points first move in the joint frame, then the URDF
                 // joint origin places that frame in the parent link.
                 var originTransform = BuildTransform(origin.xyz, origin.rpy) as Transform3DGroup;
+                OriginMatrix = originTransform?.Value ?? Matrix3D.Identity;
                 if (originTransform != null)
                     foreach (Transform3D t in originTransform.Children)
                         transforms.Children.Add(t);

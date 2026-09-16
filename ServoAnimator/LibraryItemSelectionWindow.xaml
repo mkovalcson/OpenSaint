@@ -110,6 +110,9 @@
             <ComboBox x:Name="CategoryPicker" Width="190" Margin="0,0,8,0"/>
             <Button x:Name="SaveCategoryButton" Content="Set Category" Padding="10,4" Margin="0,0,8,0" Click="SaveCategory_Click"/>
             <Button Content="Manage Categories…" Padding="10,4" Click="ManageCategories_Click"/>
+            <Button x:Name="ChooseImageButton" Content="Choose Image…" Padding="10,4" Margin="16,0,0,0"
+                    Visibility="Collapsed" IsEnabled="False" Click="ChooseImage_Click"
+                    ToolTip="Attach or replace the selected pose's image. The image is copied into the Library and saved immediately."/>
         </WrapPanel>
 
         <TextBlock x:Name="ErrorText" Grid.Row="3" Foreground="#FF8D8D"

@@ -3,8 +3,8 @@
   "audioFiles": "LightningRound.mp3|LR7_Expressive.mp3",
   "audioFile": "LightningRound.mp3",
   "audioFilePath": "Projects\\MyProject\\LightningRound.mp3",
-  "durationSeconds": 13.28,
-  "audioStartOffsetSeconds": 0,
+  "durationSeconds": 14.83,
+  "audioStartOffsetSeconds": 1.541,
   "splineServos": [
     "NeckTurn",
     "FlapsOpen",
@@ -17,42 +17,161 @@
   "scaleValues": false,
   "commands": [
     {
-      "offsetSeconds": 0,
+      "offsetSeconds": 0.329,
+      "servo": "BothEyePop",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0.329,
+      "servo": "RGBCommand",
+      "value": "ClearAll",
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0.329,
+      "servo": "EyesHorizontalRight",
+      "value": 0,
+      "speed": "Default",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0.329,
+      "servo": "EyesVerticalUp",
+      "value": 0,
+      "speed": "Default",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0.329,
+      "servo": "IrisClose",
+      "value": 0,
+      "speed": "Default",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0.329,
+      "servo": "FlapsOpen",
+      "value": 0,
+      "speed": "Default",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0.329,
+      "servo": "FlapTiltUp",
+      "value": 0,
+      "speed": "Default",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0.329,
+      "servo": "VentsOpen",
+      "value": 0,
+      "speed": "Default",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0.329,
+      "servo": "NeckTurn",
+      "value": 0,
+      "speed": "Default",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0.329,
+      "servo": "NeckTiltRight",
+      "value": 0,
+      "speed": "Default",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0.329,
+      "servo": "NoseBody",
+      "value": 0,
+      "speed": "Default",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0.329,
+      "servo": "NoseBasket",
+      "value": 0,
+      "speed": "Default",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0.329,
+      "servo": "Whip_Antenna_RaiseLower",
+      "value": 0,
+      "speed": "Default",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0.329,
+      "servo": "Whip_Antenna_Rotate",
+      "value": 0,
+      "speed": "Default",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0.329,
+      "servo": "MFR_UpDown",
+      "value": 0,
+      "speed": "Default",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0.329,
+      "servo": "MFR_Rotate",
+      "value": 0,
+      "speed": "Default",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 0.329,
+      "servo": "Microphone_RaiseLower",
+      "value": 0,
+      "speed": "Default",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 1.541,
       "servo": "NeckTurn",
       "value": 0,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 0,
+      "offsetSeconds": 1.541,
       "servo": "NoseBody",
       "value": -100,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 0,
+      "offsetSeconds": 1.541,
       "servo": "FlapsOpen",
       "value": -100,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 0,
+      "offsetSeconds": 1.541,
       "servo": "FlapTiltUp",
       "value": 38,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 0,
+      "offsetSeconds": 1.541,
       "servo": "IrisClose",
       "value": -36,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 0,
+      "offsetSeconds": 1.541,
       "servo": "RGBCommand",
       "value": "SetRGBColor,255,0,0,200,Eyes,LR",
       "speed": "N/C",
@@ -60,7 +179,7 @@
       "color": "#FF0000"
     },
     {
-      "offsetSeconds": 1.099,
+      "offsetSeconds": 2.64,
       "servo": "RGBCommand",
       "value": "SetRGBColor,0,255,0,200,Eyes,LR",
       "speed": "N/C",
@@ -68,14 +187,14 @@
       "color": "#00FF00"
     },
     {
-      "offsetSeconds": 1.392,
+      "offsetSeconds": 2.933,
       "servo": "VentsOpen",
       "value": 100,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 1.684,
+      "offsetSeconds": 3.225,
       "servo": "RGBCommand",
       "value": "SetRGBColor,0,255,0,200,Both,LR",
       "speed": "N/C",
@@ -83,175 +202,175 @@
       "color": "#00FF00"
     },
     {
-      "offsetSeconds": 2.108,
+      "offsetSeconds": 3.649,
       "servo": "RGBCommand",
       "value": "ClearAll",
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 2.667,
+      "offsetSeconds": 4.208,
       "servo": "RGBCommand",
       "value": "RainbowChase,200,LR,20",
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 3.577,
+      "offsetSeconds": 5.118,
       "servo": "NoseBody",
       "value": 49,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 3.577,
+      "offsetSeconds": 5.118,
       "servo": "EyesVerticalUp",
       "value": 0,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 3.634,
+      "offsetSeconds": 5.175,
       "servo": "NeckTurn",
       "value": 0,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 3.664,
+      "offsetSeconds": 5.205,
       "servo": "FlapsOpen",
       "value": 0,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 3.664,
+      "offsetSeconds": 5.205,
       "servo": "IrisClose",
       "value": -10,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 5.11,
+      "offsetSeconds": 6.651,
       "servo": "NeckTurn",
       "value": 69,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 5.433,
+      "offsetSeconds": 6.974,
       "servo": "FlapsOpen",
       "value": -93,
       "speed": "Default",
       "reason": "spline point"
     },
     {
-      "offsetSeconds": 5.714,
+      "offsetSeconds": 7.255,
       "servo": "EyesVerticalUp",
       "value": -100,
       "speed": "Default",
       "reason": "spline point"
     },
     {
-      "offsetSeconds": 6.58,
+      "offsetSeconds": 8.121,
       "servo": "FlapsOpen",
       "value": 33,
       "speed": "Default",
       "reason": "spline point"
     },
     {
-      "offsetSeconds": 6.708,
+      "offsetSeconds": 8.249,
       "servo": "IrisClose",
       "value": 91,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 7.241,
+      "offsetSeconds": 8.782,
       "servo": "NeckTurn",
       "value": -27,
       "speed": "Default",
       "reason": "spline point"
     },
     {
-      "offsetSeconds": 7.918,
+      "offsetSeconds": 9.459,
       "servo": "FlapsOpen",
       "value": 85,
       "speed": "Default",
       "reason": "spline point"
     },
     {
-      "offsetSeconds": 8.273,
+      "offsetSeconds": 9.814,
       "servo": "EyesVerticalUp",
       "value": 61,
       "speed": "Default",
       "reason": "spline point"
     },
     {
-      "offsetSeconds": 9.113,
+      "offsetSeconds": 10.654,
       "servo": "FlapsOpen",
       "value": -79,
       "speed": "Default",
       "reason": "spline point"
     },
     {
-      "offsetSeconds": 9.719,
+      "offsetSeconds": 11.26,
       "servo": "IrisClose",
       "value": -64,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 9.719,
+      "offsetSeconds": 11.26,
       "servo": "NeckTurn",
       "value": 41,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 9.719,
+      "offsetSeconds": 11.26,
       "servo": "BothEyePop",
       "value": 0,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 10.038,
+      "offsetSeconds": 11.579,
       "servo": "FlapsOpen",
       "value": 25,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 11.371,
+      "offsetSeconds": 12.912,
       "servo": "BothEyePop",
       "value": 1804,
       "speed": "Default",
       "reason": "spline point"
     },
     {
-      "offsetSeconds": 11.656,
+      "offsetSeconds": 13.197,
       "servo": "EyesVerticalUp",
       "value": -100,
       "speed": "Default",
       "reason": "spline point"
     },
     {
-      "offsetSeconds": 12.656,
+      "offsetSeconds": 14.197,
       "servo": "NeckTurn",
       "value": 97,
       "speed": "N/C",
       "reason": "spline point"
     },
     {
-      "offsetSeconds": 13.049,
+      "offsetSeconds": 14.59,
       "servo": "BothEyePop",
       "value": 117,
       "speed": "Default",
       "reason": "spline point"
     },
     {
-      "offsetSeconds": 13.049,
+      "offsetSeconds": 14.59,
       "servo": "FlapsOpen",
       "value": -7,
       "speed": "N/C",
@@ -259,7 +378,7 @@
       "control": "BrowLeftBottomOpen"
     },
     {
-      "offsetSeconds": 13.049,
+      "offsetSeconds": 14.59,
       "servo": "FlapsOpen",
       "value": -14,
       "speed": "N/C",
@@ -267,147 +386,147 @@
       "control": "BrowRightBottomOpen"
     },
     {
-      "offsetSeconds": 14.034,
+      "offsetSeconds": 15.575,
       "servo": "BothEyePop",
       "value": 2000,
       "speed": "Default",
       "reason": "spline point"
     },
     {
-      "offsetSeconds": 14.783,
+      "offsetSeconds": 16.324,
       "servo": "BothEyePop",
       "value": 0,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 15.25,
+      "offsetSeconds": 16.791,
       "servo": "NeckTurn",
       "value": 69,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 15.596,
+      "offsetSeconds": 17.137,
       "servo": "FlapsOpen",
       "value": -93,
       "speed": "Default",
       "reason": "spline point"
     },
     {
-      "offsetSeconds": 15.636,
+      "offsetSeconds": 17.177,
       "servo": "EyesVerticalUp",
       "value": 0,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 17.033,
+      "offsetSeconds": 18.574,
       "servo": "Play",
       "value": "Projects\\MyProject\\LR7_Expressive.mp3",
       "speed": "Default",
       "reason": "LR7_Expressive.mp3"
     },
     {
-      "offsetSeconds": 17.033,
+      "offsetSeconds": 18.574,
       "servo": "NeckTurn",
       "value": 0,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 17.033,
+      "offsetSeconds": 18.574,
       "servo": "IrisClose",
       "value": 81,
       "speed": "N/C",
       "reason": "spline point"
     },
     {
-      "offsetSeconds": 17.957,
+      "offsetSeconds": 19.498,
       "servo": "FlapsOpen",
       "value": 33,
       "speed": "Default",
       "reason": "spline point"
     },
     {
-      "offsetSeconds": 18.093,
+      "offsetSeconds": 19.634,
       "servo": "IrisClose",
       "value": 84,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 18.618,
+      "offsetSeconds": 20.159,
       "servo": "NeckTurn",
       "value": -27,
       "speed": "Default",
       "reason": "spline point"
     },
     {
-      "offsetSeconds": 19.295,
+      "offsetSeconds": 20.836,
       "servo": "FlapsOpen",
       "value": 85,
       "speed": "Default",
       "reason": "spline point"
     },
     {
-      "offsetSeconds": 20.49,
+      "offsetSeconds": 22.031,
       "servo": "FlapsOpen",
       "value": -79,
       "speed": "Default",
       "reason": "spline point"
     },
     {
-      "offsetSeconds": 21.096,
+      "offsetSeconds": 22.637,
       "servo": "IrisClose",
       "value": -64,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 21.096,
+      "offsetSeconds": 22.637,
       "servo": "NeckTurn",
       "value": 41,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 21.415,
+      "offsetSeconds": 22.956,
       "servo": "FlapsOpen",
       "value": 25,
       "speed": "Default",
       "reason": ""
     },
     {
-      "offsetSeconds": 25.235,
+      "offsetSeconds": 26.776,
       "servo": "NoseBody",
       "value": -100,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 25.235,
+      "offsetSeconds": 26.776,
       "servo": "FlapsOpen",
       "value": -100,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 25.235,
+      "offsetSeconds": 26.776,
       "servo": "FlapTiltUp",
       "value": 38,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 25.235,
+      "offsetSeconds": 26.776,
       "servo": "IrisClose",
       "value": -36,
       "speed": "N/C",
       "reason": ""
     },
     {
-      "offsetSeconds": 25.235,
+      "offsetSeconds": 26.776,
       "servo": "RGBCommand",
       "value": "SetRGBColor,255,0,0,200,Eyes,LR",
       "speed": "N/C",
@@ -415,7 +534,7 @@
       "color": "#FF0000"
     },
     {
-      "offsetSeconds": 25.977,
+      "offsetSeconds": 27.518,
       "servo": "FlapsOpen",
       "value": -90,
       "speed": "N/C",
@@ -423,7 +542,7 @@
       "control": "BrowLeftBottomOpen"
     },
     {
-      "offsetSeconds": 25.977,
+      "offsetSeconds": 27.518,
       "servo": "FlapsOpen",
       "value": -90,
       "speed": "N/C",

@@ -39,7 +39,7 @@ The Manage Library Sequences and Manage Library Poses windows edit descriptions 
 
 If a description cannot be saved, the window stays open with the edits intact and identifies the file that failed. Resolve the problem and close again to retry. Selection-only Library browsers remain read-only.
 
-In Library Pose browsers, selecting a row shows its attached image in the **Image** column immediately after Description. Attach an image when creating a Library Pose; the manager no longer has separate description/image panels or Save Description and Change Image buttons. Deleting a Library Pose still asks for confirmation and removes an attached image stored alongside its JSON.
+In Library Pose browsers, selecting a row shows its attached image in the **Image** column immediately after Description. In **Manage Library Poses**, select a pose and click **Choose Image…** to attach or replace its picture. PNG, JPEG, BMP, GIF, and TIFF images are supported. A copy is stored beside the pose JSON, saved immediately, and shown in the Image column. Cancelling the chooser leaves the pose unchanged. The original source image and any previous attachment are preserved. Stream Deck pose buttons pick up the new picture within 30 seconds, or with **Refresh connection & Library**. Deleting a Library Pose still asks for confirmation and removes its current attached image stored alongside its JSON.
 
 ## Pose editor Library buttons
 

@@ -17,8 +17,13 @@ namespace ServoAnimator
     public static class Program
     {
         [STAThread]
-        public static void Main()
+        public static void Main(string[] args)
         {
+            if (args.Length > 0 && args[0] == "--editor-api")
+            {
+                Environment.ExitCode = EditorApiClient.Run(args).GetAwaiter().GetResult();
+                return;
+            }
             var app = new App();
             app.InitializeComponent();   // loads App.xaml (StartupUri -> MainWindow)
             app.Run();

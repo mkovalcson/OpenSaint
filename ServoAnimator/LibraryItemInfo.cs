@@ -73,7 +73,7 @@ namespace ServoAnimator
         private void OnPropertyChanged([CallerMemberName] string name = null) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-        public static List<LibraryItemInfo> Scan(string rootFolder)
+        public static List<LibraryItemInfo> Scan(string rootFolder, bool loadImages = true)
         {
             var results = new List<LibraryItemInfo>();
             if (string.IsNullOrWhiteSpace(rootFolder) || !Directory.Exists(rootFolder))
@@ -120,7 +120,7 @@ namespace ServoAnimator
                         Category = item.Category,
                         AudioFiles = audio,
                         ImagePath = imagePath,
-                        ImageSource = LoadImage(imagePath),
+                        ImageSource = loadImages ? LoadImage(imagePath) : null,
                     });
                 }
                 catch (Exception ex)

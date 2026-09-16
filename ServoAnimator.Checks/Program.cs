@@ -18,7 +18,82 @@ internal static partial class Program
     {
         try
         {
-            if (args.Contains("--sequence-triggers"))
+            if (args.Contains("--controller-feedback"))
+            {
+                ControllerFeedbackChecks();
+                Console.WriteLine($"PASS: {_checks} focused controller feedback assertions.");
+            }
+            else if (args.Contains("--controller-layout"))
+            {
+                ControllerLayoutChecks();
+                Console.WriteLine($"PASS: {_checks} controller layout assertions.");
+            }
+            else if (args.Contains("--layout-recovery"))
+            {
+                LayoutRecoveryChecks();
+                Console.WriteLine($"PASS: {_checks} layout recovery assertions.");
+            }
+            else if (args.Contains("--controller-speeds"))
+            {
+                ControllerCalibratedSpeedChecks();
+                Console.WriteLine($"PASS: {_checks} shared controller speed assertions.");
+            }
+            else if (args.Contains("--render-loop"))
+            {
+                UrdfRenderLoopChecks();
+                Console.WriteLine($"PASS: {_checks} synchronized URDF render assertions.");
+            }
+            else if (args.Contains("--collision-performance"))
+            {
+                CollisionPerformanceChecks();
+                Console.WriteLine($"PASS: {_checks} cached collision model assertions.");
+            }
+            else if (args.Contains("--controller-safeguard"))
+            {
+                ControllerSafeguardChecks();
+                Console.WriteLine($"PASS: {_checks} controller display and collision safeguard assertions.");
+            }
+            else if (args.Contains("--speed-calibration"))
+            {
+                SpeedCalibrationChecks();
+                Console.WriteLine($"PASS: {_checks} servo speed calibration assertions.");
+            }
+            else if (args.Contains("--library-images"))
+            {
+                LibraryPoseImageChecks();
+                Console.WriteLine($"PASS: {_checks} Library pose image assertions.");
+            }
+            else if (args.Length == 3 && args[0] == "--pose-button-preview")
+            {
+                PoseButtonPreview(args[1], args[2]);
+            }
+            else if (args.Contains("--preview-cadence"))
+            {
+                SmoothCursorPresentation(); ClockContinuity(); QueueCancellation();
+                Console.WriteLine($"PASS: {_checks} preview cadence and playback timing assertions.");
+            }
+            else if (args.Contains("--urdf-exterior") || args.Contains("--urdf-exterior-assets"))
+            {
+                UrdfExteriorChecks(render: !args.Contains("--urdf-exterior-assets"));
+                Console.WriteLine($"PASS: {_checks} URDF exterior assertions.");
+            }
+            else if (args.Contains("--controllers"))
+            {
+                int preview = Array.IndexOf(args, "--previews");
+                ControllerChecks(preview >= 0 && preview + 1 < args.Length ? args[preview + 1] : null);
+                Console.WriteLine($"PASS: {_checks} controller assertions.");
+            }
+            else if (args.Contains("--editor-api"))
+            {
+                EditorApiChecks();
+                Console.WriteLine($"PASS: {_checks} editor API assertions.");
+            }
+            else if (args.Contains("--audio-movie"))
+            {
+                AudioMovieCreation();
+                Console.WriteLine($"PASS: {_checks} audio movie assertions.");
+            }
+            else if (args.Contains("--sequence-triggers"))
             {
                 SequenceTriggers();
                 Console.WriteLine($"PASS: {_checks} sequence trigger assertions.");
@@ -34,6 +109,7 @@ internal static partial class Program
 
     private static void RunChecks()
     {
+        AudioMovieCreation();
         QueueCancellation();
         ClockContinuity();
         EnvelopeQueries();
@@ -73,16 +149,18 @@ internal static partial class Program
 
     private static void SmoothCursorPresentation()
     {
-        foreach (int refresh in new[] { 30, 60, 75, 120, 144, 240 })
+        foreach (int refresh in new[] { 15, 30, 60, 75, 120, 144, 240 })
         {
             var cadence = new PlaybackFrameCadence();
             int updates = 0;
             for (int i = 0; i < refresh * 5; i++)
                 if (cadence.IsDue(TimeSpan.FromSeconds(i / (double)refresh))) updates++;
-            Check(Math.Abs(updates - Math.Min(refresh, 60) * 5) <= 1,
+            Check(Math.Abs(updates - Math.Min(refresh, 30) * 5) <= 1,
                 $"Preview cadence drifted at {refresh} Hz: {updates} updates in five seconds");
             cadence.Reset();
             Check(cadence.IsDue(TimeSpan.Zero), "Resuming playback delayed the first preview frame");
+            Check(cadence.IsDue(TimeSpan.FromSeconds(2)), "A slow frame prevents the next preview update");
+            Check(!cadence.IsDue(TimeSpan.FromSeconds(2)), "A delayed frame causes duplicate catch-up preview updates");
         }
         var wave = new CountingWaveform { Duration = 10, ContentDuration = 10 };
         var host = new System.Windows.Documents.AdornerDecorator { Child = wave };

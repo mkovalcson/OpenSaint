@@ -89,6 +89,8 @@ namespace ServoAnimator
                 _items.Add(new CommandVM(c, _moveServoNow, _moveServoNowText, _moveChildNow, _configureGangSpeedNow, _configureChildSpeedNow, _splineDraft));
 
             CmdList.ItemsSource = _items;
+            AllCommandsSpeed.ItemsSource = CommandVM.SpeedChoices;
+            AllCommandsSpeed.SelectedItem = "N/C";
             Closing += (_, e) =>
             {
                 if (_discardChanges) return;
@@ -97,6 +99,14 @@ namespace ServoAnimator
                     box.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.UpdateSource();
                 e.Cancel = !_commitCommands(_session.Merge(_sourceDoc.Commands), _splineDraft.Changes);
             };
+        }
+
+        private void SetAllSpeeds_Click(object sender, RoutedEventArgs e)
+        {
+            if (AllCommandsSpeed.SelectedItem is not string speed) return;
+            // Use the same draft editing and speed-only preview path as each row.
+            foreach (var item in _items.Where(item => item.SupportsSpeed).ToArray())
+                item.SpeedText = speed;
         }
 
         /// <summary>Append a new command at the same time point and show it.</summary>
@@ -480,8 +490,9 @@ namespace ServoAnimator
         /// <summary>Command speed is optional.  N/C means this command
         /// changes position only and leaves the Maestro's current speed and
         /// acceleration profile untouched.</summary>
-        public string[] SpeedOptions { get; } =
+        internal static readonly string[] SpeedChoices =
             { "N/C", "Default", "Fast", "Slow", "Crawl" };
+        public string[] SpeedOptions => SpeedChoices;
 
         public string SpeedText
         {
