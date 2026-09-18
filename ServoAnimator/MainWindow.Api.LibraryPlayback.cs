@@ -89,12 +89,12 @@ public partial class MainWindow
                             throw new InvalidOperationException("Editor context changed before the picker opened.");
                         var picker = new LibraryItemSelectionWindow(root, manageMode: false,
                             itemLabel: request.LibraryKind == "pose" ? "Library Pose" : "Library Sequence",
-                            showAudioFiles: request.LibraryKind == "sequence") { Owner = this };
+                            showAudioFiles: request.LibraryKind == "sequence", offerBreakPreceding: true) { Owner = this };
                         if (picker.ShowDialog() != true || picker.SelectedLibraryItem == null)
                         { ApiReceipt(request, payload, "cancelled"); return; }
                         if (EditorApiEnabled.IsChecked != true || token != EditorApiToken() || IsRunning || LiveDrive)
                             throw new InvalidOperationException("Editor context changed while selecting a library item.");
-                        ApiReceipt(request, payload, "completed", InsertApiLibrary(picker.SelectedLibraryItem.FullPath, request.LibraryKind, at));
+                        ApiReceipt(request, payload, "completed", InsertApiLibrary(picker.SelectedLibraryItem.FullPath, request.LibraryKind, at, picker.BreakPrecedingSplines));
                     }
                     catch (Exception ex) { ApiReceipt(request, payload, "failed", error: ex.Message); ShowStatus("Codex library insertion: " + ex.Message); }
                 }));
@@ -103,7 +103,7 @@ public partial class MainWindow
         return ApiReceipt(request, payload, "completed");
     }
 
-    private int InsertApiLibrary(string path, string kind, double at)
+    private int InsertApiLibrary(string path, string kind, double at, bool breakPreceding = false)
     {
         if (!ConfigPathService.IsWithin(ApiLibraryRoot(kind), path)) throw new InvalidOperationException("Item is outside the selected library.");
         var commands = AnimationDocument.LoadCommandsOnly(path).Select(c => c.Clone()).ToList();
@@ -129,6 +129,7 @@ public partial class MainWindow
         try
         {
             PushUndo("Codex: Insert Library " + kind + " " + Path.GetFileNameWithoutExtension(path));
+            if (breakPreceding) SplineBreakOperations.BreakPreceding(_doc.Commands, SplineServosEnabled(), at);
             _doc.Commands.AddRange(commands);
             RefreshAfterEdit();
         }

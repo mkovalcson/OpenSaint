@@ -26,5 +26,15 @@ namespace ServoAnimator
     }
 
     internal sealed record CommandInspectorRow(string NameText, string ValueText, string SpeedText,
-        string TimeText, Brush AccentBrush, string Details);
+        string TimeText, Brush AccentBrush, string Details)
+    {
+        public ServoCommand Command { get; init; }
+        public bool IsCommandRow => true;
+        public bool SplineEnabled { get; init; }
+        public bool CanSpline => SplineBreakOperations.SupportsSpline(Command);
+        public bool BreakSpline => Command?.BreakSpline == true;
+        public bool CanBreak => CanSpline && SplineEnabled && !Command.Disable;
+        public bool CanSetBreaks => false;
+        public bool CanClearBreaks => false;
+    }
 }

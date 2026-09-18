@@ -2,6 +2,13 @@ namespace ServoAnimator
 {
     internal sealed record ModifiedCommandControl(ServoNames Servo, RobotControls? Control)
     {
+        public bool IsCommandRow => false;
+        public bool SplineEnabled => false;
+        public bool CanSpline => false;
+        public bool BreakSpline => false;
+        public bool CanBreak => false;
+        public bool CanSetBreaks { get; set; }
+        public bool CanClearBreaks { get; set; }
         public string NameText => ToString();
         public string ValueText => "—";
         public string SpeedText => "—";

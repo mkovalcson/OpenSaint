@@ -7,6 +7,19 @@ public partial class MainWindow
 {
     private bool _fittingEditorPanels;
 
+    internal static void ConstrainEditorRowHeight(RowDefinition row, double maximum)
+    {
+        // Star rows already receive the space left by the other rows. A finite
+        // maximum equal to that remainder can hit WPF's star-sizing rounding
+        // bug (SetFinalSizeMaxDiscrepancy indexes -1 after resolving a max).
+        // Keep the drag limit on pixel rows; let star rows absorb the remainder.
+        double limit = Math.Max(row.MinHeight, maximum);
+        double maxHeight = row.Height.IsAbsolute ? limit : double.PositiveInfinity;
+        if (row.MaxHeight != maxHeight) row.MaxHeight = maxHeight;
+        if (row.Height.IsAbsolute && row.Height.Value > limit)
+            row.Height = new GridLength(limit);
+    }
+
     // Use the parent's viewport, not the grid's desired/row height: an oversized
     // saved pixel row can make those measurements exceed the visible window.
     private double EditorPanelViewportHeight()
@@ -40,24 +53,18 @@ public partial class MainWindow
             SplineArea.MinHeight = separate ? 80 * scale : 0;
             double timelineMinimum = AudioTimelineRow.MinHeight + (separate ? SplineTimelineRow.MinHeight : 0);
             double topMax = Math.Max(TopEditorRow.MinHeight, available - timelineMinimum);
-            if (TopEditorRow.MaxHeight != topMax) TopEditorRow.MaxHeight = topMax;
-            if (TopEditorRow.Height.IsAbsolute && TopEditorRow.Height.Value > topMax)
-                TopEditorRow.Height = new GridLength(topMax);
+            ConstrainEditorRowHeight(TopEditorRow, topMax);
 
             // Pixel heights left by either splitter must also shrink when the
             // window or monitor gets smaller. Reserve room for both timelines.
             double top = TopEditorRow.Height.IsAbsolute ? TopEditorRow.Height.Value : Math.Min(TopEditorRow.ActualHeight, topMax);
             double audioMax = Math.Max(AudioTimelineRow.MinHeight, available - top - (separate ? SplineTimelineRow.MinHeight : 0));
-            if (AudioTimelineRow.MaxHeight != audioMax) AudioTimelineRow.MaxHeight = audioMax;
-            if (AudioTimelineRow.Height.IsAbsolute && AudioTimelineRow.Height.Value > audioMax)
-                AudioTimelineRow.Height = new GridLength(audioMax);
+            ConstrainEditorRowHeight(AudioTimelineRow, audioMax);
             if (separate)
             {
                 double audio = AudioTimelineRow.Height.IsAbsolute ? AudioTimelineRow.Height.Value : AudioTimelineRow.MinHeight;
                 double splineMax = Math.Max(SplineTimelineRow.MinHeight, available - top - audio);
-                if (SplineTimelineRow.MaxHeight != splineMax) SplineTimelineRow.MaxHeight = splineMax;
-                if (SplineTimelineRow.Height.IsAbsolute && SplineTimelineRow.Height.Value > splineMax)
-                    SplineTimelineRow.Height = new GridLength(splineMax);
+                ConstrainEditorRowHeight(SplineTimelineRow, splineMax);
             }
             ApplyEmbeddedUrdfHeight();
         }

@@ -106,11 +106,18 @@ namespace ServoAnimator
             {
                 CommandsAtPointList.Items.Clear();
                 foreach (var control in ModifiedCommandControls.From(SelectedGroupCommands()))
+                {
+                    var commands = SelectedGroupCommands().Where(c => c.Servo == control.Servo && c.Control == control.Control &&
+                        SplineBreakOperations.SupportsSpline(c) && !c.Disable && SplineServosEnabled().Contains(c.Servo)).ToArray();
+                    control.CanSetBreaks = commands.Length > 0;
+                    control.CanClearBreaks = commands.Any(c => c.BreakSpline);
                     CommandsAtPointList.Items.Add(control);
+                }
                 CommandsAtPointHeader.Text = $"Modified controls · {Waveform.SelectedMarkers.Count} selected times";
                 CommandsAtPointHeader.ToolTip = $"{CommandsAtPointList.Items.Count} distinct controls in the selected command triangles";
-                if (selected != null && CommandsAtPointList.Items.Contains(selected))
-                    CommandsAtPointList.SelectedItem = selected;
+                if (selected != null)
+                    CommandsAtPointList.SelectedItem = CommandsAtPointList.Items.OfType<ModifiedCommandControl>()
+                        .FirstOrDefault(c => c.Servo == selected.Servo && c.Control == selected.Control);
             }
             finally { _updatingModifiedControls = false; }
             CommandsAtPointList.ToolTip = "Select a control to highlight every command triangle that includes it in purple.";

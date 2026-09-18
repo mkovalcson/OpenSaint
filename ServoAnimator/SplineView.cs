@@ -109,6 +109,19 @@ namespace ServoAnimator
         public double[] M = Array.Empty<double>();   // precomputed tangents
         public double Min, Max;                      // servo value range
         public bool Visible = true;                  // legend show/hide
+        public bool[] BreakAfter = Array.Empty<bool>(); // hide only the segment after this point
+
+        internal bool IsSegmentVisible(int index) => index >= 0 && index < T.Length - 1
+            && (BreakAfter.Length != T.Length || !BreakAfter[index])
+            && (!IsSharedNeck || PointVisible.Length != T.Length || PointVisible[index]);
+
+        internal int SegmentAt(double time)
+        {
+            if (T.Length < 2 || time < T[0] || time > T[^1]) return -1;
+            int index = Array.BinarySearch(T, time);
+            if (index < 0) index = ~index - 1;
+            return Math.Min(index, T.Length - 2);
+        }
 
         // NeckNodUp and NeckTiltRight can share one physical spline.  For
         // that special curve Owners/PointColors are parallel to T/V and say
@@ -157,6 +170,9 @@ namespace ServoAnimator
         public event Action<double> TimeClicked;
         /// <summary>Right click on the cursor: open the shared cursor menu.</summary>
         public event Action<double> RightClicked;
+        public event Action<ServoNames, double> PointRightClicked;
+        private System.Windows.Point _rightPressPoint;
+        private bool _rightDragMoved;
         public event Action<double> CommandsEditRequested;
 
         // ---- point-editing events (MainWindow mutates the commands) ----
@@ -349,7 +365,7 @@ namespace ServoAnimator
 
             if (c.T.Length >= 2)
             {
-                if (c.IsSharedNeck && c.PointColors.Length == c.T.Length)
+                if (c.IsSharedNeck && c.PointColors.Length == c.T.Length || c.BreakAfter.Any(b => b))
                 {
                     // The neck pair is ONE Hermite curve, but ownership changes
                     // at its control points. Draw each interval in the color of
@@ -357,9 +373,8 @@ namespace ServoAnimator
                     // changes color at NeckNodUp/NeckTiltRight hand-offs.
                     for (int seg = 0; seg < c.T.Length - 1; seg++)
                     {
-                        if (c.PointVisible.Length == c.T.Length && !c.PointVisible[seg])
-                            continue;
-                        line.Color = c.PointColors[seg];
+                        if (!c.IsSegmentVisible(seg)) continue;
+                        line.Color = c.IsSharedNeck && c.PointColors.Length == c.T.Length ? c.PointColors[seg] : c.Color;
                         using var path = new SKPath();
                         bool started = false;
                         int x0 = Math.Max((int)WaveformView.TimelineLeftInset, (int)XAtTime(c.T[seg]));
@@ -461,6 +476,7 @@ namespace ServoAnimator
             {
                 double tt = TimeAtX(p.X);
                 if (tt < c.T[0] || tt > c.T[^1]) continue;
+                if (!c.IsSegmentVisible(c.SegmentAt(tt))) continue;
                 if (c.IsSharedNeck && c.PointVisible.Length == c.T.Length)
                 {
                     // Determine visibility from the actual latest point, not merely
@@ -629,6 +645,8 @@ namespace ServoAnimator
             if (pc != null)
             {
                 _drag = DragKind.Time;
+                _rightPressPoint = e.GetPosition(this);
+                _rightDragMoved = false;
                 _dragServo = OwnerAt(pc, idx);
                 _dragKey = ServoCommand.TimeKey(pc.T[idx]);
                 CaptureMouse();
@@ -678,6 +696,9 @@ namespace ServoAnimator
 
             if (_drag == DragKind.Time)
             {
+                if (!_rightDragMoved && Math.Abs(p.X - _rightPressPoint.X) < System.Windows.SystemParameters.MinimumHorizontalDragDistance)
+                    return;
+                _rightDragMoved = true;
                 if (_pointInfo.IsOpen) ShowPointInfo(_pointInfo.Content as string);
                 // Dragging left/right moves the point's time offset. Skip
                 // moves that would land exactly on another point of the same
@@ -750,8 +771,17 @@ namespace ServoAnimator
             if (_drag != DragKind.None &&
                 (e.ChangedButton == MouseButton.Left || e.ChangedButton == MouseButton.Right))
             {
+                bool pointMenu = _drag == DragKind.Time && !_rightDragMoved && e.ChangedButton == MouseButton.Right;
                 _drag = DragKind.None;
                 ReleaseMouseCapture();
+                if (pointMenu)
+                {
+                    _hasSelection = true; _selServo = _dragServo; _selKey = _dragKey;
+                    InvalidateVisual();
+                    PointRightClicked?.Invoke(_dragServo, _dragKey);
+                    e.Handled = true;
+                    return;
+                }
                 DragCompleted?.Invoke();   // MainWindow does a full refresh
                 return;
             }

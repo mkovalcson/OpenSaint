@@ -28,7 +28,7 @@ namespace ServoAnimator
         public static bool SameContent(ServoCommand a, ServoCommand b) =>
             a.OffsetSeconds == b.OffsetSeconds && a.Servo == b.Servo && a.Control == b.Control &&
             a.NumericValue == b.NumericValue && a.TextValue == b.TextValue &&
-            a.Disable == b.Disable && a.Speed == b.Speed && a.ColorHex == b.ColorHex &&
+            a.Disable == b.Disable && a.BreakSpline == b.BreakSpline && a.Speed == b.Speed && a.ColorHex == b.ColorHex &&
             a.Reason == b.Reason && a.ScaledExportValue == b.ScaledExportValue;
     }
 

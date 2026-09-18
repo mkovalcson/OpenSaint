@@ -124,6 +124,10 @@ namespace ServoAnimator
         /// and child-servo commands - and parsed back from it.</summary>
         public bool Disable { get; set; }
 
+        /// <summary>Hide the outgoing spline segment in the editor. This is
+        /// presentation metadata and does not change playback interpolation.</summary>
+        public bool BreakSpline { get; set; }
+
         /// <summary>
         /// Optional INDIVIDUAL control target. Null (the default) means the
         /// command drives the whole ganged ServoName. When set, the command
@@ -209,6 +213,7 @@ namespace ServoAnimator
             TextValue = TextValue,
             ScaledExportValue = ScaledExportValue,
             Disable = Disable,
+            BreakSpline = BreakSpline,
             Control = Control,
             ColorHex = ColorHex,
             Speed = Speed,
@@ -282,6 +287,10 @@ namespace ServoAnimator
                         cmd.Reason = reader.GetString() ?? "";
                         break;
 
+                    case "breakSpline":
+                        cmd.BreakSpline = reader.GetBoolean();
+                        break;
+
                     case "color":
                         cmd.ColorHex = reader.GetString() ?? "";
                         break;
@@ -325,6 +334,7 @@ namespace ServoAnimator
 
             writer.WriteString("speed", ServoCommand.SpeedToText(cmd.Speed));
             writer.WriteString("reason", cmd.Reason ?? "");
+            if (cmd.BreakSpline) writer.WriteBoolean("breakSpline", true);
             if (cmd.Control.HasValue)
                 writer.WriteString("control", cmd.Control.Value.ToString());
             if (!string.IsNullOrEmpty(cmd.ColorHex))

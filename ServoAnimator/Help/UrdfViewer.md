@@ -66,18 +66,25 @@ surfaces and moving parts retain their original detail. Open and transparent
 surfaces keep both sides, and collision checks continue to use the original meshes.
 The optimization is automatic; changed model files fall back to full-detail rendering.
 
-Timeline playback and controller-driven previews target **30 URDF pose updates per second**. Audio, timeline
-cursor updates, controller polling, and hardware command dispatch retain their
-independent timing. Delayed preview frames skip ahead to the current playback
+Timeline playback targets **30 pose/slider updates per second**, while calibrated
+URDF motion and controller visual updates run at display cadence, up to **60 per second**.
+Audio, timeline cursor updates, controller polling, and hardware command dispatch
+retain their independent timing. Delayed preview frames skip ahead to the current playback
 position rather than replaying a backlog. Command-time collision checks are retained.
 Controller visuals coalesce the latest values between frames, including Library
 poses/sequences and config testing. Controller polling and hardware dispatch are
 not throttled by the visual update queue.
 
-The `fps:` indicator above the legend counts rendered frames with changed URDF
-poses or lighting, rather than unrelated WPF redraws. It shows a whole-number
-rate over the last second and refreshes every quarter second. A stationary model
-can read zero; this measures model animation updates, not the monitor refresh rate.
-If rendering stalls, the next refresh includes that delay.
+The `fps:` indicator above the legend estimates **WPF render-callback frequency**
+while the URDF view is visible. Each unique rendering timestamp counts once,
+including when the model is still or only the camera moves. The whole-number
+rate covers the last second and the label refreshes at most twice a second, only
+when the value changes. A stalled render stream decays to zero.
+
+Sampling uses fixed storage with no per-frame allocations. The counter does not
+advance the model or explicitly request a redraw. Its label uses a low-priority
+timer and fixed width to minimize UI work. Hover over the indicator for its meaning.
+This is a rendering-cadence estimate, not a measurement of completed GPU frames;
+other UI activity can still change WPF's scheduling and therefore the measured rate.
 Actual speed depends on the graphics hardware,
 window size, and other editor activity.

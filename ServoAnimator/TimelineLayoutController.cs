@@ -22,6 +22,7 @@ namespace ServoAnimator
 
         public void RestoreHeights(GridLength audioHeight, GridLength splineHeight)
         {
+            _audioRow.MaxHeight = _splineRow.MaxHeight = double.PositiveInfinity;
             // Restore both the visible rows and the hidden separate-mode sizes.
             // Do not let Apply capture measurements from the startup layout.
             _separateAudioHeight = audioHeight;
@@ -52,6 +53,9 @@ namespace ServoAnimator
 
         public void Apply(TimelineLayoutMode mode, bool hasSplines)
         {
+            // Clear pixel-row caps before a row can switch back to star sizing.
+            // The host reinstates the appropriate pixel limits after layout.
+            _audioRow.MaxHeight = _splineRow.MaxHeight = double.PositiveInfinity;
             if (_splineArea.Visibility == Visibility.Visible && _splineRow.Height.Value > 0)
                 LastSplineHeight = _splineRow.Height;
             if (Mode != TimelineLayoutMode.Combined && mode == TimelineLayoutMode.Combined)

@@ -103,6 +103,7 @@ namespace ServoAnimator
         private double[] _sharedNeckValues = Array.Empty<double>();
         private double[] _sharedNeckTangents = Array.Empty<double>();
         private ServoNames[] _sharedNeckOwners = Array.Empty<ServoNames>();
+        private bool[] _sharedNeckBreakAfter = Array.Empty<bool>();
 
         /// <summary>Current cursor position in seconds (selection + playback).</summary>
         private double _cursorTime;
@@ -178,6 +179,7 @@ namespace ServoAnimator
         private LibraryRangePromptWindow _libraryRangeWindow;
         private string _pendingLibraryItemPath;
         private string _pendingLibraryItemDescription;
+        private bool _pendingLibraryBreakPreceding;
         private bool _endingLibraryOperation;
 
         // ----- Movie timeline -----
@@ -477,6 +479,7 @@ namespace ServoAnimator
             Spline.SyncTarget = Waveform;
             Spline.TimeClicked += Waveform_TimeClicked;
             Spline.RightClicked += Spline_RightClicked;
+            Spline.PointRightClicked += Spline_PointRightClicked;
             Spline.PointValueChanged += Spline_PointValueChanged;
             Spline.PointTimeChanged += Spline_PointTimeChanged;
             Spline.PointAdded += Spline_PointAdded;
@@ -2443,7 +2446,8 @@ namespace ServoAnimator
                     c.Control.HasValue ? $"{c.Servo} [{c.Control}]" : c.Servo.ToString(),
                     c.ValueDisplay, c.SpeedDisplay, $"{c.OffsetSeconds:0.000}", BrushFor(c.Servo),
                     $"{c.Servo}{(c.Control.HasValue ? $" [{c.Control}]" : "")}\n{c.ValueDisplay} · {c.SpeedDisplay} · {c.OffsetSeconds:F3} s" +
-                    (string.IsNullOrWhiteSpace(c.Reason) ? "" : $"\n{c.Reason}")));
+                    (string.IsNullOrWhiteSpace(c.Reason) ? "" : $"\n{c.Reason}"))
+                    { Command = c, SplineEnabled = SplineServosEnabled().Contains(c.Servo) });
             if (CommandsAtPointList.Items.Count > 0)
                 CommandsAtPointList.SelectedIndex = Math.Clamp(keep, 0, CommandsAtPointList.Items.Count - 1);
         }
@@ -2823,9 +2827,11 @@ namespace ServoAnimator
         /// exactly the selected timeline point.</summary>
         private void InsertLibraryCommandAtCursor()
         {
+            if (!ApplyOpenCommandEditor()) return;
+            if (IsRunning) PausePlayback();
             var win = new LibraryItemSelectionWindow(
                 LibraryCommandsFolder(), manageMode: false,
-                itemLabel: "Library Pose", showAudioFiles: false)
+                itemLabel: "Library Pose", showAudioFiles: false, offerBreakPreceding: true)
             {
                 Owner = this,
             };
@@ -2846,6 +2852,8 @@ namespace ServoAnimator
 
                 PushUndo($"Insert Library Pose {Path.GetFileNameWithoutExtension(win.SelectedLibraryItem.FullPath)}");
                 double at = ServoCommand.TimeKey(_cursorTime);
+                if (win.BreakPrecedingSplines)
+                    SplineBreakOperations.BreakPreceding(_doc.Commands, SplineServosEnabled(), at);
                 foreach (var c in cmds)
                 {
                     var copy = c.Clone();
@@ -2869,10 +2877,12 @@ namespace ServoAnimator
         /// preserved and rebased from the selected cursor time.</summary>
         private void InsertLibrarySequenceAtCursor()
         {
+            if (!ApplyOpenCommandEditor()) return;
+            if (IsRunning) PausePlayback();
             EndArrowPrompt();
             var win = new LibraryItemSelectionWindow(
                 LibraryFolder(), manageMode: false,
-                itemLabel: "Library Sequence", showAudioFiles: true)
+                itemLabel: "Library Sequence", showAudioFiles: true, offerBreakPreceding: true)
             {
                 Owner = this,
             };
@@ -2880,7 +2890,7 @@ namespace ServoAnimator
                 return;
 
             InsertLibrarySequence(win.SelectedLibraryItem.FullPath,
-                                  ServoCommand.TimeKey(_cursorTime));
+                                  ServoCommand.TimeKey(_cursorTime), win.BreakPrecedingSplines);
         }
 
         /// <summary>
@@ -3024,6 +3034,8 @@ namespace ServoAnimator
         /// so the pose survives round-tripping through the normal timeline model.</summary>
         private void InsertPoseAtCursor()
         {
+            if (!ApplyOpenCommandEditor()) return;
+            if (IsRunning) PausePlayback();
             RobotHeadView view = _urdfUndocked ? _head?.HeadView : EmbeddedHeadView;
             if (view == null) return;
 
@@ -3031,7 +3043,11 @@ namespace ServoAnimator
             double t = ServoCommand.TimeKey(_cursorTime);
             var commands = BuildCommandsFromPose(pose, t);
 
+            bool breakPreceding = MessageBox.Show(this, "Break Preceding Splines?", "Insert Pose",
+                MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+
             PushUndo($"Insert URDF pose at {t:F3} s");
+            if (breakPreceding) SplineBreakOperations.BreakPreceding(_doc.Commands, SplineServosEnabled(), t);
 
             // Keep earlier candidates until the conflict chooser has shown
             // their values alongside the newly inserted pose commands.
@@ -3486,13 +3502,15 @@ namespace ServoAnimator
                         c.Servo == ServoNames.NeckTiltRight) ?? g.Last();
                     return (Time: ServoCommand.TimeKey(chosen.OffsetSeconds),
                             Value: (double)chosen.NumericValue,
-                            Owner: chosen.Servo);
+                            Owner: chosen.Servo,
+                            BreakAfter: chosen.BreakSpline);
                 })
                 .OrderBy(p => p.Time)
                 .ToArray();
             _sharedNeckTimes = neckPoints.Select(p => p.Time).ToArray();
             _sharedNeckValues = neckPoints.Select(p => p.Value).ToArray();
             _sharedNeckOwners = neckPoints.Select(p => p.Owner).ToArray();
+            _sharedNeckBreakAfter = neckPoints.Select(p => p.BreakAfter).ToArray();
             _sharedNeckTangents = _sharedNeckTimes.Length >= 2
                 ? SplineUtil.Tangents(_sharedNeckTimes, _sharedNeckValues)
                 : Array.Empty<double>();
@@ -3563,6 +3581,7 @@ namespace ServoAnimator
                         Visible = nodVisible || tiltVisible,
                         IsSharedNeck = true,
                         Owners = owners,
+                        BreakAfter = _sharedNeckBreakAfter,
                         PointColors = owners.Select(SkColorFor).ToArray(),
                         PointVisible = owners.Select(o => o == ServoNames.NeckNodUp
                             ? nodVisible : tiltVisible).ToArray(),
@@ -3583,6 +3602,10 @@ namespace ServoAnimator
                     T = t,
                     V = v,
                     M = SplineUtil.Tangents(t, v),
+                    BreakAfter = _doc.Commands
+                        .Where(c => c.Servo == s && !c.Control.HasValue && !c.Disable)
+                        .GroupBy(c => ServoCommand.TimeKey(c.OffsetSeconds))
+                        .OrderBy(g => g.Key).Select(g => g.Last().BreakSpline).ToArray(),
                     Min = mn,
                     Max = mx,
                     Visible = !_lineVisible.TryGetValue(s, out bool lv) || lv,
@@ -4458,6 +4481,7 @@ namespace ServoAnimator
                     ?? new GridLength(1, GridUnitType.Star);
                 CommandsEditorColumn.Width = _lastDockedServoColumnWidth;
                 UrdfEditorColumn.Width = _lastDockedUrdfColumnWidth;
+                TopEditorRow.MaxHeight = AudioTimelineRow.MaxHeight = double.PositiveInfinity;
                 TopEditorRow.Height = layout.TopEditorRow?.ToGridLength(new GridLength(250))
                     ?? new GridLength(250);
                 AudioTimelineRow.Height = layout.AudioTimelineRow?.ToGridLength(new GridLength(1, GridUnitType.Star))
@@ -4509,6 +4533,7 @@ namespace ServoAnimator
             // client area, and docked/undocked hosts have their final arrangement.
             _lastTopEditorHeight = layout.TopEditorRow?.ToGridLength(new GridLength(250))
                 ?? new GridLength(250);
+            TopEditorRow.MaxHeight = double.PositiveInfinity;
             TopEditorRow.Height = _lastTopEditorHeight;
             if (!_urdfUndocked)
             {
@@ -5022,6 +5047,7 @@ namespace ServoAnimator
                       .Append(c.NumericValue).Append('|')
                       .Append(c.TextValue ?? "").Append('|')
                       .Append(c.Disable ? '1' : '0').Append('|')
+                      .Append(c.BreakSpline ? '1' : '0').Append('|')
                       .Append(c.Speed).Append('|')
                       .Append(c.ColorHex ?? "").Append('|')
                       .Append(c.Reason ?? "").AppendLine();
@@ -6066,7 +6092,7 @@ namespace ServoAnimator
         {
             EndArrowPrompt();
 
-            var win = new LibraryItemSelectionWindow(LibraryFolder(), manageMode: false)
+            var win = new LibraryItemSelectionWindow(LibraryFolder(), manageMode: false, offerBreakPreceding: true)
             {
                 Owner = this,
             };
@@ -6075,6 +6101,7 @@ namespace ServoAnimator
 
             _pendingLibraryItemPath = win.SelectedLibraryItem.FullPath;
             _pendingLibraryItemDescription = win.SelectedLibraryItem.Description ?? "";
+            _pendingLibraryBreakPreceding = win.BreakPrecedingSplines;
             _libraryPrompt = LibraryPrompt.InsertSequence;
             Waveform.BeginInsertSelect();
         }
@@ -6351,6 +6378,7 @@ namespace ServoAnimator
                 _libraryPrompt = LibraryPrompt.None;
                 _pendingLibraryItemPath = null;
                 _pendingLibraryItemDescription = null;
+                _pendingLibraryBreakPreceding = false;
 
                 if (prompt?.IsVisible == true)
                     prompt.Close();
@@ -6668,13 +6696,15 @@ namespace ServoAnimator
             if (result != MessageBoxResult.OK) return;
 
             string path = _pendingLibraryItemPath;
-            try { InsertLibrarySequence(path, at); }
+            try { InsertLibrarySequence(path, at, _pendingLibraryBreakPreceding); }
             finally { EndArrowPrompt(); }
         }
 
         /// <summary>Insert the selected library JSON at the blue-arrow time.</summary>
-        private void InsertLibrarySequence(string fileName, double at)
+        private void InsertLibrarySequence(string fileName, double at, bool breakPreceding = false)
         {
+            if (!ApplyOpenCommandEditor()) return;
+            if (IsRunning) PausePlayback();
             try
             {
                 var cmds = AnimationDocument.LoadCommandsOnly(fileName);
@@ -6726,6 +6756,7 @@ namespace ServoAnimator
                 }
 
                 PushUndo($"Insert Library Sequence {Path.GetFileNameWithoutExtension(fileName)}");
+                if (breakPreceding) SplineBreakOperations.BreakPreceding(_doc.Commands, SplineServosEnabled(), at);
                 foreach (var c in cmds)
                 {
                     c.OffsetSeconds = ServoCommand.TimeKey(c.OffsetSeconds + at);

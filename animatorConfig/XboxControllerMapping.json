@@ -77,20 +77,20 @@
         "TriggerButton": ""
       },
       "LeftTrigger": {
-        "Target": "Servo:VentsOpen",
-        "Mode": "Absolute",
-        "Low": 0,
+        "Target": "Servo:IrisClose",
+        "Mode": "Relative",
+        "Low": -100,
         "High": 100,
         "DeadZone": 0.12,
         "SensorScale": 1,
-        "Invert": false,
+        "Invert": true,
         "LibraryName": "",
         "Loop": false,
         "TriggerButton": ""
       },
       "RightTrigger": {
         "Target": "Servo:IrisClose",
-        "Mode": "Absolute",
+        "Mode": "Relative",
         "Low": -100,
         "High": 100,
         "DeadZone": 0.12,
@@ -319,21 +319,21 @@
         "TriggerButton": ""
       },
       "LeftTrigger": {
-        "Target": "",
+        "Target": "Servo:VentsOpen",
         "Mode": "Relative",
-        "Low": -100,
+        "Low": 0,
         "High": 100,
         "DeadZone": 0.12,
         "SensorScale": 1,
-        "Invert": false,
+        "Invert": true,
         "LibraryName": "",
         "Loop": false,
         "TriggerButton": ""
       },
       "RightTrigger": {
-        "Target": "",
+        "Target": "Servo:VentsOpen",
         "Mode": "Relative",
-        "Low": -100,
+        "Low": 0,
         "High": 100,
         "DeadZone": 0.12,
         "SensorScale": 1,

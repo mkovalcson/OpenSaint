@@ -450,11 +450,13 @@
                                 Visibility="Collapsed" ToolTip="Dock the detached URDF beside Commands" Click="DockUrdf_Click"/>
                     </Grid>
                     <Grid DockPanel.Dock="Top" Margin="19,7,23,3">
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="30*"/><ColumnDefinition Width="50*"/><ColumnDefinition Width="9*"/><ColumnDefinition Width="11*"/></Grid.ColumnDefinitions>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="30*"/><ColumnDefinition Width="38"/><ColumnDefinition Width="42"/><ColumnDefinition Width="50*"/><ColumnDefinition Width="36"/><ColumnDefinition Width="48"/></Grid.ColumnDefinitions>
                         <TextBlock Text="CONTROL" Style="{StaticResource SectionCaption}"/>
-                        <TextBlock Grid.Column="1" Text="VALUE" Style="{StaticResource SectionCaption}"/>
-                        <TextBlock Grid.Column="2" Text="SPEED" Style="{StaticResource SectionCaption}"/>
-                        <TextBlock Grid.Column="3" Text="TIME (s)" Style="{StaticResource SectionCaption}" TextAlignment="Right"/>
+                        <TextBlock Grid.Column="1" Text="Spline" FontSize="10" TextAlignment="Center" Foreground="{DynamicResource SecondaryText}"/>
+                        <TextBlock Grid.Column="2" Text="Break&#10;Spline" FontSize="10" TextAlignment="Center" Foreground="{DynamicResource SecondaryText}"/>
+                        <TextBlock Grid.Column="3" Text="VALUE" Style="{StaticResource SectionCaption}"/>
+                        <TextBlock Grid.Column="4" Text="SPEED" Style="{StaticResource SectionCaption}"/>
+                        <TextBlock Grid.Column="5" Text="TIME (s)" Style="{StaticResource SectionCaption}" TextAlignment="Right"/>
                     </Grid>
                     <ListBox x:Name="CommandsAtPointList" Margin="8,2,8,6" SelectionMode="Single"
                              SelectionChanged="CommandsAtPointList_SelectionChanged"
@@ -462,14 +464,21 @@
                              PreviewKeyDown="CommandsAtPointList_PreviewKeyDown"
                              ToolTip="Double-click to edit; Delete removes the selected command" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
 
+                        <ListBox.Resources><BooleanToVisibilityConverter x:Key="CommandFlagVisibility"/></ListBox.Resources>
                         <ListBox.ItemTemplate><DataTemplate>
                             <Grid ToolTip="{Binding Details}" MinHeight="23">
-                                <Grid.ColumnDefinitions><ColumnDefinition Width="30*"/><ColumnDefinition Width="50*"/><ColumnDefinition Width="9*"/><ColumnDefinition Width="11*"/></Grid.ColumnDefinitions>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="30*"/><ColumnDefinition Width="38"/><ColumnDefinition Width="42"/><ColumnDefinition Width="50*"/><ColumnDefinition Width="36"/><ColumnDefinition Width="48"/></Grid.ColumnDefinitions>
                                 <Border Width="3" CornerRadius="1.5" Height="17" Background="{Binding AccentBrush}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="0" Text="{Binding NameText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" FontWeight="SemiBold" Margin="12,0,7,0"/>
-                                <TextBlock Grid.Column="1" Text="{Binding ValueText}" TextWrapping="Wrap" FontFamily="Consolas" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                <TextBlock Grid.Column="2" Text="{Binding SpeedText}" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="3" Text="{Binding TimeText}" TextTrimming="CharacterEllipsis" FontFamily="Consolas" Foreground="{DynamicResource SecondaryText}" TextAlignment="Right" VerticalAlignment="Center"/>
+                                <CheckBox Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" IsChecked="{Binding SplineEnabled, Mode=OneWay}" IsEnabled="{Binding CanSpline}" Click="CommandSpline_Click" ToolTip="Enable this control's spline for the sequence" Visibility="{Binding IsCommandRow, Converter={StaticResource CommandFlagVisibility}}"/>
+                                <CheckBox Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" IsChecked="{Binding BreakSpline, Mode=OneWay}" IsEnabled="{Binding CanBreak}" Click="CommandBreak_Click" ToolTip="Hide the outgoing spline line" Visibility="{Binding IsCommandRow, Converter={StaticResource CommandFlagVisibility}}"/>
+                                <TextBlock Grid.Column="3" Text="{Binding ValueText}" TextWrapping="Wrap" FontFamily="Consolas" VerticalAlignment="Center" Margin="0,0,5,0" Visibility="{Binding IsCommandRow, Converter={StaticResource CommandFlagVisibility}}"/>
+                                <WrapPanel Grid.Column="1" Grid.ColumnSpan="3" VerticalAlignment="Center">
+                                    <Button Content="Clear Breaks" Padding="5,2" Margin="2" FontSize="11" Click="ModifiedBreaks_Click" Tag="Clear" Visibility="{Binding CanClearBreaks, Converter={StaticResource CommandFlagVisibility}}"/>
+                                    <Button Content="Set Breaks" Padding="5,2" Margin="2" FontSize="11" Click="ModifiedBreaks_Click" Tag="Set" Visibility="{Binding CanSetBreaks, Converter={StaticResource CommandFlagVisibility}}"/>
+                                </WrapPanel>
+                                <TextBlock Grid.Column="4" Text="{Binding SpeedText}" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="5" Text="{Binding TimeText}" TextTrimming="CharacterEllipsis" FontFamily="Consolas" Foreground="{DynamicResource SecondaryText}" TextAlignment="Right" VerticalAlignment="Center"/>
                             </Grid>
                         </DataTemplate></ListBox.ItemTemplate>
                     </ListBox>

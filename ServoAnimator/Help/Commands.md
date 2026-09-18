@@ -11,6 +11,7 @@ Double-click a command in Commands at Cursor, a waveform command triangle, or a 
 - Offset
 - Servo or individual child control
 - Spline checkbox (to the left of the Servo picklist)
+- Break Spline checkbox (available when Spline is checked for a numeric group command)
 - Value
 - Disable state
 - Speed
@@ -22,6 +23,31 @@ Changes are staged while the editor is open. **Apply and Close** commits them;
 editor to apply its pending changes. Servo and URDF previews still respond while editing.
 
 Spline is a sequence-wide setting, not a property of one command. All rows for the same servo show the same state. Neck Nod and Neck Tilt share one spline setting. Spline changes are saved with the sequence and participate in Undo/Redo. The checkbox is disabled for RGB/audio and individual child-only targets, which the current spline engine does not interpolate.
+
+**Break Spline** belongs to the individual command. It hides the outgoing line to
+the next point on that control's spline; both command dots remain visible and
+editable. Later segments display normally unless their starting command also has
+Break Spline checked. The shared Neck Nod/Tilt spline follows its next shared
+point. A break on the final point takes effect if another point is added after it.
+This is a display-only break: playback and exported interpolation remain unchanged.
+The flag is saved with the command and retained by copy/paste, Library operations,
+and Undo/Redo. Uncheck it to restore the line.
+
+The Command List also has **Spline** and **Break Spline** checkboxes immediately
+after each control name. Spline affects the whole control's sequence; Break
+Spline affects just that command. Right-click a spline control point without
+dragging to toggle **Break Spline**. Right-drag still moves the point in time.
+
+For selected command triangles, choose **Show all modified controls**. Splined
+controls offer **Set Breaks**, plus **Clear Breaks** when any matching selected
+command has a break. These buttons affect only commands of that exact control
+type at the selected times. Each bulk change is one undoable edit.
+
+**Insert Pose** asks **Break Preceding Splines?**. Yes marks the last enabled
+point strictly before insertion on every active spline, even if the new pose
+does not contain that control. Disabled and individual child-only commands are
+skipped; Neck Nod/Tilt share one preceding point. No leaves existing breaks
+unchanged. The pose and preceding breaks undo together.
 
 ## Redundant commands
 

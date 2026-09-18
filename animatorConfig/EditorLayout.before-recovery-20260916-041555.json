@@ -1,21 +1,21 @@
 {
-  "WindowLeft": -1703,
-  "WindowTop": 170,
-  "WindowWidth": 1250,
-  "WindowHeight": 880,
-  "WindowState": "Maximized",
-  "TimelineLayout": "Combined",
+  "WindowLeft": -171,
+  "WindowTop": 42,
+  "WindowWidth": 1983,
+  "WindowHeight": 1167,
+  "WindowState": "Normal",
+  "TimelineLayout": "SplineTop",
   "TimelineLayoutDefaultsVersion": 1,
   "ServoEditorColumn": {
-    "Value": 837.0521529114817,
+    "Value": 1283.816342743764,
     "Unit": "Star"
   },
   "UrdfEditorColumn": {
-    "Value": 934.9478470885183,
+    "Value": 1066.183657256236,
     "Unit": "Star"
   },
   "TopEditorRow": {
-    "Value": 508.14000000000016,
+    "Value": 1025.1399999999999,
     "Unit": "Pixel"
   },
   "AudioTimelineRow": {
@@ -27,13 +27,13 @@
     "Unit": "Pixel"
   },
   "EmbeddedUrdfHeightStage": 0,
-  "EmbeddedUrdfHeightPixels": 470.10000000000014,
+  "EmbeddedUrdfHeightPixels": 562.1,
   "UrdfCameraYaw": 0,
   "UrdfCameraPitch": 0,
-  "UrdfCameraDistance": 0.9621545837390044,
+  "UrdfCameraDistance": 0.8359444743337793,
   "UrdfUndocked": false,
-  "UrdfWindowLeft": -2914,
-  "UrdfWindowTop": 53,
+  "UrdfWindowLeft": -3175,
+  "UrdfWindowTop": 142,
   "UrdfWindowWidth": 900,
   "UrdfWindowHeight": 782,
   "UrdfWindowFullScreen": false,

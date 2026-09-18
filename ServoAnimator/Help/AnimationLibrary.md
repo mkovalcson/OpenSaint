@@ -1,5 +1,14 @@
 # Animation Library
 
+When inserting onto the timeline, the selection window also offers **Insert
+Pose, Break Preceding Splines** or **Insert Sequence, Break Preceding Splines**.
+This marks the last command strictly before insertion on every enabled spline.
+It does not add missing commands or change existing same-time commands. The
+ordinary insertion button leaves preceding breaks unchanged. The insertion and
+breaks form a single undoable edit. Breaks hide outgoing lines only; playback
+interpolation is unchanged. The blue-arrow Library Sequence workflow also
+retains this choice until the insertion location is confirmed.
+
 The Animation Library stores reusable sequence material that can be inserted into the current animation.
 
 The Animation Library menu provides **Create Library Sequence**, **Insert Library Sequence**, **Manage Library Sequences**, and **Manage Library Poses**. A Library Sequence is reusable multi-time content whose relative command timing is preserved.

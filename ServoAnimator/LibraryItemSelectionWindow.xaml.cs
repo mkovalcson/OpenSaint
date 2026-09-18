@@ -24,15 +24,19 @@ namespace ServoAnimator
         private readonly Dictionary<LibraryItemInfo, string> _savedDescriptions;
 
         public LibraryItemInfo SelectedLibraryItem { get; private set; }
+        public bool BreakPrecedingSplines { get; private set; }
 
         public LibraryItemSelectionWindow(string libraryFolder, bool manageMode,
                                           string itemLabel = "Library Sequence",
                                           bool showAudioFiles = true,
-                                          string selectActionText = null)
+                                          string selectActionText = null, bool offerBreakPreceding = false)
         {
             InitializeComponent();
             HelpSystem.EnableContextHelp(this, "animation-library");
             _manageMode = manageMode;
+            SelectBreakButton.Visibility = !manageMode && offerBreakPreceding ? Visibility.Visible : Visibility.Collapsed;
+            SelectBreakButton.Content = itemLabel.EndsWith("Pose", StringComparison.OrdinalIgnoreCase)
+                ? "Insert Pose, Break Preceding Splines" : "Insert Sequence, Break Preceding Splines";
             _itemLabel = itemLabel;
             _isCommandMode = itemLabel.EndsWith("Command", StringComparison.OrdinalIgnoreCase) ||
                              itemLabel.EndsWith("Pose", StringComparison.OrdinalIgnoreCase);
@@ -115,6 +119,7 @@ namespace ServoAnimator
             ErrorText.Text = item?.ReadError ?? "";
             DeleteButton.IsEnabled = _manageMode && item != null;
             SelectButton.IsEnabled = !_manageMode && item != null && item.IsValid;
+            SelectBreakButton.IsEnabled = SelectButton.IsEnabled;
 
         }
 
@@ -125,6 +130,12 @@ namespace ServoAnimator
         }
 
         private void Select_Click(object sender, RoutedEventArgs e) => SelectCurrent();
+        private void SelectBreak_Click(object sender, RoutedEventArgs e)
+        {
+            if (Current?.IsValid != true) return;
+            BreakPrecedingSplines = true;
+            SelectCurrent();
+        }
 
         private void SelectCurrent()
         {
@@ -245,6 +256,7 @@ namespace ServoAnimator
             CategoryPicker.IsEnabled = SaveCategoryButton.IsEnabled = false;
             DeleteButton.IsEnabled = false;
             SelectButton.IsEnabled = false;
+            SelectBreakButton.IsEnabled = false;
             ErrorText.Foreground = Brushes.IndianRed;
             ErrorText.Text = message;
         }

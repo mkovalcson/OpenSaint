@@ -104,14 +104,14 @@ namespace ServoAnimator
         private readonly Viewport3D _viewport = new();
         private readonly PerspectiveCamera _camera = new();
         private readonly TextBlock _status = new();
-        private readonly TextBlock _fps = new() { Text = "fps: 0", IsHitTestVisible = false };
+        private readonly TextBlock _fps = new() { Text = "fps: 0", Width = 92,
+            ToolTip = "WPF render-callback rate over the last second. Counts each render timestamp once, including when the model is still. This is an estimate, not a measurement of completed GPU frames." };
         private bool _fpsSubscribed;
-        private TimeSpan _fpsLastFrame = TimeSpan.MinValue;
         private readonly System.Diagnostics.Stopwatch _fpsClock = new();
-        private readonly System.Windows.Threading.DispatcherTimer _fpsTimer = new(System.Windows.Threading.DispatcherPriority.Render)
-        { Interval = TimeSpan.FromMilliseconds(250) };
-        private readonly Queue<double> _fpsFrameTimes = new();
-        private (long Pose, int Mouth, int Rgb, bool HasRgb) _fpsLastVisualState;
+        private readonly System.Windows.Threading.DispatcherTimer _fpsTimer = new(System.Windows.Threading.DispatcherPriority.Background)
+        { Interval = TimeSpan.FromMilliseconds(500) };
+        private readonly RenderFrameRateCounter _fpsCounter = new();
+        private int _displayedFps;
         private readonly StackPanel _bottomControls = new();
         private readonly Button _recenterButton = new();
         private readonly Button _cameraMinus90Button = new();
@@ -461,7 +461,7 @@ namespace ServoAnimator
             if (!IsLoaded || !IsVisible) { StopFpsCounter(); return; }
             if (_fpsSubscribed) return;
             _fpsSubscribed = true;
-            _fpsLastVisualState = (_poseRevision, _lastMouthStep, _lastRgbFrameHash, _hasRgbFrameHash);
+            _fpsCounter.Reset();
             _fpsClock.Restart();
             _fpsTimer.Tick += RefreshFps;
             _fpsTimer.Start();
@@ -471,32 +471,27 @@ namespace ServoAnimator
         private void StopFpsCounter()
         {
             if (_fpsSubscribed) CompositionTarget.Rendering -= MeasureFps;
-            _fpsSubscribed = false; _fpsFrameTimes.Clear();
+            _fpsSubscribed = false; _fpsCounter.Reset();
             _fpsTimer.Stop(); _fpsTimer.Tick -= RefreshFps; _fpsClock.Reset();
-            _fpsLastFrame = TimeSpan.MinValue; _fps.Text = "fps: 0";
+            if (_displayedFps != 0) { _displayedFps = 0; _fps.Text = "fps: 0"; }
         }
 
         private void MeasureFps(object sender, EventArgs e)
         {
-            // WPF can raise Rendering more than once for the same frame.
-            if (e is not RenderingEventArgs frame || frame.RenderingTime == _fpsLastFrame) return;
-            _fpsLastFrame = frame.RenderingTime;
-            // Count a changed URDF frame once, regardless of how many joints
-            // changed or how often the rest of the WPF editor renders.
-            var state = (_poseRevision, _lastMouthStep, _lastRgbFrameHash, _hasRgbFrameHash);
-            if (state == _fpsLastVisualState) return;
-            _fpsLastVisualState = state;
-            _fpsFrameTimes.Enqueue(_fpsClock.Elapsed.TotalSeconds);
+            // Observe WPF's cadence independently of which animation callback
+            // ran first, whether a joint moved, or whether only the camera moved.
+            if (e is RenderingEventArgs frame)
+                _fpsCounter.Record(frame.RenderingTime, _fpsClock.Elapsed.TotalSeconds);
         }
 
         private void RefreshFps(object sender, EventArgs e)
         {
-            double seconds = _fpsClock.Elapsed.TotalSeconds;
-            if (seconds <= 0) return;
-            while (_fpsFrameTimes.TryPeek(out double at) && at <= seconds - 1) _fpsFrameTimes.Dequeue();
-            // A rolling second avoids 28/32 oscillation when 30 updates are
-            // displayed in quarter-second reporting intervals.
-            _fps.Text = "fps: " + Math.Round(_fpsFrameTimes.Count / Math.Min(seconds, 1)).ToString("0", CultureInfo.InvariantCulture);
+            int rate = _fpsCounter.Read(_fpsClock.Elapsed.TotalSeconds);
+            // Avoid string allocations and text/layout invalidations for an
+            // unchanged reading. The background timer never advances the model.
+            if (rate == _displayedFps) return;
+            _displayedFps = rate;
+            _fps.Text = "fps: " + rate.ToString(CultureInfo.InvariantCulture);
         }
 
         // ================================================================

@@ -288,11 +288,23 @@ namespace ServoAnimator
         public string SplineToolTip => Command.Control.HasValue
             ? "Spline is a sequence-wide setting for the parent servo group; select the group to change it. Individual child commands are not interpolated."
             : "Enable spline interpolation for this servo throughout the sequence. Neck Nod and Neck Tilt share one spline.";
+        public bool SupportsBreakSpline => SupportsSpline && SplineEnabled && !Command.Disable;
+        public bool BreakSpline
+        {
+            get => Command.BreakSpline;
+            set
+            {
+                if (!SupportsBreakSpline || Command.BreakSpline == value) return;
+                Command.BreakSpline = value; Raise(nameof(BreakSpline));
+            }
+        }
         private void RefreshSplineState()
         {
             Raise(nameof(SplineEnabled));
             Raise(nameof(SupportsSpline));
             Raise(nameof(SplineToolTip));
+            Raise(nameof(SupportsBreakSpline));
+            Raise(nameof(BreakSpline));
         }
 
         // ---- merged Servo picklist ----
@@ -526,7 +538,7 @@ namespace ServoAnimator
         public bool Disable
         {
             get => Command.Disable;
-            set { Command.Disable = value; Raise(nameof(Disable)); }
+            set { Command.Disable = value; Raise(nameof(Disable)); RefreshSplineState(); }
         }
 
         public string Reason
