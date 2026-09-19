@@ -44,18 +44,19 @@ public partial class MainWindow
         window.ShowDialog(); UpdateBackgroundMovieKeys();
     }
     private bool ControllerFocusAllowed(ControllerKind kind) => FocusControlPolicy.Controller(
-        IsActive || _head?.IsActive == true, _focusControl.AllowsController(kind),
-        !IsEnabled || OwnedWindows.Cast<Window>().Any(w => w.IsVisible && w != _head));
+        ControllerWindowActive, _focusControl.AllowsController(kind),
+        !IsEnabled || OwnedWindows.Cast<Window>().Any(ControllerDialogBlocks));
     private bool ControllerOutputAllowed(bool physical)
     {
+        if (_recordingWindow != null && !RecordingController && !_recordingReplayOutput) return false;
         if (_safeguardHolding) return false;
         if (_speedCalibrationBusy) return false;
         if (_apiLibraryOwnsOutput) return ApiLibraryOutputAllowed(physical);
         if (_controllerConfigOpen) return !physical && _controllerMappingWindow?.CanTestWithCurrentFocus != false;
         if (!_enabledController.HasValue) return !physical;
-        return FocusControlPolicy.Controller(IsActive || _head?.IsActive == true,
+        return FocusControlPolicy.Controller(ControllerWindowActive,
             _focusControl.AllowsOutput(_enabledController.Value, physical),
-            !IsEnabled || OwnedWindows.Cast<Window>().Any(w => w.IsVisible && w != _head));
+            !IsEnabled || OwnedWindows.Cast<Window>().Any(ControllerDialogBlocks));
     }
     private void RefreshControllerOutputPermissions()
     {
@@ -71,8 +72,8 @@ public partial class MainWindow
         ForEachHeadView(v => v.RefreshCalibratedMotionPermission());
     }
     private bool PlaybackOutputAllowed(bool physical) => !_speedCalibrationBusy && !_safeguardHolding && (!_controllerPlaybackSource.HasValue || FocusControlPolicy.Controller(
-        IsActive || _head?.IsActive == true, _focusControl.AllowsOutput(_controllerPlaybackSource.Value, physical),
-        !IsEnabled || OwnedWindows.Cast<Window>().Any(w => w.IsVisible && w != _head)));
+        ControllerWindowActive, _focusControl.AllowsOutput(_controllerPlaybackSource.Value, physical),
+        !IsEnabled || OwnedWindows.Cast<Window>().Any(ControllerDialogBlocks)));
     private void SetPlaybackControlSource(ControllerKind? source)
     {
         if (_controllerPlaybackSource != source) Interlocked.Increment(ref _controllerOutputEpoch);
@@ -89,8 +90,8 @@ public partial class MainWindow
     private void EndMovieBackgroundControl()
     { _movieBackgroundArmed = false; _backgroundMovieKeys?.SetEnabled(false); }
     private bool ShouldUseBackgroundMovieKeys() => FocusControlPolicy.Movie(_focusControl.MoviePlayback,
-        _movieBackgroundArmed, BackgroundMovieKeys.IsEditorForeground(),
-        !IsEnabled || OwnedWindows.Cast<Window>().Any(w => w.IsVisible && w != _head),
+        _movieBackgroundArmed && _recordingWindow == null, BackgroundMovieKeys.IsEditorForeground(),
+        !IsEnabled || OwnedWindows.Cast<Window>().Any(ControllerDialogBlocks),
         _movieItems.Count > 0 && MovieTimelinePanel.Visibility == Visibility.Visible);
     private void UpdateBackgroundMovieKeys()
     {

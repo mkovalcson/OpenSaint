@@ -26,6 +26,7 @@ public sealed partial class RobotHeadView
     public bool SnapCalibratedMotion { get; set; }
     public Func<bool> CalibratedMotionAllowed { get; set; }
     public bool UsesCalibratedMotion => _speedCalibration?.UseInUrdf == true;
+    internal ServoSpeed CalibratedSpeedFor(RobotControls control) => _motionSpeeds.GetValueOrDefault(control, ServoSpeed.Default);
 
     public void SetSpeedCalibration(SpeedCalibrationData data)
     {

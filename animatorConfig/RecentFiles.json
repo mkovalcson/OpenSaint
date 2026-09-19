@@ -5,7 +5,12 @@
     {
       "Path": "Projects\\testmovie.json",
       "Kind": "Movie",
-      "LastOpenedUtc": "2026-09-18T12:46:29.8867548Z"
+      "LastOpenedUtc": "2026-09-19T15:13:51.1031891Z"
+    },
+    {
+      "Path": "Projects\\MyProject\\TestRecording_seq.json",
+      "Kind": "Sequence",
+      "LastOpenedUtc": "2026-09-19T14:17:01.6821789Z"
     },
     {
       "Path": "Projects\\Demo1movie.json",

@@ -18,7 +18,37 @@ internal static partial class Program
     {
         try
         {
-            if (args.Contains("--playback-performance"))
+            if (args.Contains("--mapping-files"))
+            {
+                MappingFileChecks();
+                Console.WriteLine($"PASS: {_checks} controller mapping file assertions.");
+            }
+            else if (args.Contains("--persistent-groups"))
+            {
+                PersistentCommandGroupChecks();
+                Console.WriteLine($"PASS: {_checks} persistent command group assertions.");
+            }
+            else if (args.Contains("--controller-recording"))
+            {
+                ControllerRecordingChecks();
+                Console.WriteLine($"PASS: {_checks} controller recording assertions.");
+            }
+            else if (args.Contains("--splitter-rounding"))
+            {
+                SplitterRoundingChecks(args.Contains("--baseline"));
+                Console.WriteLine($"PASS: {_checks} splitter rounding assertions.");
+            }
+            else if (args.Contains("--break-spline"))
+            {
+                BreakSplineChecks();
+                Console.WriteLine($"PASS: {_checks} focused Break Spline assertions.");
+            }
+            else if (args.Contains("--fps-counter"))
+            {
+                FrameRateCounterChecks();
+                Console.WriteLine($"PASS: {_checks} focused FPS counter assertions.");
+            }
+            else if (args.Contains("--playback-performance"))
             {
                 PlaybackPerformanceChecks(args.Contains("--baseline"));
                 Console.WriteLine($"PASS: {_checks} focused playback performance assertions.");

@@ -105,9 +105,10 @@ public partial class MainWindow
                 _motionSpeedIndex[group.Key] = group.Select(p => p.command).Where(c => !c.Disable && c.Speed != ServoSpeed.NoChange).ToArray();
             }
         }
-        foreach (var row in _rows.Where(r => !r.IsTextRow && !_manualPoseOverrides.Contains(r.Servo)))
+        foreach (var row in _rows.Where(r => !r.IsTextRow && !_manualPoseOverrides.Contains(r.Servo) && !RecordingOwns(r.Servo)))
         foreach (var control in ServoConfiguration.ControlsFor(row.Servo))
         {
+            if (RecordingOwns(row.Servo, control)) continue;
             _motionSpeedIndex.TryGetValue(control, out var commands);
             var command = LastCommandAtOrBefore(commands, _cursorTime);
             var speed = command?.Speed ?? (_movieCarryPose?.Speeds.GetValueOrDefault(row.Servo, ServoSpeed.Default) ?? ServoSpeed.Default);

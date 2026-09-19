@@ -130,6 +130,7 @@ public partial class MainWindow
             var available = new List<(ControllerKind Kind, ControllerIntent Intent)>();
             foreach (var kind in Enum.GetValues<ControllerKind>())
             {
+                if (RecordingController && kind != _recordingWindow.Source) { _controllerEngines[kind].Reset(); continue; }
                 if (!_controllerConnections[kind].Enabled || _controllerMappingErrors.ContainsKey(kind) || !ControllerFocusAllowed(kind))
                 { _controllerEngines[kind].Reset(); continue; }
                 var sample = kind == ControllerKind.Xbox ? xbox : steam;
@@ -137,9 +138,10 @@ public partial class MainWindow
             }
             // A fresh Library button takes priority over stick motion and ordinary
             // actions in the same poll. Stop/disable always take first priority.
-            foreach (var entry in available.OrderBy(i => i.Intent.Target is "Action:Stop" or "Action:Disable servos" ? 0 : ControllerTargets.IsLibrary(i.Intent.Target) ? 1 : 2))
+            foreach (var entry in available.OrderBy(i => i.Intent.Target is "Action:Stop" or "Action:Disable servos" ? 0 : i.Intent.Target == ControllerCatalog.RecordingTarget ? 1 : ControllerTargets.IsLibrary(i.Intent.Target) ? 2 : 3))
             {
                 var intent = entry.Intent;
+                if (HandleRecordingIntent(entry.Kind, intent)) continue;
                 if (!intent.Target.StartsWith("Action:") && !ControllerTargets.IsLibrary(intent.Target) && (IsRunning || _controllerLibraryRun != null)) continue;
                 if (_enabledController != entry.Kind || _apiLibraryOwnsOutput)
                 {
@@ -152,6 +154,7 @@ public partial class MainWindow
                 else if (!IsRunning && _controllerLibraryRun == null) ApplyControllerPosition(intent.Target, intent.Value);
             }
             if (!_apiLibraryOwnsOutput) TickControllerLibrary();
+            if (RecordingController) _controllerTake.Sample(RecordingTime);
         }
         finally { RefreshActiveControllerMapping(); RefreshCollisionSafeguardButton(); }
     }
@@ -215,9 +218,9 @@ public partial class MainWindow
         if (_controllerProfiles.Count == 0) LoadControllerProfiles();
         ResetControllerMotion();
         var window = new ControllerMappingWindow(_controllerProfiles[kind], () => _controllers?.Read(kind) ?? new ControllerSample(),
-            profile => { ControllerProfileStore.Save(ConfigRoot, profile); _controllerProfiles[kind] = profile.Clone(); _controllerMappingErrors.Remove(kind); },
+            profile => { _controllerProfiles[kind] = profile.Clone(); _controllerMappingErrors.Remove(kind); },
             ChooseControllerLibrary, ControllerCurrentValue, PreviewControllerConfiguration,
-            () => _focusControl.AllowsOutput(kind, physical: false), AdvanceControllerRelative) { Owner = this };
+            () => _focusControl.AllowsOutput(kind, physical: false), AdvanceControllerRelative, ConfigRoot) { Owner = this };
         _controllerConfigOpen = true;
         _controllerMappingWindow = window;
         try { window.ShowDialog(); }
@@ -243,6 +246,8 @@ public partial class MainWindow
     }
     private double ControllerCurrentValue(string target)
     {
+        if (RecordingController && ControllerTargets.TryServo(target, out var recordingServo, out var recordingChild) && _controllerTake.Touches(recordingServo)
+            && _controllerTake.Current(recordingServo, recordingChild) is double recordedValue) return recordedValue;
         if (_controllerPositions.TryGetValue(target, out double value)) return value;
         if (!ControllerTargets.TryServo(target, out var servo, out var child)) return 0;
         var row = _rows.FirstOrDefault(r => r.Servo == servo);
@@ -251,6 +256,7 @@ public partial class MainWindow
     private double AdvanceControllerRelative(string target, double before, double input, double seconds)
     {
         if (!ControllerTargets.TryServo(target, out var servo, out var child)) return before;
+        if (_recordingWindow != null && (!RecordingController || !_controllerTake.Touches(servo))) return before;
         var view = (_urdfUndocked ? _head?.HeadView : EmbeddedHeadView) ?? EmbeddedHeadView;
         if (view == null) return before;
         ConfigureMotionView(view);
@@ -260,17 +266,28 @@ public partial class MainWindow
     {
         if (_speedCalibrationBusy) return;
         if (!ControllerTargets.TryServo(target, out var servo, out var child)) return;
+        if (RecordingController && !RecordingOwns(servo, child))
+        {
+            if (!child.HasValue)
+                foreach (var member in ServoConfiguration.ControlsFor(servo).Where(c => RecordingOwns(servo, c)))
+                    ApplyControllerPosition($"Child:{servo}:{member}", value);
+            return;
+        }
         var speed = _controllerSpeed;
         if (!AllowControllerTargets(new[] { new ServoCommand { Servo = servo, Control = child, NumericValue = (int)Math.Round(value), Speed = speed } })) return;
+        if (RecordingController)
+        {
+            _controllerTake.Accept(new ServoCommand { Servo = servo, Control = child, NumericValue = (int)Math.Round(value), Speed = speed });
+        }
         _controllerPositions[target] = value;
         int position = (int)Math.Round(value);
         var row = _rows.First(r => r.Servo == servo);
-        _manualPoseOverrides.Add(servo);
+        if (!RecordingController || RecordingOwns(servo)) _manualPoseOverrides.Add(servo);
         if (child.HasValue)
         {
             var childRow = row.Children.FirstOrDefault(c => c.Control == child);
             if (childRow != null) childRow.Value = value;
-            QueueControllerVisual(target, v => { PrepareDirectMotion(v, servo, child, speed, controller: true); v.SetChildServo(servo, child.Value, position); });
+            QueueControllerVisual(target, v => { PrepareDirectMotion(v, servo, child, speed, controller: true); v.SetChildServo(servo, child.Value, position, preserveOtherNeck: true); });
         }
         else { row.Value = value; QueueControllerVisual(target, v => { PrepareDirectMotion(v, servo, null, speed, controller: true); v.SetServo(servo, position); }); }
         if (!ControllerOutputAllowed(true) || !LiveDrive || !_hw.Connected) return;

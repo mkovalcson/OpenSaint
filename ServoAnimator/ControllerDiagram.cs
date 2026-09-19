@@ -255,7 +255,8 @@ public sealed partial class ControllerDiagram : FrameworkElement
             bool live = IsLive(card.Input.Id);
             dc.DrawRoundedRectangle(live ? Brushes.DarkGreen : selected ? _body : new SolidColorBrush(Color.FromRgb(27, 35, 46)), new Pen(live ? Brushes.LimeGreen : selected ? Brushes.Turquoise : _edge, selected || live ? 1.5 : 0.6), card.Rect, 5, 5);
             Label(dc, card.Input.Label, card.Rect.X + 5, card.Rect.Y + 1, 12, Brushes.LightSlateGray, card.Rect.Width - 10);
-            Label(dc, MappingText(card.Input.Id), card.Rect.X + 5, card.Rect.Y + 16, 14, live ? Brushes.White : selected ? Brushes.Turquoise : Brushes.WhiteSmoke, card.Rect.Width - 10);
+            bool recording = Mappings?.TryGetValue(card.Input.Id, out var mapped) == true && mapped.Target == ControllerCatalog.RecordingTarget;
+            Label(dc, MappingText(card.Input.Id), card.Rect.X + 5, card.Rect.Y + 16, 14, recording ? Brushes.Tomato : live ? Brushes.White : selected ? Brushes.Turquoise : Brushes.WhiteSmoke, card.Rect.Width - 10);
             if (ShowLiveValues && card.Input.Analog) DrawLiveValue(dc, card.Input.Id, card.Rect, card.Left);
         }
         if (ReadOnly && cards.Count > 0)
@@ -271,6 +272,7 @@ public sealed partial class ControllerDiagram : FrameworkElement
     {
         if (Mappings == null || !Mappings.TryGetValue(id, out var binding) || string.IsNullOrEmpty(binding.Target)) return "Unassigned";
         string gate = string.IsNullOrEmpty(binding.TriggerButton) ? "" : " · hold " + binding.TriggerButton;
+        if (binding.Target == ControllerCatalog.RecordingTarget) return "REC" + gate;
         if (ControllerTargets.IsLibrary(binding.Target)) return (binding.Target == "Library:pose" ? "Pose: " : "Sequence: ") + binding.LibraryName + (binding.Loop ? " ↻" : "") + gate;
         return binding.Target.Replace("Servo:", "").Replace("Action:", "").Replace("Child:", "").Replace(":", " · ") + gate;
     }

@@ -9,6 +9,10 @@ namespace ServoAnimator
         private readonly Stopwatch _watch = new();
         private double _time, _lastElapsed, _lastDevice = double.NaN;
 
+        // Read-only interpolation between render ticks for input recording.
+        // Reading it must not consume time or skip timeline command dispatch.
+        internal double EstimatedTime => _time + Math.Max(0, _watch.Elapsed.TotalSeconds - _lastElapsed);
+
         public void Start(double time)
         {
             _time = time;

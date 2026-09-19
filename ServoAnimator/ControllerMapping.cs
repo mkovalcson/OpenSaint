@@ -57,7 +57,9 @@ public static class ControllerCatalog
         }
         return list;
     }
-    public static readonly string[] Actions = { "Snapshot", "Disable servos", "Default pose", "Play / pause sequence", "Stop", "Play / pause movie", "Previous sequence", "Next sequence", "Speed Default", "Speed Slow", "Speed Fast", "Speed Crawl", "RGB ClearAll" };
+    public const string RecordingAction = "Start / Stop recording";
+    public const string RecordingTarget = "Action:" + RecordingAction;
+    public static readonly string[] Actions = { "Snapshot", "Disable servos", "Default pose", "Play / pause sequence", "Stop", RecordingAction, "Play / pause movie", "Previous sequence", "Next sequence", "Speed Default", "Speed Slow", "Speed Fast", "Speed Crawl", "RGB ClearAll" };
 }
 
 public sealed class ControllerBinding
@@ -184,19 +186,40 @@ public static class ControllerProfileStore
 {
     private static readonly JsonSerializerOptions Json = new() { WriteIndented = true, Converters = { new JsonStringEnumConverter() } };
     public static string PathFor(string root, ControllerKind kind) => Path.Combine(root, kind + "ControllerMapping.json");
+    private static string SelectionPath(string root, ControllerKind kind) => Path.Combine(root, kind + "ControllerMapping.selected.txt");
+    public static string ActivePath(string root, ControllerKind kind)
+    {
+        string selection = SelectionPath(root, kind);
+        if (File.Exists(selection))
+        {
+            string path = File.ReadAllText(selection).Trim();
+            if (Path.IsPathFullyQualified(path) && File.Exists(path)) return path;
+        }
+        return PathFor(root, kind);
+    }
     public static ControllerProfile Load(string root, ControllerKind kind)
     {
-        string path = PathFor(root, kind);
+        string path = ActivePath(root, kind);
         if (!File.Exists(path)) return ControllerProfile.Defaults(kind);
+        return LoadFile(path, kind);
+    }
+    public static ControllerProfile LoadFile(string path, ControllerKind kind)
+    {
         var profile = JsonSerializer.Deserialize<ControllerProfile>(File.ReadAllText(path), Json) ?? throw new InvalidDataException("Empty controller mapping.");
         if (profile.Kind != kind) throw new InvalidDataException("Controller mapping has the wrong device type.");
         profile.Validate(); return profile;
     }
     public static void Save(string root, ControllerProfile profile)
+        => SaveSelected(root, profile, ActivePath(root, profile.Kind));
+    public static void SaveSelected(string root, ControllerProfile profile, string path)
     {
         profile.Validate(); Directory.CreateDirectory(root);
-        string path = PathFor(root, profile.Kind), temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        path = Path.GetFullPath(path);
+        string temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try { File.WriteAllText(temp, JsonSerializer.Serialize(profile, Json)); File.Move(temp, path, true); }
         finally { if (File.Exists(temp)) File.Delete(temp); }
+        string selection = SelectionPath(root, profile.Kind), selectionTemp = selection + ".tmp";
+        try { File.WriteAllText(selectionTemp, path); File.Move(selectionTemp, selection, true); }
+        finally { if (File.Exists(selectionTemp)) File.Delete(selectionTemp); }
     }
 }

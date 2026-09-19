@@ -7,15 +7,15 @@
   "TimelineLayout": "Combined",
   "TimelineLayoutDefaultsVersion": 1,
   "ServoEditorColumn": {
-    "Value": 837.0521529114817,
+    "Value": 435.0521529114794,
     "Unit": "Star"
   },
   "UrdfEditorColumn": {
-    "Value": 934.9478470885183,
+    "Value": 1336.9478470885206,
     "Unit": "Star"
   },
   "TopEditorRow": {
-    "Value": 508.14000000000016,
+    "Value": 459.1400000000001,
     "Unit": "Pixel"
   },
   "AudioTimelineRow": {
@@ -27,7 +27,7 @@
     "Unit": "Pixel"
   },
   "EmbeddedUrdfHeightStage": 0,
-  "EmbeddedUrdfHeightPixels": 470.10000000000014,
+  "EmbeddedUrdfHeightPixels": 760.1000000000001,
   "UrdfCameraYaw": 0,
   "UrdfCameraPitch": 0,
   "UrdfCameraDistance": 0.9621545837390044,

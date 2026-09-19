@@ -8,6 +8,38 @@ namespace ServoAnimator
     public partial class MainWindow
     {
         private AnimationDocument _markerSelectionDocument;
+        private IEnumerable<ServoCommand> VisibleCommands => _doc.Commands.Where(c => !_doc.HiddenCommandGroups.Contains(c.GroupId));
+        private void EnsureCommandGroupNumbers()
+        {
+            _doc.CommandGroupNumbers ??= new();
+            int next = _doc.CommandGroupNumbers.Values.DefaultIfEmpty(0).Max() + 1;
+            foreach (string id in _doc.Commands.Select(c => c.GroupId).Where(id => !string.IsNullOrEmpty(id)).Distinct())
+                if (!_doc.CommandGroupNumbers.ContainsKey(id)) _doc.CommandGroupNumbers[id] = next++;
+        }
+        internal static SkiaSharp.SKColor CommandGroupColor(int number)
+            => SkiaSharp.SKColor.FromHsv((float)((157 + (number - 1) * 137.507764) % 360), 78, 84);
+        private void RefreshHiddenGroupButtons()
+        {
+            HiddenGroupButtons.Children.Clear();
+            foreach (var id in _doc.HiddenCommandGroups.Where(id => _doc.Commands.Any(c => c.GroupId == id))
+                .OrderBy(id => _doc.CommandGroupNumbers[id]))
+            {
+                int number = _doc.CommandGroupNumbers[id];
+                var color = CommandGroupColor(number);
+                var button = new Button { Content = $"Show Group {number}", Margin = new Thickness(5, 0, 0, 0),
+                    Padding = new Thickness(9, 5, 9, 5), Background = new SolidColorBrush(Color.FromRgb(color.Red, color.Green, color.Blue)),
+                    Foreground = Brushes.Black };
+                button.Click += (_, _) => { if (IsRunning) PausePlayback(); _doc.HiddenCommandGroups.Remove(id); RefreshGroupVisibility(); };
+                HiddenGroupButtons.Children.Add(button);
+            }
+        }
+        private void RefreshGroupVisibility()
+        {
+            Waveform.SetMarkerSelection(Array.Empty<double>());
+            _rgbSimulator.Invalidate();
+            ClearCollisionCommandWarnings();
+            RebuildSplineData(); RefreshMarkers(); RefreshAudioClips(); UpdateCommandsAtPointList();
+        }
         private bool _showModifiedControls;
         private bool _updatingModifiedControls;
 
@@ -49,6 +81,13 @@ namespace ServoAnimator
 
         private void SyncCommandGroupSelection()
         {
+            EnsureCommandGroupNumbers();
+            Waveform.GroupColors = VisibleCommands.Where(c => !string.IsNullOrEmpty(c.GroupId))
+                .GroupBy(c => ServoCommand.TimeKey(c.OffsetSeconds)).ToDictionary(g => g.Key,
+                    g => CommandGroupColor(_doc.CommandGroupNumbers[g.First().GroupId]));
+            RefreshHiddenGroupButtons();
+            Waveform.CommandGroups = VisibleCommands.Where(c => !string.IsNullOrEmpty(c.GroupId)).GroupBy(c => c.GroupId)
+                .Select(g => g.Select(c => ServoCommand.TimeKey(c.OffsetSeconds)).Distinct().ToArray()).ToArray();
             var keys = ReferenceEquals(_markerSelectionDocument, _doc)
                 ? Waveform.SelectedMarkers.Intersect(Waveform.Markers).ToArray() : Array.Empty<double>();
             _markerSelectionDocument = _doc;
@@ -58,7 +97,7 @@ namespace ServoAnimator
         private List<ServoCommand> SelectedGroupCommands()
         {
             var keys = Waveform.SelectedMarkers.ToHashSet();
-            return _doc.Commands.Where(c => keys.Contains(ServoCommand.TimeKey(c.OffsetSeconds))).ToList();
+            return VisibleCommands.Where(c => keys.Contains(ServoCommand.TimeKey(c.OffsetSeconds))).ToList();
         }
 
         private void ShowSelectedCommandMenu()
@@ -71,6 +110,22 @@ namespace ServoAnimator
                 menu.Items.Add(item);
             }
             Item("Uniform offset…", UniformSelectedCommands);
+            bool grouped = SelectedGroupCommands().Any(c => !string.IsNullOrEmpty(c.GroupId));
+            if (grouped)
+            {
+                EnsureCommandGroupNumbers();
+                menu.Items.Add(new MenuItem { Header = string.Join(", ", SelectedGroupCommands()
+                    .Where(c => !string.IsNullOrEmpty(c.GroupId)).Select(c => _doc.CommandGroupNumbers[c.GroupId])
+                    .Distinct().OrderBy(n => n).Select(n => $"Group {n}")), IsEnabled = false });
+            }
+            Item(grouped ? "Ungroup Commands" : "Group Commands", () => SetPersistentCommandGroup(!grouped));
+            if (grouped) Item("Hide Group", () =>
+            {
+                if (!PrepareGroupEdit()) return;
+                foreach (var id in SelectedGroupCommands().Select(c => c.GroupId).Where(id => !string.IsNullOrEmpty(id)))
+                    _doc.HiddenCommandGroups.Add(id);
+                RefreshGroupVisibility();
+            });
             Item("Repeat…", RepeatSelectedCommands);
             Item("Show all modified controls", () =>
             {
@@ -143,6 +198,25 @@ namespace ServoAnimator
             if (!ApplyOpenCommandEditor()) return false;
             if (IsRunning) PausePlayback();
             return Waveform.SelectedMarkers.Count > 0 && SelectedGroupCommands().Count > 0;
+        }
+
+        private void SetPersistentCommandGroup(bool group)
+        {
+            if (!PrepareGroupEdit()) return;
+            var selected = SelectedGroupCommands();
+            var ids = selected.Where(c => !string.IsNullOrEmpty(c.GroupId)).Select(c => c.GroupId).ToHashSet();
+            string id = group ? Guid.NewGuid().ToString("N") : "";
+            ApplySelectedGroupEdit(group ? "Group Commands" : "Ungroup Commands", () =>
+            {
+                foreach (var c in _doc.Commands.Where(c => selected.Contains(c) || ids.Contains(c.GroupId))) c.GroupId = id;
+            }, Array.Empty<double>());
+        }
+
+        private void DeleteSelectedCommandGroup()
+        {
+            if (!PrepareGroupEdit()) return;
+            var selected = SelectedGroupCommands();
+            ApplySelectedGroupEdit($"Delete {selected.Count} selected commands", () => _doc.Commands.RemoveAll(selected.Contains), Array.Empty<double>());
         }
 
         private void ApplySelectedGroupEdit(string description, Action edit, IEnumerable<double> resultingSelection)

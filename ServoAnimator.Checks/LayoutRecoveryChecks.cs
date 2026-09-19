@@ -11,6 +11,11 @@ internal static partial class Program
         var app = new App(); app.InitializeComponent();
         var window = new MainWindow();
         var root = (DockPanel)window.Content;
+        window.Content = null; // Attach the visuals without running MainWindow's hardware startup.
+        using var presentation = new System.Windows.Interop.HwndSource(new System.Windows.Interop.HwndSourceParameters("Layout checks")
+        { Width = 1250, Height = 800, WindowStyle = unchecked((int)0x80000000) });
+        presentation.RootVisual = root;
+        root.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
         var grid = (Grid)window.FindName("EditorTimelineGrid");
         var top = (RowDefinition)window.FindName("TopEditorRow");
         var audio = (RowDefinition)window.FindName("AudioTimelineRow");
@@ -19,6 +24,15 @@ internal static partial class Program
         var divider = (GridSplitter)window.FindName("CommandsTimelineSplitter");
         var robot = (Border)window.FindName("RobotHeadEmbeddedBorder");
         const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        var doc = new AnimationDocument { Commands = Enum.GetValues<ServoNames>()
+            .Select(servo => new ServoCommand { Servo = servo, OffsetSeconds = 0, NumericValue = 0 }).ToList() };
+        typeof(MainWindow).GetField("_doc", flags).SetValue(window, doc);
+        typeof(MainWindow).GetMethod("UpdateCommandsAtPointList", flags).Invoke(window, null);
+        typeof(MainWindow).GetMethod("ApplySplineSettings", flags).Invoke(window, new object[] { new[] { ServoNames.NeckTurn } });
+        typeof(MainWindow).GetMethod("RebuildSplineData", flags).Invoke(window, null);
+        var wave = (WaveformView)window.FindName("Waveform");
+        var peaks = Enumerable.Range(0, 1000).Select(i => (float)Math.Sin(i * .03)).ToArray();
+        wave.SetAudio(peaks.Select(v => -Math.Abs(v)).ToArray(), peaks.Select(Math.Abs).ToArray(), .01, 10);
         var fit = typeof(MainWindow).GetMethod("FitEditorPanels", flags);
         var controller = (TimelineLayoutController)typeof(MainWindow).GetField("_timelineLayout", flags).GetValue(window);
         void Arrange(int width, int height)
@@ -49,6 +63,18 @@ internal static partial class Program
                 Check(bottom <= viewport + 1 && audioArea.ActualHeight >= audio.MinHeight - 1,
                     $"Sequence timeline fits the usable viewport: {mode}, controller={activeController}, {size}, bottom={bottom}, viewport={viewport}");
                 Check(splitterBottom <= size.Item2 && divider.ActualHeight >= 7, "Upper-panel resize divider stays reachable");
+                foreach (double delta in new[] { 10.0, 100, 1000, -10, -1000, 50 })
+                {
+                    typeof(GridSplitter).GetMethod("InitializeData", flags).Invoke(divider, new object[] { false });
+                    for (int step = 0; step < 3; step++)
+                    {
+                        typeof(GridSplitter).GetMethod("MoveSplitter", flags).Invoke(divider, new object[] { 0.0, delta });
+                        Arrange(size.Item1, size.Item2);
+                        root.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+                    }
+                    Check(top.ActualHeight >= top.MinHeight - 1 && top.ActualHeight <= top.MaxHeight + 1,
+                        $"Dragging the command divider stays bounded: {mode}, {size}, delta={delta}");
+                }
             }
         }
         top.Height = new GridLength(1500); audio.Height = new GridLength(1200); spline.Height = new GridLength(900);

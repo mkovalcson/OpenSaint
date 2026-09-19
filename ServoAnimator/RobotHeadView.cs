@@ -2510,10 +2510,51 @@ namespace ServoAnimator
                             double noseBody = 0,
                             double noseBasket = 0,
                             double leftEyePop = 0, double rightEyePop = 0,
-                            double whipRotate = 0, double mfrRotate = 0)
+                            double whipRotate = 0, double mfrRotate = 0,
+                            Func<ServoNames, RobotControls?, bool> includeControl = null)
         {
             if (_scene == null || (!_urdfDriveEnabled && !_poseInternalUpdate)) return;
             if (_poseEditEnabled && !_poseInternalUpdate) return;
+
+            // During an overdub the timeline owns only the unarmed controls.
+            // Do not even enqueue calibrated targets for the controller-owned
+            // joints, or playback will fight the controller on every frame.
+            if (includeControl != null)
+            {
+                long before = _poseRevision; _suppressCollisionRefresh = true;
+                try
+                {
+                    void Child(ServoNames s, RobotControls c, double value) { if (includeControl(s, c)) SetChildServo(s, c, value, preserveOtherNeck: true); }
+                    void Gang(ServoNames s, double value)
+                    {
+                        if (ServoConfiguration.ControlsFor(s).All(c => includeControl(s, c))) SetServo(s, value);
+                        else foreach (var c in ServoConfiguration.ControlsFor(s)) Child(s, c, value);
+                    }
+                    Child(ServoNames.EyesHorizontalRight, RobotControls.RightLensHorizontal, eyeHLeft);
+                    Child(ServoNames.EyesHorizontalRight, RobotControls.LeftLensHorizontal, eyeHRight);
+                    Child(ServoNames.EyesVerticalUp, RobotControls.RightLensVertical, eyeVLeft);
+                    Child(ServoNames.EyesVerticalUp, RobotControls.LeftLensVertical, eyeVRight);
+                    Child(ServoNames.IrisClose, RobotControls.RightIris, irisLeft);
+                    Child(ServoNames.IrisClose, RobotControls.LeftIris, irisRight);
+                    Child(ServoNames.FlapsOpen, RobotControls.BrowRightTopOpen, topFlapLeft);
+                    Child(ServoNames.FlapsOpen, RobotControls.BrowLeftTopOpen, topFlapRight);
+                    Child(ServoNames.FlapsOpen, RobotControls.BrowRightBottomOpen, bottomFlapLeft);
+                    Child(ServoNames.FlapsOpen, RobotControls.BrowLeftBottomOpen, bottomFlapRight);
+                    Child(ServoNames.FlapTiltUp, RobotControls.BrowRightTopTilt, tiltLeft);
+                    Child(ServoNames.FlapTiltUp, RobotControls.BrowLeftTopTilt, tiltRight);
+                    Child(ServoNames.VentsOpen, RobotControls.RightEyeVent, ventsLeft);
+                    Child(ServoNames.VentsOpen, RobotControls.LeftEyeVent, ventsRight);
+                    Gang(neckOwner == ServoNames.NeckTiltRight ? ServoNames.NeckTiltRight : ServoNames.NeckNodUp, neckOwner == ServoNames.NeckTiltRight ? neckTilt : neckNod);
+                    Gang(ServoNames.NeckTurn, neckTurn);
+                    Gang(ServoNames.Whip_Antenna_RaiseLower, whip); Gang(ServoNames.Whip_Antenna_Rotate, whipRotate);
+                    Gang(ServoNames.Microphone_RaiseLower, mic); Gang(ServoNames.MFR_UpDown, mfr); Gang(ServoNames.MFR_Rotate, mfrRotate);
+                    Gang(ServoNames.NoseBody, noseBody); Gang(ServoNames.NoseBasket, noseBasket);
+                    Gang(ServoNames.LeftEyePop, leftEyePop); Gang(ServoNames.RightEyePop, rightEyePop);
+                }
+                finally { _suppressCollisionRefresh = false; }
+                if (_poseRevision != before) RefreshCollisionState(allowThrottle: true);
+                return;
+            }
 
             if (!_poseInternalUpdate)
                 CaptureIncomingPose(eyeHLeft, eyeHRight, eyeVLeft, eyeVRight,
@@ -2567,7 +2608,7 @@ namespace ServoAnimator
                 UpdatePoseOverlayLayout();
         }
 
-        public void SetChildServo(ServoNames parentServo, RobotControls control, double value)
+        public void SetChildServo(ServoNames parentServo, RobotControls control, double value, bool preserveOtherNeck = false)
         {
             if (_scene == null || (!_urdfDriveEnabled && !_poseInternalUpdate)) return;
             if (_poseEditEnabled && !_poseInternalUpdate) return;
@@ -2584,9 +2625,16 @@ namespace ServoAnimator
             {
                 if (_activeNeckMode != parentServo)
                 {
+                    double ConvertNeck(RobotControls member, double current)
+                    {
+                        var entry = _servoConfiguration.Get(member);
+                        return preserveOtherNeck && _activeNeckMode.HasValue && entry != null
+                            ? ServoPulseMapping.ToLogical(_servoConfiguration, parentServo, entry, ServoPulseMapping.ToPulse(_servoConfiguration, _activeNeckMode.Value, entry, current)) : 0;
+                    }
+                    double left = ConvertNeck(RobotControls.NeckTiltLeft, _neckLeft), right = ConvertNeck(RobotControls.NeckTiltRight, _neckRight);
                     _activeNeckMode = parentServo;
-                    _neckLeft = UsesCalibratedMotion ? CurrentNeckMotion(parentServo, RobotControls.NeckTiltLeft) : 0;
-                    _neckRight = UsesCalibratedMotion ? CurrentNeckMotion(parentServo, RobotControls.NeckTiltRight) : 0;
+                    _neckLeft = UsesCalibratedMotion ? CurrentNeckMotion(parentServo, RobotControls.NeckTiltLeft) : left;
+                    _neckRight = UsesCalibratedMotion ? CurrentNeckMotion(parentServo, RobotControls.NeckTiltRight) : right;
                 }
 
                 value = CalibratedControlValue(parentServo, control, value);

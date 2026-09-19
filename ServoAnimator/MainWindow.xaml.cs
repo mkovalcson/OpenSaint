@@ -368,6 +368,7 @@ namespace ServoAnimator
         {
             get
             {
+                if (RecordingController) return _recordingLimit;
                 if (_moviePlaybackActive && _moviePlaybackIndex >= 0 &&
                     _moviePlaybackIndex < _movieItems.Count &&
                     _movieItems[_moviePlaybackIndex].IsLooping &&
@@ -385,7 +386,7 @@ namespace ServoAnimator
 
         /// <summary>Timeline extent for scrolling/clicking/inserting: the
         /// content plus the editable tail.</summary>
-        private double TimelineDuration => ContentEnd + TimelineTailSeconds;
+        private double TimelineDuration => Math.Max(ContentEnd + TimelineTailSeconds, RecordingController ? _recordingLimit : 0);
 
         public MainWindow()
         {
@@ -572,6 +573,7 @@ namespace ServoAnimator
 
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
+            if (_recordingWindow != null) { e.Cancel = true; _recordingWindow.ShowReview(); return; }
             if (!ApplyOpenCommandEditor()) e.Cancel = true;
             base.OnClosing(e);
             // Window/owned-window bounds must be captured before WPF tears down
@@ -1281,6 +1283,7 @@ namespace ServoAnimator
                 UpdateTimeText();
                 UpdateServoState(_cursorTime);
                 SyncMovieCursorToSequencePlayback(_cursorTime);
+                if (RecordingController) { StopControllerRecording("Maximum take length reached."); return; }
                 if (!ContinueMoviePlaybackAfterSequenceEnd())
                     StopPlayback(cancelPending: false);
                 return;
@@ -1546,7 +1549,7 @@ namespace ServoAnimator
             var missing = new List<string>();
             var clips = new List<AudioClipVisual>();
 
-            foreach (var c in _doc.Commands.Where(c => c.Servo == ServoNames.Play))
+            foreach (var c in VisibleCommands.Where(c => c.Servo == ServoNames.Play))
             {
                 float[] mn = null, mx = null;
                 double dur = 0;
@@ -1749,7 +1752,7 @@ namespace ServoAnimator
                 // Staged values remain together until another time is
                 // selected, playback begins, or they are generated into
                 // timeline commands.
-                if (row.IsEditing || _manualPoseOverrides.Contains(row.Servo)) continue;
+                if (row.IsEditing || _manualPoseOverrides.Contains(row.Servo) || RecordingOwns(row.Servo)) continue;
 
                 _gangCommandIndex.TryGetValue(row.Servo, out ServoCommand[] positions);
                 _gangSpeedCommandIndex.TryGetValue(row.Servo, out ServoCommand[] speeds);
@@ -1817,6 +1820,7 @@ namespace ServoAnimator
             var nodSplineRow = _rows.First(r => r.Servo == ServoNames.NeckNodUp);
             var tiltSplineRow = _rows.First(r => r.Servo == ServoNames.NeckTiltRight);
             if ((nodSplineRow.SplineEnabled || tiltSplineRow.SplineEnabled) &&
+                !RecordingOwns(ServoNames.NeckNodUp) &&
                 !_manualPoseOverrides.Contains(ServoNames.NeckNodUp) &&
                 !_manualPoseOverrides.Contains(ServoNames.NeckTiltRight))
             {
@@ -2254,7 +2258,9 @@ namespace ServoAnimator
                 leftEyePop: EyePopValue(leftPop),
                 rightEyePop: EyePopValue(rightPop),
                 whipRotate: RV(ServoNames.Whip_Antenna_Rotate),
-                mfrRotate: RV(ServoNames.MFR_Rotate));
+                mfrRotate: RV(ServoNames.MFR_Rotate),
+                includeControl: RecordingController ? (s, c) => !RecordingOwns(s, c) : null);
+                ApplyTimelineNeckChildren(headView);
             }
 
             if (EmbeddedHeadView != null) ApplyPose(EmbeddedHeadView);
@@ -2263,7 +2269,7 @@ namespace ServoAnimator
             // RGB rings are evaluated from the sequence playhead rather than a
             // separate wall-clock timer. This makes the URDF match Arduino
             // timing during playback and remain deterministic when scrubbing.
-            var rgbFrame = _rgbSimulator.Evaluate(_doc.Commands, _cursorTime);
+            var rgbFrame = _rgbSimulator.Evaluate(_orderedCommands, _cursorTime);
             ForEachHeadView(v => v.SetRgbRingFrame(rgbFrame));
         }
 
@@ -2417,7 +2423,7 @@ namespace ServoAnimator
         private List<ServoCommand> CommandsAt(double t)
         {
             double key = ServoCommand.TimeKey(t);
-            return _doc.Commands
+            return VisibleCommands
                        .Where(c => ServoCommand.TimeKey(c.OffsetSeconds) == key)
                        .ToList();
         }
@@ -2494,7 +2500,8 @@ namespace ServoAnimator
             int i = CommandsAtPointList.SelectedIndex;
             if (i < 0 || i >= cmds.Count) return;
             PushUndo($"Delete {cmds[i].Servo} command at {_cursorTime:F3} s");
-            _doc.Commands.Remove(cmds[i]);
+            if (!string.IsNullOrEmpty(cmds[i].GroupId)) _doc.Commands.RemoveAll(c => c.GroupId == cmds[i].GroupId);
+            else _doc.Commands.Remove(cmds[i]);
             RefreshAfterEdit();
             ShowStatus("Selected command deleted");
         }
@@ -2502,7 +2509,7 @@ namespace ServoAnimator
         /// <summary>Rebuild the command-marker list from the unique command offsets.</summary>
         private void RefreshMarkers()
         {
-            Waveform.Markers = _doc.Commands
+            Waveform.Markers = VisibleCommands
                 .Select(c => ServoCommand.TimeKey(c.OffsetSeconds))
                 .Distinct()
                 .OrderBy(t => t)
@@ -2794,8 +2801,9 @@ namespace ServoAnimator
         private void DeleteCommandsAtCursor()
         {
             PushUndo($"Delete commands at {_cursorTime:F3} s");
-            foreach (var c in CommandsAt(_cursorTime))
-                _doc.Commands.Remove(c);
+            var selected = CommandsAt(_cursorTime);
+            var ids = selected.Where(c => !string.IsNullOrEmpty(c.GroupId)).Select(c => c.GroupId).ToHashSet();
+            _doc.Commands.RemoveAll(c => selected.Contains(c) || ids.Contains(c.GroupId));
             RefreshAfterEdit();
         }
 
@@ -3399,7 +3407,7 @@ namespace ServoAnimator
         /// timeline, deduped per millisecond time key, sorted by time.</summary>
         private (double[] T, double[] V) SplinePoints(ServoNames servo)
         {
-            var pts = _doc.Commands
+            var pts = VisibleCommands
                 .Where(c => c.Servo == servo && !c.Control.HasValue && !c.Disable)
                 .GroupBy(c => ServoCommand.TimeKey(c.OffsetSeconds))
                 .OrderBy(g => g.Key)
@@ -3465,7 +3473,7 @@ namespace ServoAnimator
 
         private void RebuildPlaybackIndexes()
         {
-            _orderedCommands = _doc.Commands
+            _orderedCommands = VisibleCommands
                 .Select((command, index) => (command, index))
                 .OrderBy(x => x.command.OffsetSeconds)
                 .ThenBy(x => x.index)
@@ -3602,7 +3610,7 @@ namespace ServoAnimator
                     T = t,
                     V = v,
                     M = SplineUtil.Tangents(t, v),
-                    BreakAfter = _doc.Commands
+                    BreakAfter = VisibleCommands
                         .Where(c => c.Servo == s && !c.Control.HasValue && !c.Disable)
                         .GroupBy(c => ServoCommand.TimeKey(c.OffsetSeconds))
                         .OrderBy(g => g.Key).Select(g => g.Last().BreakSpline).ToArray(),
@@ -4051,6 +4059,7 @@ namespace ServoAnimator
 
                 var export = new AnimationDocument
                 {
+                    CommandGroupNumbers = new(_doc.CommandGroupNumbers),
                     Description = _doc.Description,
                     AudioFile = _doc.AudioFile,
                     AudioFilePath = _doc.AudioFilePath,
@@ -5048,6 +5057,7 @@ namespace ServoAnimator
                       .Append(c.TextValue ?? "").Append('|')
                       .Append(c.Disable ? '1' : '0').Append('|')
                       .Append(c.BreakSpline ? '1' : '0').Append('|')
+                      .Append(c.GroupId).Append('|')
                       .Append(c.Speed).Append('|')
                       .Append(c.ColorHex ?? "").Append('|')
                       .Append(c.Reason ?? "").AppendLine();
@@ -5853,7 +5863,7 @@ namespace ServoAnimator
 
             var neck = SharedNeckStateAt(_cursorTime);
             pose.NeckOwner = neck.Owner ?? _movieCarryPose?.NeckOwner;
-            pose.RgbFrame = _rgbSimulator.Evaluate(_doc.Commands, _cursorTime);
+            pose.RgbFrame = _rgbSimulator.Evaluate(_orderedCommands, _cursorTime);
             _movieCarryPose = pose;
             _rgbSimulator.SetInitialFrame(pose.RgbFrame);
         }
@@ -6143,6 +6153,17 @@ namespace ServoAnimator
         /// </summary>
         private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
         {
+            if (_recordingWindow == null && e.Key == Key.Delete && Waveform.SelectedMarkers.Count > 0 && IsWaveformMouseSource(Keyboard.FocusedElement as DependencyObject))
+            { DeleteSelectedCommandGroup(); e.Handled = true; return; }
+            if (_recordingWindow != null)
+            {
+                if (e.Key == Key.Escape)
+                {
+                    if (RecordingController) StopControllerRecording("Recording stopped.");
+                    else _recordingWindow.ShowConfiguration();
+                }
+                e.Handled = true; return;
+            }
             if (e.Key == Key.Escape && _libraryPrompt != LibraryPrompt.None)
             {
                 EndArrowPrompt();
@@ -6887,7 +6908,7 @@ namespace ServoAnimator
             if (servo == ServoNames.RGBCommand)
             {
                 _rgbSimulator.Invalidate();
-                var frame = _rgbSimulator.Evaluate(_doc.Commands, _cursorTime);
+                var frame = _rgbSimulator.Evaluate(_orderedCommands, _cursorTime);
                 ForEachHeadView(v => v.SetRgbRingFrame(frame));
             }
 
@@ -6903,6 +6924,8 @@ namespace ServoAnimator
         /// </summary>
         public void PlayBackServoValues(ServoCommand[] commandsAtOffset)
         {
+            if (RecordingController) commandsAtOffset = commandsAtOffset.SelectMany(_controllerTake.Unrecorded).ToArray();
+            if (commandsAtOffset.Length == 0) return;
             if (_controllerPlaybackSource.HasValue && !AllowControllerTargets(commandsAtOffset)) { PausePlayback(); return; }
             // Drive the physical robot during playback when Live Drive is On.
             if (LiveDrive && _hw.Connected && PlaybackOutputAllowed(true))

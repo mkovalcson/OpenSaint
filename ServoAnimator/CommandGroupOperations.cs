@@ -7,9 +7,15 @@ namespace ServoAnimator
             var source = commands.ToList();
             if (source.Count == 0) return new();
             double first = source.Min(c => c.OffsetSeconds);
+            var groupIds = new Dictionary<string, string>();
             return source.Select(c =>
             {
                 var copy = c.Clone();
+                if (!string.IsNullOrEmpty(copy.GroupId))
+                {
+                    if (!groupIds.ContainsKey(copy.GroupId)) groupIds[copy.GroupId] = Guid.NewGuid().ToString("N");
+                    copy.GroupId = groupIds[copy.GroupId];
+                }
                 copy.OffsetSeconds = ServoCommand.TimeKey(time + c.OffsetSeconds - first);
                 return copy;
             }).ToList();
@@ -39,13 +45,21 @@ namespace ServoAnimator
             double first = selected.Min(c => c.OffsetSeconds), last = selected.Max(c => c.OffsetSeconds);
             var result = new List<ServoCommand>();
             for (int repeat = 1; repeat <= repetitions; repeat++)
+            {
+                var groupIds = new Dictionary<string, string>();
                 foreach (var command in selected)
                 {
                     var copy = command.Clone();
+                    if (!string.IsNullOrEmpty(copy.GroupId))
+                    {
+                        if (!groupIds.ContainsKey(copy.GroupId)) groupIds[copy.GroupId] = Guid.NewGuid().ToString("N");
+                        copy.GroupId = groupIds[copy.GroupId];
+                    }
                     copy.OffsetSeconds = ServoCommand.TimeKey(command.OffsetSeconds + repeat * (last - first + gap));
                     if (!double.IsFinite(copy.OffsetSeconds)) throw new ArgumentException("The resulting command time is too large.");
                     result.Add(copy);
                 }
+            }
             return result;
         }
     }

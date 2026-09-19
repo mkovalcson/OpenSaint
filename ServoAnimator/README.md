@@ -6,6 +6,170 @@ format.
 
 ## Build & run
 
+Starting with version 1.29.13, command groups have sequential numbers and distinct
+triangle colors. **Hide Group** temporarily excludes a group from the timeline
+and playback; matching **Show Group #** buttons restore it from the Sequence bar.
+
+Starting with version 1.29.11, **Group Recorded Commands** defaults to checked
+in **Record from Controller**. Keeping a take creates a new group for its recorded
+commands; uncheck the option to keep them ungrouped.
+
+Starting with version 1.29.9, Xbox and Steam mappings support **Open mapping**
+and **Save mapping as** with a separate remembered file for each controller.
+Existing mappings remain the default. **Select child controls** in the recorder
+now toggles child visibility without changing the recording selection.
+
+The release notes below summarize known changes, newest first. Some intermediate
+builds were rebuilds or deployment iterations; the early controller/API rollout
+is grouped where exact patch attribution was not recorded.
+
+Starting with version 1.29.5, **Group Commands** links selected timeline triangles
+into a persistent group, colors them teal, and deselects them. Group members
+move/delete together; **Ungroup Commands** restores independent behavior and
+normal colors. Groups survive save/load and Undo/Redo, and pasted/repeated copies
+receive independent group identities. The recorder only expands parents with
+more than one child control.
+
+Versions 1.29.0 onward rename the recorder **Record from Controller**, simplify
+its explanatory text, and add **Select child controls** beneath parent groups.
+Individual children can be armed, recorded, replayed, and overdubbed without
+recording their siblings. Existing parent commands are split where necessary;
+unrecorded sibling spline motion is retained as sampled child commands.
+
+Starting with version 1.28.16, the controller recorder uses **Ready to Record**
+to arm the chosen controls and hide the configuration window. The controller's
+REC button starts and stops the take; stopping returns to review with **Keep
+Take**, **Replay Recording**, and **Discard / close**. Draft replay plays only
+recorded movements without altering the timeline, cursor, audio, or undo history.
+
+Version 1.28.14 adds the controller action **REC · Start / Stop recording** for
+X-Box and Steam mappings. Mapping diagrams display it as red **REC**. A press
+starts a take using the recorder's selected controls and duration; another press
+stops for review without overwriting a pending take. The sequence Record button
+uses a dark-red background when idle and bright red while recording.
+
+Starting with version 1.28.9, **Record** beside the sequence transport captures an
+X-Box or Steam controller performance from the current cursor. **Overdub selected
+controls** records eyes, brows, neck, or other armed controls while existing audio
+and unarmed movements play. Stop to adjust smoothing and keyframe reduction, then
+keep the take as ordinary editable commands in one undoable change. Discard leaves
+the timeline unchanged. Existing spline settings, speed profiles, controller focus
+routing, and collision safeguards are retained. See [Controller recording](Help/Controllers.md)
+for the workflow and target-capture details.
+
+Versions 1.28.4–1.28.8 add **Spline** and **Break Spline** checkboxes after the
+Control name in the Command List. **Show all modified controls** offers **Set
+Breaks** and, when applicable, **Clear Breaks** for matching commands at the
+selected timeline markers. Right-clicking a spline point offers a Break Spline
+toggle; right-drag still moves its time. **Insert Pose** asks **Break Preceding
+Splines?**, and Library Pose/Sequence browsers offer dedicated insertion buttons
+that break the last preceding point on every enabled spline. Insertion and breaks
+undo together. Break-only edits now participate in unsaved-change detection.
+
+Versions 1.28.1–1.28.3 fix the crash when dragging the divider below Commands,
+including past the embedded URDF's bottom edge. Fractional row sizes and a finite
+maximum on the remaining-space row could trigger a WPF grid-sizing exception.
+Remaining-space rows now size naturally while fixed-height rows retain their
+drag limits and the timelines retain usable minimum heights. Layout restoration
+and switching modes clear obsolete height caps.
+
+Version 1.27.0 adds **Break Spline** beside Spline in Edit Commands. A checked
+command hides its outgoing line to the next point while retaining both editable
+points. Breaks survive save/load, copying, Library operations and Undo/Redo;
+older files default to unbroken lines. This is display-only: playback and exported
+interpolation remain unchanged. Neck Nod/Tilt use their shared physical curve.
+
+Version 1.26.8 replaces the pose-change-based fps count with a rolling estimate
+of unique WPF render callbacks. It uses fixed storage without allocations while
+sampling and updates the whole-number label twice per second without requesting
+extra rendering. Stationary and camera-only views are counted consistently, and
+stalled views decay to zero. The reading estimates render cadence, not confirmed
+GPU-presented frames.
+
+Versions 1.26.6–1.26.7 reduce timeline and collision-warning overhead. Turning
+warnings off clears their state once instead of repeatedly updating the UI;
+unchanged collision highlights retain their materials. Calibrated motion skips
+settled channels and updates only moving parts. Timeline target updates remain
+30 Hz, with calibrated visual motion synchronized to rendering at up to 60 Hz.
+Version 1.26.7 packages these changes in the deployment folder and ZIP.
+
+Version 1.26.5 synchronizes the controller, calibration, editor API and related
+tools into the local repository and creates the portable deployment, including
+the required configuration, model, Help and device support files.
+
+Version 1.26.4 removes duplicate headings from controller configuration windows
+and adds live input highlighting to the main-screen and configuration diagrams:
+buttons, triggers, stick axes, trackpad touch/axes/click/pressure and available
+Steam controls. Configuration labels retain their mapping names, with raw and
+mapped analog values displayed beside them. Steam No MUX retains all four MUX
+banks independently, and disconnecting clears live feedback.
+
+Version 1.26.3 restores the Command List when the URDF is undocked and places a
+connected controller's mapping between Commands and Hardware. Clicking Steam
+while disconnected toggles a display-only Steam mapping preview. Connected
+controllers retain their enable/disable behavior, and controller polling preserves
+the user's pane widths.
+
+Version 1.26.2 repairs main-window sizing so oversized saved panes cannot push
+the sequence timeline out of reach. Hardware and URDF overlays no longer enlarge
+the header rows; pane bounds follow the available viewport and Hardware remains
+scrollable. **Config > Reset Layout** restores a usable arrangement without
+changing animation data or camera settings.
+
+Version 1.25.15 makes Xbox and Steam relative controls use the same Speed
+Calibration profiles as the URDF instead of an independent controller rate.
+Partial input scales the calibrated travel rate, N/C retains the active profile,
+and ganged controls respect the slowest member. Eye Pop uses its extension and
+retraction calibration. Mapping-window testing uses the same speed resolver.
+
+Version 1.25.11 synchronizes queued controller targets and calibrated URDF motion
+in one render loop targeting 60 Hz. Delayed frames use elapsed time rather than
+replaying missed frames. Controller polling remains independent at 25 ms, while
+timeline target updates remain 30 Hz. Docking, pausing and focus changes reset or
+register motion updates appropriately without duplicate subscriptions.
+
+Version 1.25.10 caches collision geometry, permitted pairs, joint relationships
+and baseline exclusions. Collision checks evaluate a separate numerical model
+instead of changing and restoring rendered WPF transforms. Unchanged branches
+reuse their geometry, and safeguard checks stop at the first collision. This
+reduces collision-check work while retaining the existing contact rules and path
+resolution; controller validation remains synchronous in this release.
+
+Versions 1.24–1.25 also deliver the earlier controller, API and calibration
+rollout (individual early patch numbers are not fully recorded):
+
+- A local editor API supports cursor-relative command insertion, spline setup,
+  Library Pose/Sequence insertion, playback, collision-warning control and Movie
+  sequence insertion, removal and reordering. **Create Movie from Audio Files**
+  creates sequences in leading-filename-number order.
+- Xbox and Steam configuration screens provide graphical mappings and four
+  shoulder-selected MUX banks, separate Control/Pose/Sequence choices, immediate
+  Library playback replacement and optional sequence looping. Steam adds No MUX
+  shoulder mapping and optional button gates for gyro/accelerometer input.
+  Configuration windows can test mappings against the URDF.
+- Hardware buttons show controller connection state separately from output
+  enablement and automatically enable newly connected devices unless manually
+  disabled for the session. **Focus Control** independently permits background
+  URDF and Physical Model output, with Movie playback/navigation options.
+- The Stream Deck XL plugin calls the editor API to apply poses, start or loop
+  sequences, choose Library items and stop playback. Pose keys show downsized
+  attached images above their captions. Output follows the editor's hardware and
+  Focus Control settings; Manage Library Poses can attach or replace pose images.
+- **Speed Calibration** provides Servos and Stepper Motors tabs, predicted servo
+  motion from configured Maestro speed/acceleration, regeneration after servo
+  configuration changes, and calibrated URDF motion enabled by default. The
+  unlimited 0/0 estimate is 0.15 seconds per 60 degrees, with 0.10 for Nose Body/
+  Basket and 0.11 for Iris/Vents. Eye Pop defaults to about 1.1 seconds per stroke.
+  Edit Commands can set one speed profile for all commands in the window.
+- **Collision Safeguard** checks controller-driven URDF and physical movement,
+  rejects colliding motion and highlights its button while blocking. The main
+  screen can show the active controller's current MUX mapping in place of Commands.
+  URDF performance work also reduces rendering of internal model geometry and
+  adds an fps indicator above the legend.
+- About/build metadata updates the generation date automatically, increments the
+  minor version on a new build day and the patch for additional builds that day;
+  the major version changes only on request.
+
 Version 1.23.2 pins both antenna control groups to the URDF top edge and moves Eye Pop
 sliders 50 pixels left. Layout preferences now save before window teardown and restore
 after startup layout settles, preserving maximized state, splitter sizes, docked URDF

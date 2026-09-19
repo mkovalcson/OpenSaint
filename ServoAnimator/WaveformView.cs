@@ -266,6 +266,18 @@ namespace ServoAnimator
         public HashSet<double> HighlightedControlMarkers { get; } = new();
         private readonly HashSet<double> _selectedMarkers = new();
         public IReadOnlyCollection<double> SelectedMarkers => _selectedMarkers;
+        public double[][] CommandGroups { get; set; } = Array.Empty<double[]>();
+        public Dictionary<double, SKColor> GroupColors { get; set; } = new();
+        private void ExpandPersistentSelection()
+        {
+            bool changed;
+            do
+            {
+                int count = _selectedMarkers.Count;
+                foreach (var group in CommandGroups) if (group.Any(_selectedMarkers.Contains)) _selectedMarkers.UnionWith(group);
+                changed = count != _selectedMarkers.Count;
+            } while (changed);
+        }
         private double? _selectionAnchor;
         private double _groupDragOffset;
 
@@ -274,6 +286,7 @@ namespace ServoAnimator
             var keys = times.Select(ServoCommand.TimeKey).ToArray();
             _selectedMarkers.Clear();
             _selectedMarkers.UnionWith(keys);
+            ExpandPersistentSelection();
             if (_selectedMarkers.Count == 0) _selectionAnchor = null;
             else if (!_selectionAnchor.HasValue || !_selectedMarkers.Contains(_selectionAnchor.Value))
                 _selectionAnchor = _selectedMarkers.Min();
@@ -294,6 +307,7 @@ namespace ServoAnimator
             {
                 if (_selectedMarkers.Remove(time))
                 {
+                    foreach (var group in CommandGroups.Where(g => g.Contains(time))) _selectedMarkers.ExceptWith(group);
                     if (_selectionAnchor == time)
                         _selectionAnchor = _selectedMarkers.Count == 0 ? null : _selectedMarkers.OrderBy(m => Math.Abs(m - time)).First();
                 }
@@ -308,6 +322,7 @@ namespace ServoAnimator
                 _selectedMarkers.Add(time);
                 _selectionAnchor = time;
             }
+            ExpandPersistentSelection();
             InvalidateVisual();
             MarkerSelectionChanged?.Invoke();
         }
@@ -875,6 +890,7 @@ namespace ServoAnimator
 
             using var selectedOutline = new SKPaint { Color = new SKColor(70, 210, 255), Style = SKPaintStyle.Stroke, StrokeWidth = 3, IsAntialias = true };
             using var purpleFill = new SKPaint { Color = new SKColor(175, 95, 245), IsAntialias = true };
+            using var groupedFill = new SKPaint { Color = new SKColor(40, 205, 160), IsAntialias = true };
             using var purpleOutline = new SKPaint { Color = new SKColor(225, 180, 255), Style = SKPaintStyle.Stroke, StrokeWidth = 3, IsAntialias = true };
 
             const float halfWidth = 6f;
@@ -882,7 +898,8 @@ namespace ServoAnimator
             {
                 bool collision = collisionTimes.Contains(ServoCommand.TimeKey(mv.Time));
                 bool highlighted = HighlightedControlMarkers.Contains(mv.Time);
-                var fill = highlighted ? purpleFill : collision ? collisionPaint : normalPaint;
+                if (GroupColors.TryGetValue(mv.Time, out var groupColor)) groupedFill.Color = groupColor;
+                var fill = GroupColors.ContainsKey(mv.Time) ? groupedFill : highlighted ? purpleFill : collision ? collisionPaint : normalPaint;
                 var outline = highlighted ? purpleOutline : _selectedMarkers.Contains(mv.Time) ? selectedOutline : collision ? collisionOutline : normalOutline;
                 var stem = collision ? collisionStem : normalStem;
 
@@ -1046,6 +1063,12 @@ namespace ServoAnimator
                 RightClicked?.Invoke(TimeAtX(e.GetPosition(this).X));
                 e.Handled = true;
                 return;
+            }
+
+            if (TryHitMarker(e.GetPosition(this), out double groupedHit) && CommandGroups.Any(g => g.Contains(groupedHit)))
+            {
+                SetMarkerSelection(new[] { groupedHit });
+                RightClicked?.Invoke(groupedHit); e.Handled = true; return;
             }
 
             var clipUnder = ClipHandleAt(e.GetPosition(this));

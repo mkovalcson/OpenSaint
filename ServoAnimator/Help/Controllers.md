@@ -1,5 +1,81 @@
 # Xbox and Steam Controller mapping
 
+## Record a controller performance
+
+**Group Recorded Commands** is checked by default. Keeping a take creates one
+new command group containing its recorded commands, so they move and delete
+together. Uncheck it before keeping the take to leave those commands ungrouped.
+
+The setup window is **Record from Controller**. **Select child controls**, beside
+**Clear selection**, toggles individual actuators beneath parents with multiple
+children. Hiding the children preserves their selections.
+Selecting a child unchecks its parent; selecting the parent clears its child
+selections. Use **Clear selection** first when recording only one or two children.
+Parent controller mappings drive only the armed children during a child-only take.
+Unselected siblings continue following the timeline and survive the overdub.
+When an existing splined parent must be split, its unrecorded sibling motion is
+retained as sampled child commands across the take. Single-actuator groups and
+eye-pop sides use their equivalent native channel commands.
+
+A controller button can use **Control → Target control or action → REC · Start /
+Stop recording**. It appears as red **REC** on the mapping diagram. Press once to
+start and again to stop for review, after preparing the take with **Ready to
+Record**. A pending take must be kept or
+discarded before recording another. The sequence **Record** button is dark red
+when idle and bright red while recording.
+
+Click **● Record** beside the sequence playback buttons. Recording begins at
+the current timeline cursor. Select an enabled, connected X-Box or Steam
+controller and a maximum take length (1–300 seconds), then press **Ready to Record**.
+The window disappears; press the selected controller's **REC** button to start,
+then press it again to stop. The window reappears for review. Ready itself does
+not start recording. **Esc** returns to setup while armed, or stops an active take.
+URDF Drive must be on and pose editing must be closed.
+Existing audio and unarmed timeline controls play alongside the performance.
+
+With **Overdub selected controls** checked, use **Clear selection** and arm just
+the controls for this pass—for example, eyes first, then brows or neck. Uncheck
+it to arm all numeric controls. Neck Nod/Tilt share actuators and are armed
+together; the three eye-pop command aliases are also armed together. Library,
+snapshot, and transport shortcuts are suspended during recording. Mapped speed
+buttons, Stop, and Disable servos remain available. RGB and audio are backing
+tracks, not recorded controller controls.
+
+After stopping from the controller, adjust **Smoothing** (0–300 ms) and **Keyframe
+reduction tolerance** (0–5% of the control's full native range). The window shows
+the resulting editable command count. Processing runs off the UI thread and can
+be repeated without losing the original samples. Existing spline settings are
+preserved: spline-enabled ganged controls use Hermite-aware reduction, while
+non-splined and individual child controls retain held-value commands. Speed and
+shared-neck mode changes keep their boundaries.
+
+**Replay Recording** plays only the processed take, without the original
+sequence's audio or unarmed controls. It does not modify the timeline, move its
+cursor, or add an Undo entry. Existing Drive HW, Focus Control, speed calibration,
+and Collision Safeguard settings apply. While playing, the button becomes **Stop
+Replay**. Replay as often as needed before keeping or discarding; changing
+smoothing stops replay and recalculates the draft.
+
+**Keep take** replaces only armed-control commands in the recorded time range.
+Other controls, audio, RGB, and commands outside the range are retained. One
+**Undo** restores the previous timeline. **Discard / close** leaves it unchanged.
+For another pass, return to the desired cursor time and record different controls.
+New boundary points can reshape the adjoining spline segments; inspect those
+transitions when overdubbing into an existing spline.
+
+The take captures accepted native controller targets and effective speed profiles,
+not measured feedback from the physical servos. Capture follows controller polls
+and the audio-corrected playback clock (including between render frames), with
+approximately 30 Hz hold samples when needed. Existing speed
+calibration, Collision Safeguard, Drive HW, and Focus Control settings still govern
+live motion. A lost/disabled controller, blocked focus, or a safeguard playback
+stop ends the take for review. Editing and API mutations are locked while the
+recording window is open. Review smoothed motion in the URDF before live playback:
+smoothing changes the intermediate positions, and normal timeline playback rules
+still apply after the take is kept.
+
+## Configure mappings
+
 Use **Config > X-Box Controller Mapping** or **Steam Controller Mapping**. The
 Steam screen is for the new 2026 Steam Controller, not the 2015 model. The screens
 can be edited without connected hardware. Click a controller input or its mapping
@@ -249,3 +325,11 @@ The **Collision Safeguard: On / Off** toggle below Focus Control defaults On and
 The safeguard checks sampled intermediate poses against the existing URDF flap/eye/lens/gimbal collision geometry before controller output is queued. Calibrated URDF steps are also checked before rendering. It works independently of Collision Warning visibility. Missing geometry blocks controller motion. A rejected move clears pending output, stops Library motion or pauses controller-started timeline playback, and requests a hardware hold when physical output is active. Maestro holds preserve the current commanded pulse and torque; Tic motors receive halt-and-hold. A held eye-pop motor may require re-homing because an abrupt halt can lose steps (see the Pololu Tic command reference: https://www.pololu.com/docs/0J71/8#cmd-halt-and-hold).
 
 This is predictive protection for the modeled contact areas, not comprehensive physical collision prevention. It assumes the physical robot matches the displayed pose, calibration, and timing. Geometry omissions, mechanical deflection, communication latency, independently moving actuators and missed steps can defeat those assumptions; sampled paths cannot guarantee every intermediate contact is detected. Check alignment after a physical hold. Unmodeled contacts and pre-existing contacts excluded by the neutral-pose baseline are not protected. If already in a modeled collision, further checked motion is blocked; turn the safeguard off only to deliberately resolve that condition.
+# Saved mapping files
+
+Each controller mapping window offers **Open mapping…**, **Save mapping**, and
+**Save mapping as…**. Save As creates a separate JSON configuration without
+replacing the previous file. Open loads a draft; Save applies it and remembers
+that file independently for Xbox and Steam at the next startup. Cancel leaves
+the active mapping unchanged. The original mapping remains in use until another
+is saved; if the remembered file is missing, the original mapping is used again.

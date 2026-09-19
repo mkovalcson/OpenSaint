@@ -1,5 +1,22 @@
 # Commands and Edit Commands
 
+## Persistent command groups
+
+Select timeline command triangles, right-click, and choose **Group Commands**.
+Each new group receives a sequential number (Group 1, Group 2, …) and its own
+triangle color, and is deselected. Selecting or dragging any member
+selects the whole group, so its commands move and delete together. Right-click
+a grouped triangle and choose **Ungroup Commands** to restore independent
+movement and normal colors. Grouping and ungrouping support Undo/Redo and survive
+saving and reopening the sequence. Pasted and repeated groups are independent
+of their source group. Each triangle represents all commands at its timestamp.
+
+**Hide Group** temporarily removes a group's commands from the timeline and
+playback, including servo, spline, RGB, and command-triggered audio playback.
+A matching colored **Show Group #** button appears on the right of the Sequence
+playback bar. Click it to restore the group. Hiding does not delete commands or
+save a muted state to the sequence file.
+
 Commands are the authored changes that occur at a specific timeline offset.
 
 The Commands list remains visible beside the docked URDF, replacing the old Grid controls. Add, Edit and Delete are immediately before the cursor heading. Drag the horizontal bar below this pane to resize its height, or the vertical divider to adjust its width beside the URDF. There is no Commands visibility toggle.

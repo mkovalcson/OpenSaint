@@ -1,0 +1,2131 @@
+{
+  "description": "",
+  "audioFiles": "LR7_Expressive.mp3",
+  "audioFile": "LR7_Expressive.mp3",
+  "audioFilePath": "Projects\\LR7_Expressive.mp3",
+  "durationSeconds": 19.26,
+  "audioStartOffsetSeconds": 0,
+  "splineServos": [
+    "FlapsOpen",
+    "FlapTiltUp"
+  ],
+  "splineSampleHz": 50,
+  "animateMode": "Individual",
+  "scaleValues": false,
+  "commands": [
+    {
+      "offsetSeconds": 0,
+      "servo": "FlapsOpen",
+      "value": 0,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 0,
+      "servo": "FlapTiltUp",
+      "value": 0,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 0.907,
+      "servo": "FlapsOpen",
+      "value": 5,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 0.938,
+      "servo": "FlapsOpen",
+      "value": 13,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 0.97,
+      "servo": "FlapsOpen",
+      "value": 24,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.002,
+      "servo": "FlapsOpen",
+      "value": 36,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.033,
+      "servo": "FlapsOpen",
+      "value": 48,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.074,
+      "servo": "FlapsOpen",
+      "value": 63,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.106,
+      "servo": "FlapsOpen",
+      "value": 76,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.137,
+      "servo": "FlapsOpen",
+      "value": 79,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.449,
+      "servo": "FlapsOpen",
+      "value": 75,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.481,
+      "servo": "FlapsOpen",
+      "value": 70,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.511,
+      "servo": "FlapsOpen",
+      "value": 66,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.543,
+      "servo": "FlapsOpen",
+      "value": 60,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.575,
+      "servo": "FlapsOpen",
+      "value": 54,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.606,
+      "servo": "FlapsOpen",
+      "value": 48,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.64,
+      "servo": "FlapsOpen",
+      "value": 42,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.669,
+      "servo": "FlapsOpen",
+      "value": 36,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.701,
+      "servo": "FlapsOpen",
+      "value": 30,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.729,
+      "servo": "FlapsOpen",
+      "value": 24,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.762,
+      "servo": "FlapsOpen",
+      "value": 17,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.793,
+      "servo": "FlapsOpen",
+      "value": 9,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.825,
+      "servo": "FlapsOpen",
+      "value": 2,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.857,
+      "servo": "FlapsOpen",
+      "value": -4,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.889,
+      "servo": "FlapsOpen",
+      "value": -8,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.921,
+      "servo": "FlapsOpen",
+      "value": -11,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 1.985,
+      "servo": "FlapsOpen",
+      "value": -14,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 2.201,
+      "servo": "FlapTiltUp",
+      "value": 4,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 2.297,
+      "servo": "FlapsOpen",
+      "value": -10,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 2.297,
+      "servo": "FlapTiltUp",
+      "value": 7,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 2.921,
+      "servo": "FlapTiltUp",
+      "value": 10,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 3.017,
+      "servo": "FlapTiltUp",
+      "value": 13,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 3.105,
+      "servo": "FlapTiltUp",
+      "value": 17,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 3.169,
+      "servo": "FlapTiltUp",
+      "value": 21,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 3.233,
+      "servo": "FlapTiltUp",
+      "value": 25,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 3.291,
+      "servo": "FlapTiltUp",
+      "value": 29,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 3.354,
+      "servo": "FlapsOpen",
+      "value": -6,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 3.354,
+      "servo": "FlapTiltUp",
+      "value": 33,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 3.417,
+      "servo": "FlapTiltUp",
+      "value": 37,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 3.479,
+      "servo": "FlapsOpen",
+      "value": -2,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 3.479,
+      "servo": "FlapTiltUp",
+      "value": 41,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 3.824,
+      "servo": "FlapTiltUp",
+      "value": 38,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 3.951,
+      "servo": "FlapsOpen",
+      "value": -6,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 4.014,
+      "servo": "FlapsOpen",
+      "value": -9,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 4.045,
+      "servo": "FlapsOpen",
+      "value": -12,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 4.105,
+      "servo": "FlapsOpen",
+      "value": -18,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 4.137,
+      "servo": "FlapsOpen",
+      "value": -22,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 4.169,
+      "servo": "FlapsOpen",
+      "value": -26,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 4.201,
+      "servo": "FlapsOpen",
+      "value": -30,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 4.234,
+      "servo": "FlapsOpen",
+      "value": -34,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 4.267,
+      "servo": "FlapsOpen",
+      "value": -38,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 4.299,
+      "servo": "FlapsOpen",
+      "value": -42,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 4.33,
+      "servo": "FlapsOpen",
+      "value": -46,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 4.363,
+      "servo": "FlapsOpen",
+      "value": -50,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 4.394,
+      "servo": "FlapsOpen",
+      "value": -54,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 4.424,
+      "servo": "FlapsOpen",
+      "value": -58,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 4.449,
+      "servo": "FlapsOpen",
+      "value": -62,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 4.482,
+      "servo": "FlapsOpen",
+      "value": -66,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 4.513,
+      "servo": "FlapsOpen",
+      "value": -70,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 5.187,
+      "servo": "FlapTiltUp",
+      "value": 34,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "9013bc43d5f442f983e67f4203dac33f"
+    },
+    {
+      "offsetSeconds": 5.252,
+      "servo": "FlapTiltUp",
+      "value": 31,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "9013bc43d5f442f983e67f4203dac33f"
+    },
+    {
+      "offsetSeconds": 5.315,
+      "servo": "FlapTiltUp",
+      "value": 27,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "9013bc43d5f442f983e67f4203dac33f"
+    },
+    {
+      "offsetSeconds": 5.379,
+      "servo": "FlapTiltUp",
+      "value": 23,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "9013bc43d5f442f983e67f4203dac33f"
+    },
+    {
+      "offsetSeconds": 5.441,
+      "servo": "FlapTiltUp",
+      "value": 19,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "9013bc43d5f442f983e67f4203dac33f"
+    },
+    {
+      "offsetSeconds": 5.518,
+      "servo": "FlapTiltUp",
+      "value": 14,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "9013bc43d5f442f983e67f4203dac33f"
+    },
+    {
+      "offsetSeconds": 5.58,
+      "servo": "FlapTiltUp",
+      "value": 10,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "9013bc43d5f442f983e67f4203dac33f"
+    },
+    {
+      "offsetSeconds": 5.647,
+      "servo": "FlapTiltUp",
+      "value": 6,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "9013bc43d5f442f983e67f4203dac33f"
+    },
+    {
+      "offsetSeconds": 5.707,
+      "servo": "FlapTiltUp",
+      "value": 1,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "9013bc43d5f442f983e67f4203dac33f"
+    },
+    {
+      "offsetSeconds": 5.731,
+      "servo": "FlapTiltUp",
+      "value": -4,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "9013bc43d5f442f983e67f4203dac33f"
+    },
+    {
+      "offsetSeconds": 5.763,
+      "servo": "FlapTiltUp",
+      "value": -10,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "9013bc43d5f442f983e67f4203dac33f"
+    },
+    {
+      "offsetSeconds": 5.955,
+      "servo": "FlapTiltUp",
+      "value": -13,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "9013bc43d5f442f983e67f4203dac33f"
+    },
+    {
+      "offsetSeconds": 5.987,
+      "servo": "FlapTiltUp",
+      "value": -21,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "9013bc43d5f442f983e67f4203dac33f"
+    },
+    {
+      "offsetSeconds": 6.017,
+      "servo": "FlapTiltUp",
+      "value": -32,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "9013bc43d5f442f983e67f4203dac33f"
+    },
+    {
+      "offsetSeconds": 6.049,
+      "servo": "FlapTiltUp",
+      "value": -44,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "9013bc43d5f442f983e67f4203dac33f"
+    },
+    {
+      "offsetSeconds": 6.08,
+      "servo": "FlapTiltUp",
+      "value": -59,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "9013bc43d5f442f983e67f4203dac33f"
+    },
+    {
+      "offsetSeconds": 6.107,
+      "servo": "FlapTiltUp",
+      "value": -73,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "9013bc43d5f442f983e67f4203dac33f"
+    },
+    {
+      "offsetSeconds": 6.139,
+      "servo": "FlapTiltUp",
+      "value": -89,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "9013bc43d5f442f983e67f4203dac33f"
+    },
+    {
+      "offsetSeconds": 6.482,
+      "servo": "FlapTiltUp",
+      "value": -98,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 8.802,
+      "servo": "FlapsOpen",
+      "value": -65,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 8.828,
+      "servo": "FlapsOpen",
+      "value": -62,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 8.866,
+      "servo": "FlapsOpen",
+      "value": -58,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 8.898,
+      "servo": "FlapsOpen",
+      "value": -53,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 8.92,
+      "servo": "FlapsOpen",
+      "value": -50,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 8.954,
+      "servo": "FlapsOpen",
+      "value": -45,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 8.986,
+      "servo": "FlapsOpen",
+      "value": -41,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 9.019,
+      "servo": "FlapsOpen",
+      "value": -37,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 9.05,
+      "servo": "FlapsOpen",
+      "value": -33,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 9.082,
+      "servo": "FlapsOpen",
+      "value": -30,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 9.144,
+      "servo": "FlapsOpen",
+      "value": -26,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 9.458,
+      "servo": "FlapsOpen",
+      "value": -30,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 9.522,
+      "servo": "FlapsOpen",
+      "value": -34,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 9.577,
+      "servo": "FlapsOpen",
+      "value": -38,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 9.64,
+      "servo": "FlapsOpen",
+      "value": -42,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 9.706,
+      "servo": "FlapsOpen",
+      "value": -47,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 9.766,
+      "servo": "FlapsOpen",
+      "value": -52,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 9.797,
+      "servo": "FlapsOpen",
+      "value": -56,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 9.862,
+      "servo": "FlapsOpen",
+      "value": -62,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 9.893,
+      "servo": "FlapsOpen",
+      "value": -65,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 9.954,
+      "servo": "FlapsOpen",
+      "value": -70,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.049,
+      "servo": "FlapsOpen",
+      "value": -73,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.112,
+      "servo": "FlapTiltUp",
+      "value": -95,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.143,
+      "servo": "FlapTiltUp",
+      "value": -83,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.173,
+      "servo": "FlapTiltUp",
+      "value": -67,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.206,
+      "servo": "FlapTiltUp",
+      "value": -46,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.234,
+      "servo": "FlapTiltUp",
+      "value": -24,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.266,
+      "servo": "FlapTiltUp",
+      "value": -4,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.298,
+      "servo": "FlapsOpen",
+      "value": -70,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.298,
+      "servo": "FlapTiltUp",
+      "value": 4,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.362,
+      "servo": "FlapTiltUp",
+      "value": 10,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.425,
+      "servo": "FlapsOpen",
+      "value": -66,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.425,
+      "servo": "FlapTiltUp",
+      "value": 16,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.456,
+      "servo": "FlapTiltUp",
+      "value": 20,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.519,
+      "servo": "FlapTiltUp",
+      "value": 25,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.551,
+      "servo": "FlapsOpen",
+      "value": -62,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.551,
+      "servo": "FlapTiltUp",
+      "value": 29,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.583,
+      "servo": "FlapTiltUp",
+      "value": 32,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.616,
+      "servo": "FlapTiltUp",
+      "value": 36,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.679,
+      "servo": "FlapsOpen",
+      "value": -58,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.679,
+      "servo": "FlapTiltUp",
+      "value": 42,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.706,
+      "servo": "FlapTiltUp",
+      "value": 45,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.738,
+      "servo": "FlapTiltUp",
+      "value": 48,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.77,
+      "servo": "FlapTiltUp",
+      "value": 52,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.802,
+      "servo": "FlapsOpen",
+      "value": -54,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.836,
+      "servo": "FlapTiltUp",
+      "value": 58,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.866,
+      "servo": "FlapTiltUp",
+      "value": 61,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.922,
+      "servo": "FlapsOpen",
+      "value": -50,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.922,
+      "servo": "FlapTiltUp",
+      "value": 66,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 10.993,
+      "servo": "FlapTiltUp",
+      "value": 69,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.394,
+      "servo": "FlapsOpen",
+      "value": -46,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.394,
+      "servo": "FlapTiltUp",
+      "value": 73,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.426,
+      "servo": "FlapsOpen",
+      "value": -42,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.458,
+      "servo": "FlapsOpen",
+      "value": -38,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.458,
+      "servo": "FlapTiltUp",
+      "value": 77,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.49,
+      "servo": "FlapsOpen",
+      "value": -32,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.53,
+      "servo": "FlapsOpen",
+      "value": -24,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.561,
+      "servo": "FlapsOpen",
+      "value": -17,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.594,
+      "servo": "FlapsOpen",
+      "value": -11,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.626,
+      "servo": "FlapsOpen",
+      "value": -5,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.657,
+      "servo": "FlapsOpen",
+      "value": 3,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.689,
+      "servo": "FlapsOpen",
+      "value": 14,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.72,
+      "servo": "FlapsOpen",
+      "value": 26,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.751,
+      "servo": "FlapsOpen",
+      "value": 38,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.784,
+      "servo": "FlapsOpen",
+      "value": 50,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.816,
+      "servo": "FlapsOpen",
+      "value": 62,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.847,
+      "servo": "FlapsOpen",
+      "value": 74,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.88,
+      "servo": "FlapsOpen",
+      "value": 87,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.906,
+      "servo": "FlapsOpen",
+      "value": 95,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 11.938,
+      "servo": "FlapsOpen",
+      "value": 100,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 12.442,
+      "servo": "FlapsOpen",
+      "value": 96,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 12.474,
+      "servo": "FlapsOpen",
+      "value": 92,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 12.506,
+      "servo": "FlapsOpen",
+      "value": 88,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 12.538,
+      "servo": "FlapsOpen",
+      "value": 82,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 12.57,
+      "servo": "FlapsOpen",
+      "value": 75,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 12.594,
+      "servo": "FlapsOpen",
+      "value": 69,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 12.626,
+      "servo": "FlapsOpen",
+      "value": 62,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 12.658,
+      "servo": "FlapsOpen",
+      "value": 54,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 12.69,
+      "servo": "FlapsOpen",
+      "value": 48,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 12.722,
+      "servo": "FlapsOpen",
+      "value": 42,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 12.754,
+      "servo": "FlapsOpen",
+      "value": 38,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 12.754,
+      "servo": "FlapTiltUp",
+      "value": 80,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 12.818,
+      "servo": "FlapsOpen",
+      "value": 34,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 12.85,
+      "servo": "FlapTiltUp",
+      "value": 84,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 12.906,
+      "servo": "FlapTiltUp",
+      "value": 88,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 12.97,
+      "servo": "FlapTiltUp",
+      "value": 94,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 13.003,
+      "servo": "FlapTiltUp",
+      "value": 97,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 13.061,
+      "servo": "FlapTiltUp",
+      "value": 100,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 13.562,
+      "servo": "FlapTiltUp",
+      "value": 96,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 13.626,
+      "servo": "FlapTiltUp",
+      "value": 90,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 13.656,
+      "servo": "FlapsOpen",
+      "value": 38,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 13.69,
+      "servo": "FlapTiltUp",
+      "value": 84,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 13.722,
+      "servo": "FlapsOpen",
+      "value": 42,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 13.722,
+      "servo": "FlapTiltUp",
+      "value": 81,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 13.749,
+      "servo": "FlapTiltUp",
+      "value": 78,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 13.78,
+      "servo": "FlapsOpen",
+      "value": 46,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 13.78,
+      "servo": "FlapTiltUp",
+      "value": 74,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 13.843,
+      "servo": "FlapsOpen",
+      "value": 50,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 13.843,
+      "servo": "FlapTiltUp",
+      "value": 68,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 13.876,
+      "servo": "FlapTiltUp",
+      "value": 64,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 13.906,
+      "servo": "FlapsOpen",
+      "value": 54,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 13.94,
+      "servo": "FlapTiltUp",
+      "value": 58,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.001,
+      "servo": "FlapsOpen",
+      "value": 57,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.001,
+      "servo": "FlapTiltUp",
+      "value": 52,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.063,
+      "servo": "FlapTiltUp",
+      "value": 47,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.126,
+      "servo": "FlapTiltUp",
+      "value": 43,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.19,
+      "servo": "FlapsOpen",
+      "value": 54,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.19,
+      "servo": "FlapTiltUp",
+      "value": 40,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.221,
+      "servo": "FlapsOpen",
+      "value": 51,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.25,
+      "servo": "FlapsOpen",
+      "value": 48,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.282,
+      "servo": "FlapsOpen",
+      "value": 44,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.314,
+      "servo": "FlapsOpen",
+      "value": 38,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.314,
+      "servo": "FlapTiltUp",
+      "value": 37,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.346,
+      "servo": "FlapsOpen",
+      "value": 30,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.38,
+      "servo": "FlapsOpen",
+      "value": 22,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.411,
+      "servo": "FlapsOpen",
+      "value": 14,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.411,
+      "servo": "FlapTiltUp",
+      "value": 34,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.442,
+      "servo": "FlapsOpen",
+      "value": 6,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.474,
+      "servo": "FlapsOpen",
+      "value": 0,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.506,
+      "servo": "FlapsOpen",
+      "value": -5,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.506,
+      "servo": "FlapTiltUp",
+      "value": 30,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.53,
+      "servo": "FlapsOpen",
+      "value": -9,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.571,
+      "servo": "FlapsOpen",
+      "value": -13,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.571,
+      "servo": "FlapTiltUp",
+      "value": 26,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.595,
+      "servo": "FlapsOpen",
+      "value": -17,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.626,
+      "servo": "FlapsOpen",
+      "value": -20,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.626,
+      "servo": "FlapTiltUp",
+      "value": 22,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.664,
+      "servo": "FlapsOpen",
+      "value": -24,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.696,
+      "servo": "FlapsOpen",
+      "value": -27,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.696,
+      "servo": "FlapTiltUp",
+      "value": 18,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.754,
+      "servo": "FlapsOpen",
+      "value": -32,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 14.754,
+      "servo": "FlapTiltUp",
+      "value": 14,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.218,
+      "servo": "FlapsOpen",
+      "value": -29,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.249,
+      "servo": "FlapsOpen",
+      "value": -25,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.282,
+      "servo": "FlapsOpen",
+      "value": -20,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.314,
+      "servo": "FlapsOpen",
+      "value": -14,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.358,
+      "servo": "FlapsOpen",
+      "value": -7,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.394,
+      "servo": "FlapsOpen",
+      "value": 3,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.426,
+      "servo": "FlapsOpen",
+      "value": 14,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.458,
+      "servo": "FlapsOpen",
+      "value": 26,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.486,
+      "servo": "FlapsOpen",
+      "value": 38,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.522,
+      "servo": "FlapsOpen",
+      "value": 51,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.546,
+      "servo": "FlapsOpen",
+      "value": 61,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.579,
+      "servo": "FlapsOpen",
+      "value": 71,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.609,
+      "servo": "FlapsOpen",
+      "value": 74,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.734,
+      "servo": "FlapsOpen",
+      "value": 69,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.765,
+      "servo": "FlapsOpen",
+      "value": 64,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.796,
+      "servo": "FlapsOpen",
+      "value": 59,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.828,
+      "servo": "FlapsOpen",
+      "value": 52,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.858,
+      "servo": "FlapsOpen",
+      "value": 45,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.891,
+      "servo": "FlapsOpen",
+      "value": 36,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.922,
+      "servo": "FlapsOpen",
+      "value": 26,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.954,
+      "servo": "FlapsOpen",
+      "value": 14,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 15.986,
+      "servo": "FlapsOpen",
+      "value": 3,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.018,
+      "servo": "FlapsOpen",
+      "value": -5,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.05,
+      "servo": "FlapsOpen",
+      "value": -11,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.081,
+      "servo": "FlapsOpen",
+      "value": -17,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.112,
+      "servo": "FlapsOpen",
+      "value": -23,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.143,
+      "servo": "FlapsOpen",
+      "value": -29,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.143,
+      "servo": "FlapTiltUp",
+      "value": 10,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.175,
+      "servo": "FlapsOpen",
+      "value": -35,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.208,
+      "servo": "FlapsOpen",
+      "value": -41,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.238,
+      "servo": "FlapsOpen",
+      "value": -47,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.269,
+      "servo": "FlapsOpen",
+      "value": -53,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.269,
+      "servo": "FlapTiltUp",
+      "value": 6,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.298,
+      "servo": "FlapsOpen",
+      "value": -59,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.33,
+      "servo": "FlapsOpen",
+      "value": -65,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.362,
+      "servo": "FlapsOpen",
+      "value": -70,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.394,
+      "servo": "FlapTiltUp",
+      "value": 2,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.49,
+      "servo": "FlapsOpen",
+      "value": -64,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.522,
+      "servo": "FlapsOpen",
+      "value": -58,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.553,
+      "servo": "FlapsOpen",
+      "value": -51,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.578,
+      "servo": "FlapsOpen",
+      "value": -47,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.578,
+      "servo": "FlapTiltUp",
+      "value": -2,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.61,
+      "servo": "FlapsOpen",
+      "value": -40,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.61,
+      "servo": "FlapTiltUp",
+      "value": -6,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.642,
+      "servo": "FlapsOpen",
+      "value": -34,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.674,
+      "servo": "FlapsOpen",
+      "value": -28,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.707,
+      "servo": "FlapsOpen",
+      "value": -22,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.738,
+      "servo": "FlapsOpen",
+      "value": -16,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.77,
+      "servo": "FlapsOpen",
+      "value": -10,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.802,
+      "servo": "FlapsOpen",
+      "value": -4,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.833,
+      "servo": "FlapsOpen",
+      "value": 4,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.865,
+      "servo": "FlapsOpen",
+      "value": 16,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.897,
+      "servo": "FlapsOpen",
+      "value": 29,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.922,
+      "servo": "FlapsOpen",
+      "value": 39,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.959,
+      "servo": "FlapsOpen",
+      "value": 52,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 16.992,
+      "servo": "FlapsOpen",
+      "value": 64,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 17.021,
+      "servo": "FlapsOpen",
+      "value": 76,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 17.053,
+      "servo": "FlapsOpen",
+      "value": 88,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 17.084,
+      "servo": "FlapsOpen",
+      "value": 97,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 17.116,
+      "servo": "FlapsOpen",
+      "value": 100,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "groupId": "d937e42fafb94ba1a2506b1bb6dc1238"
+    },
+    {
+      "offsetSeconds": 19.39,
+      "servo": "FlapsOpen",
+      "value": 100,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 19.39,
+      "servo": "FlapTiltUp",
+      "value": -7,
+      "speed": "Default",
+      "reason": "Controller recording"
+    }
+  ]
+}

@@ -127,6 +127,8 @@ namespace ServoAnimator
         /// <summary>Hide the outgoing spline segment in the editor. This is
         /// presentation metadata and does not change playback interpolation.</summary>
         public bool BreakSpline { get; set; }
+        /// <summary>Persistent editor grouping; empty means an independent command.</summary>
+        public string GroupId { get; set; } = "";
 
         /// <summary>
         /// Optional INDIVIDUAL control target. Null (the default) means the
@@ -214,6 +216,7 @@ namespace ServoAnimator
             ScaledExportValue = ScaledExportValue,
             Disable = Disable,
             BreakSpline = BreakSpline,
+            GroupId = GroupId,
             Control = Control,
             ColorHex = ColorHex,
             Speed = Speed,
@@ -290,6 +293,9 @@ namespace ServoAnimator
                     case "breakSpline":
                         cmd.BreakSpline = reader.GetBoolean();
                         break;
+                    case "groupId":
+                        cmd.GroupId = reader.GetString() ?? "";
+                        break;
 
                     case "color":
                         cmd.ColorHex = reader.GetString() ?? "";
@@ -335,6 +341,7 @@ namespace ServoAnimator
             writer.WriteString("speed", ServoCommand.SpeedToText(cmd.Speed));
             writer.WriteString("reason", cmd.Reason ?? "");
             if (cmd.BreakSpline) writer.WriteBoolean("breakSpline", true);
+            if (!string.IsNullOrEmpty(cmd.GroupId)) writer.WriteString("groupId", cmd.GroupId);
             if (cmd.Control.HasValue)
                 writer.WriteString("control", cmd.Control.Value.ToString());
             if (!string.IsNullOrEmpty(cmd.ColorHex))
@@ -453,6 +460,10 @@ namespace ServoAnimator
     /// <summary>The whole animation file (root JSON object).</summary>
     public class AnimationDocument
     {
+        [JsonPropertyName("commandGroupNumbers")]
+        public Dictionary<string, int> CommandGroupNumbers { get; set; } = new();
+        [JsonIgnore]
+        public HashSet<string> HiddenCommandGroups { get; } = new();
         [JsonPropertyName("description")]
         public string Description { get; set; } = "";
 
@@ -537,6 +548,7 @@ namespace ServoAnimator
         /// <summary>Read a full animation document from disk.</summary>
         public AnimationDocument Clone() => new()
         {
+            CommandGroupNumbers = new(CommandGroupNumbers ?? new()),
             Description = Description, AudioFiles = AudioFiles, AudioFile = AudioFile,
             AudioFilePath = AudioFilePath, DurationSeconds = DurationSeconds,
             AudioStartOffsetSeconds = AudioStartOffsetSeconds,

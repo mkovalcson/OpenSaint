@@ -105,6 +105,7 @@ namespace ServoAnimator
             var clone = new AnimationDocument
             {
                 Description = Sequence.Description,
+                CommandGroupNumbers = new(Sequence.CommandGroupNumbers ?? new()),
                 AudioFiles = Sequence.AudioFiles,
                 AudioFile = Sequence.AudioFile,
                 AudioFilePath = Sequence.AudioFilePath,

@@ -17,7 +17,7 @@
         "TriggerButton": ""
       },
       "LeftY": {
-        "Target": "Servo:NeckNodUp",
+        "Target": "Child:NeckNodUp:NeckTiltLeft",
         "Mode": "Relative",
         "Low": -100,
         "High": 100,
@@ -209,7 +209,7 @@
         "TriggerButton": ""
       },
       "Start": {
-        "Target": "Action:Snapshot",
+        "Target": "Action:Start / Stop recording",
         "Mode": "Set",
         "Low": -100,
         "High": 100,

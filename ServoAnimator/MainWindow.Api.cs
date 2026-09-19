@@ -83,6 +83,7 @@ public partial class MainWindow
         if (request.Method == "get_library_thumbnail") return GetLibraryThumbnail(request);
         if (request.Method == "get_request") return _apiReceipts.TryGetValue(request.RequestId ?? "", out var status) ? status.Result : new { ok = false, error = "Unknown requestId." };
         if (_speedCalibrationBusy) throw new InvalidOperationException("Stop speed calibration before API edits or playback.");
+        if (_recordingWindow != null) throw new InvalidOperationException("Close the controller recording window before API edits or playback.");
         bool transport = request.Method is "play" or "pause" or "stop" or "seek";
         bool directLibrary = request.Method is "apply_library_pose" or "play_library_sequence" or "stop_library";
         bool movieEdit = request.Method is "movie_move" or "movie_remove" or "movie_insert" or "movie_create_sequence";

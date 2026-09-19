@@ -8,6 +8,7 @@
   "splineServos": [
     "NeckTurn",
     "FlapsOpen",
+    "FlapTiltUp",
     "IrisClose",
     "EyesVerticalUp",
     "BothEyePop"
@@ -397,7 +398,8 @@
       "servo": "BothEyePop",
       "value": 0,
       "speed": "Default",
-      "reason": ""
+      "reason": "",
+      "breakSpline": true
     },
     {
       "offsetSeconds": 16.791,
@@ -418,7 +420,8 @@
       "servo": "EyesVerticalUp",
       "value": 0,
       "speed": "Default",
-      "reason": ""
+      "reason": "",
+      "breakSpline": true
     },
     {
       "offsetSeconds": 18.574,
@@ -488,7 +491,8 @@
       "servo": "NeckTurn",
       "value": 41,
       "speed": "Default",
-      "reason": ""
+      "reason": "",
+      "breakSpline": true
     },
     {
       "offsetSeconds": 22.956,
@@ -509,7 +513,8 @@
       "servo": "FlapsOpen",
       "value": -100,
       "speed": "N/C",
-      "reason": ""
+      "reason": "",
+      "breakSpline": true
     },
     {
       "offsetSeconds": 26.776,
@@ -521,9 +526,10 @@
     {
       "offsetSeconds": 26.776,
       "servo": "IrisClose",
-      "value": -36,
+      "value": -37,
       "speed": "N/C",
-      "reason": ""
+      "reason": "",
+      "breakSpline": true
     },
     {
       "offsetSeconds": 26.776,
@@ -548,6 +554,715 @@
       "speed": "N/C",
       "reason": "",
       "control": "BrowRightBottomOpen"
+    },
+    {
+      "offsetSeconds": 29.434,
+      "servo": "EyesHorizontalRight",
+      "value": -15,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 29.434,
+      "servo": "EyesVerticalUp",
+      "value": 99,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 29.434,
+      "servo": "IrisClose",
+      "value": -83,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 29.434,
+      "servo": "FlapsOpen",
+      "value": 100,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 29.434,
+      "servo": "FlapTiltUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 29.434,
+      "servo": "VentsOpen",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 29.434,
+      "servo": "NeckTurn",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 29.434,
+      "servo": "NeckNodUp",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 29.434,
+      "servo": "NoseBody",
+      "value": 55,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 29.434,
+      "servo": "NoseBasket",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 29.434,
+      "servo": "BothEyePop",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 29.434,
+      "servo": "Whip_Antenna_RaiseLower",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 29.434,
+      "servo": "Whip_Antenna_Rotate",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 29.434,
+      "servo": "MFR_UpDown",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 29.434,
+      "servo": "MFR_Rotate",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 29.434,
+      "servo": "Microphone_RaiseLower",
+      "value": 0,
+      "speed": "N/C",
+      "reason": "pose"
+    },
+    {
+      "offsetSeconds": 38.196,
+      "servo": "NeckTurn",
+      "value": 0,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 38.196,
+      "servo": "FlapsOpen",
+      "value": 100,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 40.884,
+      "servo": "NeckTurn",
+      "value": 0,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 40.979,
+      "servo": "NeckTurn",
+      "value": 5,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 41.109,
+      "servo": "NeckTurn",
+      "value": 28,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 41.228,
+      "servo": "NeckTurn",
+      "value": 52,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 41.421,
+      "servo": "NeckTurn",
+      "value": 61,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 41.572,
+      "servo": "NeckTurn",
+      "value": 72,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 41.696,
+      "servo": "NeckTurn",
+      "value": 73,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 41.758,
+      "servo": "NeckTurn",
+      "value": 70,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 41.996,
+      "servo": "NeckTurn",
+      "value": 40,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 42.244,
+      "servo": "NeckTurn",
+      "value": -6,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 42.369,
+      "servo": "NeckTurn",
+      "value": -26,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 42.437,
+      "servo": "NeckTurn",
+      "value": -32,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 42.588,
+      "servo": "NeckTurn",
+      "value": -30,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 42.652,
+      "servo": "NeckTurn",
+      "value": -21,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 42.812,
+      "servo": "NeckTurn",
+      "value": 12,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 42.845,
+      "servo": "NeckTurn",
+      "value": 16,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 42.996,
+      "servo": "NeckTurn",
+      "value": 17,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 43.091,
+      "servo": "NeckTurn",
+      "value": 9,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 43.245,
+      "servo": "NeckTurn",
+      "value": -26,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 43.305,
+      "servo": "NeckTurn",
+      "value": -36,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 43.373,
+      "servo": "NeckTurn",
+      "value": -40,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 43.557,
+      "servo": "NeckTurn",
+      "value": -40,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 43.62,
+      "servo": "NeckTurn",
+      "value": -34,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 43.684,
+      "servo": "NeckTurn",
+      "value": -22,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 43.812,
+      "servo": "NeckTurn",
+      "value": 14,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 43.9,
+      "servo": "NeckTurn",
+      "value": 46,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 43.931,
+      "servo": "NeckTurn",
+      "value": 49,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 44.089,
+      "servo": "NeckTurn",
+      "value": 49,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 44.16,
+      "servo": "NeckTurn",
+      "value": 44,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 44.274,
+      "servo": "NeckTurn",
+      "value": 22,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 44.43,
+      "servo": "NeckTurn",
+      "value": -15,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 44.461,
+      "servo": "NeckTurn",
+      "value": -18,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 45.393,
+      "servo": "NeckTurn",
+      "value": -19,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 45.833,
+      "servo": "FlapsOpen",
+      "value": 100,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "breakSpline": true
+    },
+    {
+      "offsetSeconds": 45.833,
+      "servo": "FlapTiltUp",
+      "value": 0,
+      "speed": "Default",
+      "reason": "Controller recording",
+      "breakSpline": true
+    },
+    {
+      "offsetSeconds": 46.342,
+      "servo": "FlapTiltUp",
+      "value": 7,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 46.443,
+      "servo": "FlapTiltUp",
+      "value": 11,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 46.508,
+      "servo": "FlapTiltUp",
+      "value": 14,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 46.819,
+      "servo": "FlapTiltUp",
+      "value": 10,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 46.851,
+      "servo": "FlapTiltUp",
+      "value": 7,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 46.883,
+      "servo": "FlapTiltUp",
+      "value": 4,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 46.915,
+      "servo": "FlapTiltUp",
+      "value": -6,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 46.947,
+      "servo": "FlapTiltUp",
+      "value": -28,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 46.98,
+      "servo": "FlapTiltUp",
+      "value": -60,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 47.013,
+      "servo": "FlapsOpen",
+      "value": 98,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 47.013,
+      "servo": "FlapTiltUp",
+      "value": -88,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 47.044,
+      "servo": "FlapTiltUp",
+      "value": -100,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 47.075,
+      "servo": "FlapsOpen",
+      "value": 88,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 47.107,
+      "servo": "FlapsOpen",
+      "value": 79,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 47.323,
+      "servo": "FlapsOpen",
+      "value": 4,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 47.455,
+      "servo": "FlapsOpen",
+      "value": -4,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 47.601,
+      "servo": "FlapsOpen",
+      "value": -51,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 47.731,
+      "servo": "FlapsOpen",
+      "value": -58,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 47.851,
+      "servo": "FlapsOpen",
+      "value": -57,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 47.916,
+      "servo": "FlapsOpen",
+      "value": -50,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 47.947,
+      "servo": "FlapTiltUp",
+      "value": -97,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 48.011,
+      "servo": "FlapTiltUp",
+      "value": -94,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 48.163,
+      "servo": "FlapsOpen",
+      "value": -2,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 48.195,
+      "servo": "FlapTiltUp",
+      "value": -98,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 48.287,
+      "servo": "FlapsOpen",
+      "value": 39,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 48.349,
+      "servo": "FlapsOpen",
+      "value": 44,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 48.443,
+      "servo": "FlapsOpen",
+      "value": 40,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 48.507,
+      "servo": "FlapsOpen",
+      "value": 28,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 48.603,
+      "servo": "FlapsOpen",
+      "value": 2,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 48.667,
+      "servo": "FlapsOpen",
+      "value": -10,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 48.791,
+      "servo": "FlapsOpen",
+      "value": -24,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 48.819,
+      "servo": "FlapTiltUp",
+      "value": -95,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 48.852,
+      "servo": "FlapTiltUp",
+      "value": -90,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 48.883,
+      "servo": "FlapTiltUp",
+      "value": -86,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 48.913,
+      "servo": "FlapTiltUp",
+      "value": -80,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 48.943,
+      "servo": "FlapsOpen",
+      "value": -23,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 48.943,
+      "servo": "FlapTiltUp",
+      "value": -76,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 48.979,
+      "servo": "FlapTiltUp",
+      "value": -70,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 49.011,
+      "servo": "FlapTiltUp",
+      "value": -66,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 49.043,
+      "servo": "FlapTiltUp",
+      "value": -62,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 49.195,
+      "servo": "FlapsOpen",
+      "value": -4,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 49.227,
+      "servo": "FlapTiltUp",
+      "value": -70,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 49.259,
+      "servo": "FlapTiltUp",
+      "value": -77,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 49.291,
+      "servo": "FlapTiltUp",
+      "value": -86,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 49.321,
+      "servo": "FlapTiltUp",
+      "value": -94,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 49.355,
+      "servo": "FlapsOpen",
+      "value": -4,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 49.355,
+      "servo": "FlapTiltUp",
+      "value": -100,
+      "speed": "Default",
+      "reason": "Controller recording"
+    },
+    {
+      "offsetSeconds": 49.48,
+      "servo": "FlapsOpen",
+      "value": -9,
+      "speed": "Default",
+      "reason": "Controller recording"
     }
   ]
 }

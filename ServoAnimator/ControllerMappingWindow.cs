@@ -9,6 +9,9 @@ namespace ServoAnimator;
 public sealed class ControllerMappingWindow : Window
 {
     private ControllerProfile _draft;
+    private readonly string _configRoot;
+    private string _mappingPath;
+    private readonly TextBlock _mappingFile = new() { Margin = new Thickness(0, 0, 0, 8), TextWrapping = TextWrapping.Wrap };
     private readonly Func<ControllerSample> _read;
     private readonly Action<ControllerProfile> _save;
     private readonly ComboBox _target = new() { IsTextSearchEnabled = true, MaxDropDownHeight = 420 };
@@ -50,14 +53,20 @@ public sealed class ControllerMappingWindow : Window
     private int _layer;
     private string _inputId;
     private bool _loading;
-    private sealed record TargetItem(string Id, string Label) { public override string ToString() => Label; }
+    private sealed record TargetItem(string Id, string Label)
+    {
+        public Brush Foreground => Id == ControllerCatalog.RecordingTarget ? Brushes.Tomato : (Brush)Application.Current.FindResource("PrimaryText");
+        public override string ToString() => Label;
+    }
 
     public ControllerMappingWindow(ControllerProfile profile, Func<ControllerSample> read, Action<ControllerProfile> save,
         Func<string, Window, string> chooseLibrary = null, Func<string, double> currentValue = null,
         Action<IReadOnlyList<ControllerIntent>, bool> preview = null, Func<bool> allowBackground = null,
-        Func<string, double, double, double, double> relativeMotion = null)
+        Func<string, double, double, double, double> relativeMotion = null, string configRoot = null)
     {
         _draft = profile.Clone(); _draft.Validate(); _read = read; _save = save; _chooseLibrary = chooseLibrary;
+        _configRoot = configRoot;
+        if (configRoot != null) _mappingPath = ControllerProfileStore.ActivePath(configRoot, profile.Kind);
         _currentValue = currentValue ?? (_ => 0); _preview = preview;
         _liveEngine.RelativeMotion = relativeMotion;
         _allowBackground = allowBackground ?? (() => false);
@@ -70,6 +79,7 @@ public sealed class ControllerMappingWindow : Window
         SetResourceReference(ForegroundProperty, "PrimaryText");
         var root = new DockPanel { Margin = new Thickness(20), Background = Background }; Content = root;
         var top = new StackPanel(); DockPanel.SetDock(top, Dock.Top); root.Children.Add(top);
+        if (_configRoot != null) { top.Children.Add(_mappingFile); UpdateMappingFile(); }
         var layers = _layerTabs;
         for (int i = 0; i < 4; i++) layers.Items.Add(new TabItem { Header = $"{i + 1}  {ControllerCatalog.LayerNames[i]}" });
         layers.SelectedIndex = 0;
@@ -97,6 +107,11 @@ public sealed class ControllerMappingWindow : Window
             ResetLiveDraft(); RefreshMappings(); LoadInput();
         });
         AddButton("Save mapping", Save).IsDefault = true;
+        if (_configRoot != null)
+        {
+            AddButton("Open mapping…", OpenMapping);
+            AddButton("Save mapping as…", SaveMappingAs);
+        }
         AddButton("Cancel", () => DialogResult = false).IsCancel = true;
         var grid = new Grid(); root.Children.Add(grid);
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 740 });
@@ -135,12 +150,16 @@ public sealed class ControllerMappingWindow : Window
             _fields.Add((caption, control));
         }
         _target.Items.Add(new TargetItem("", "Unassigned"));
+        var targetText = new FrameworkElementFactory(typeof(TextBlock));
+        targetText.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding("Label"));
+        targetText.SetBinding(TextBlock.ForegroundProperty, new System.Windows.Data.Binding("Foreground"));
+        _target.ItemTemplate = new DataTemplate { VisualTree = targetText };
         foreach (var servo in Enum.GetValues<ServoNames>().Where(s => !ServoCommand.IsTextValued(s)))
         {
             _target.Items.Add(new TargetItem("Servo:" + servo, servo + " · group"));
             foreach (var child in ServoConfiguration.ControlsFor(servo)) _target.Items.Add(new TargetItem($"Child:{servo}:{child}", $"{servo} → {child}"));
         }
-        foreach (var action in ControllerCatalog.Actions) _target.Items.Add(new TargetItem("Action:" + action, "Action · " + action));
+        foreach (var action in ControllerCatalog.Actions) _target.Items.Add(new TargetItem("Action:" + action, action == ControllerCatalog.RecordingAction ? "REC · Start / Stop recording" : "Action · " + action));
         Field("Target control or action", _target);
         RebuildTriggerButtons();
         Field("Optional trigger · hold button", _motionTrigger);
@@ -337,7 +356,51 @@ public sealed class ControllerMappingWindow : Window
     private void Save()
     {
         if (!Commit()) return;
-        try { _save(_draft); DialogResult = true; }
+        try
+        {
+            if (_configRoot != null) ControllerProfileStore.SaveSelected(_configRoot, _draft, _mappingPath);
+            _save(_draft); DialogResult = true;
+        }
         catch (Exception ex) { _error.Text = "Could not save mapping: " + ex.Message; }
+    }
+    private void UpdateMappingFile()
+    {
+        _mappingFile.Text = "Mapping: " + System.IO.Path.GetFileNameWithoutExtension(_mappingPath);
+        _mappingFile.ToolTip = _mappingPath;
+    }
+    private void SaveMappingAs()
+    {
+        if (!Commit()) return;
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Save " + Kind + " controller mapping", Filter = "Controller mapping (*.json)|*.json",
+            DefaultExt = ".json", FileName = Kind + " mapping.json",
+            InitialDirectory = System.IO.Path.GetDirectoryName(_mappingPath)
+        };
+        if (dialog.ShowDialog(this) != true) return;
+        _mappingPath = dialog.FileName; UpdateMappingFile(); Save();
+    }
+    private void OpenMapping()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Open " + Kind + " controller mapping", Filter = "Controller mapping (*.json)|*.json",
+            InitialDirectory = System.IO.Path.GetDirectoryName(_mappingPath)
+        };
+        if (dialog.ShowDialog(this) != true) return;
+        try
+        {
+            var profile = ControllerProfileStore.LoadFile(dialog.FileName, Kind);
+            if (MessageBox.Show(this, "Replace the current draft with this mapping? Unsaved edits will be discarded.",
+                "Open mapping", MessageBoxButton.OKCancel) != MessageBoxResult.OK) return;
+            _liveEngine.Reset(); _preview?.Invoke(Array.Empty<ControllerIntent>(), false);
+            _loading = true;
+            try { _draft = profile; _layer = 0; _layerTabs.SelectedIndex = 0; _noMux.IsChecked = profile.NoMux; RebuildTriggerButtons(); }
+            finally { _loading = false; }
+            _mappingPath = dialog.FileName; UpdateMappingFile();
+            UpdateMuxUi(); RefreshMappings(); SelectInput("LeftX");
+            _error.Text = "";
+        }
+        catch (Exception ex) { _error.Text = "Could not open mapping: " + ex.Message; }
     }
 }
