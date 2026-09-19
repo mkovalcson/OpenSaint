@@ -1,13 +1,9 @@
 Requires a Windows Computer with Visual Studio 2026 C# and .NET 10.
 
-1. Copy the animatorConfig and ServoAnimator folders into the same parent folder
-2. Open the project file in the ServoAnimator folder in VS 2026
-
-It should compile and run and let you play with animating to audio files.
+There are zipped release files now available that simply need to be unzipped and run.
 
 The animatorConfig folder includes the sketch file used to drive the LED ring lights compatible with the commands it sends.
 The animatorConfig folder also includes the ticcmd.exe file to drive the eye pop. 
-
 A test movie file with audio will open by default, so it can be played immediately. 
 
 It does not require a physical robot to run the URDF virtual twin.
