@@ -188,6 +188,85 @@
             </Setter>
         </Style>
 
+        <!-- Inset-glow check boxes: a dark technical surface with the blue
+             accent carried by the border and glyph instead of a solid fill. -->
+        <Style TargetType="CheckBox">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource StudioFocusVisual}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Grid Background="Transparent">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid Width="20" Height="20" VerticalAlignment="Center">
+                                <Border x:Name="Glow" Margin="2" CornerRadius="5"
+                                        BorderBrush="{DynamicResource SequenceAccent}" BorderThickness="1"
+                                        Opacity="0">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#84B5F0" BlurRadius="7"
+                                                          ShadowDepth="0" Opacity="0.62"/>
+                                    </Border.Effect>
+                                </Border>
+                                <Border x:Name="Indicator" Margin="1" CornerRadius="5"
+                                        Background="{DynamicResource InputBackground}"
+                                        BorderBrush="{DynamicResource ControlBorder}" BorderThickness="2"/>
+                                <Path x:Name="CheckMark" Width="12" Height="9" Stretch="Fill"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                                      Data="M 1,5 L 4.5,8 L 11,1"
+                                      Stroke="{DynamicResource SequenceAccent}" StrokeThickness="2.4"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      StrokeLineJoin="Round" Visibility="Collapsed"/>
+                                <Border x:Name="MixedMark" Width="10" Height="3" CornerRadius="1.5"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        Background="{DynamicResource SequenceAccent}" Visibility="Collapsed"/>
+                            </Grid>
+                            <ContentPresenter x:Name="ContentHost" Grid.Column="1" Margin="7,0,0,0"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              HorizontalAlignment="Left"
+                                              RecognizesAccessKey="True"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Indicator" Property="BorderBrush" Value="{DynamicResource SequenceAccent}"/>
+                                <Setter TargetName="Indicator" Property="Background" Value="#171D26"/>
+                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="Glow" Property="Opacity" Value="1"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="{x:Null}">
+                                <Setter TargetName="Indicator" Property="BorderBrush" Value="{DynamicResource SequenceAccent}"/>
+                                <Setter TargetName="Indicator" Property="Background" Value="#171D26"/>
+                                <Setter TargetName="MixedMark" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="Glow" Property="Opacity" Value="1"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Indicator" Property="BorderBrush" Value="{DynamicResource FocusBorder}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Indicator" Property="Background" Value="{DynamicResource SequenceAccentSurface}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Indicator" Property="BorderBrush" Value="{DynamicResource FocusBorder}"/>
+                            </Trigger>
+                            <Trigger Property="HasContent" Value="False">
+                                <Setter TargetName="ContentHost" Property="Visibility" Value="Collapsed"/>
+                                <Setter TargetName="ContentHost" Property="Margin" Value="0"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                                <Setter Property="Cursor" Value="Arrow"/>
+                                <Setter TargetName="Glow" Property="Opacity" Value="0"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style TargetType="TextBox">
             <Setter Property="FocusVisualStyle" Value="{StaticResource StudioFocusVisual}"/>
             <Setter Property="Background" Value="{DynamicResource InputBackground}"/>
@@ -462,9 +541,9 @@
                 </StackPanel>
             </DataTemplate></Setter.Value></Setter>
         </Style>
-        <!-- URDF-only straight sliders: rounded rail and square blue handle,
-             without tick labels. Keep native Track/Thumb input behavior. -->
-        <Style x:Key="UrdfSliderTrackButton" TargetType="RepeatButton">
+        <!-- Compact studio scroll bars. The rounded blue thumb is shared by
+             direct timeline bars and the vertical bars created by ScrollViewer. -->
+        <Style x:Key="StudioScrollPageButton" TargetType="RepeatButton">
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="IsTabStop" Value="False"/>
             <Setter Property="Template"><Setter.Value>
@@ -473,66 +552,215 @@
                 </ControlTemplate>
             </Setter.Value></Setter>
         </Style>
-        <Style x:Key="UrdfSliderThumb" TargetType="Thumb">
-            <Setter Property="Width" Value="18"/>
-            <Setter Property="Height" Value="18"/>
+        <Style x:Key="StudioHorizontalScrollThumb" TargetType="Thumb">
+            <Setter Property="MinWidth" Value="28"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template"><Setter.Value>
                 <ControlTemplate TargetType="Thumb">
-                    <Border x:Name="Handle" Background="#60A5FA" BorderBrush="White"
-                            BorderThickness="2" CornerRadius="5">
-                        <Border.Effect>
-                            <DropShadowEffect Color="#6687B0" BlurRadius="6" ShadowDepth="1" Opacity="0.38"/>
-                        </Border.Effect>
+                    <Border x:Name="Handle" Margin="2,3" Background="#60A5FA"
+                            BorderBrush="#A9D0FF" BorderThickness="1" CornerRadius="7">
+                        <Border Height="2" Margin="8,2,8,0" VerticalAlignment="Top"
+                                Background="#B9DBFF" CornerRadius="1" Opacity="0.45"/>
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Handle" Property="Background" Value="#79B5FF"/>
-                        </Trigger>
-                        <Trigger Property="IsDragging" Value="True">
-                            <Setter TargetName="Handle" Property="Background" Value="#3B82F6"/>
-                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Handle" Property="Background" Value="#79B5FF"/></Trigger>
+                        <Trigger Property="IsDragging" Value="True"><Setter TargetName="Handle" Property="Background" Value="#3B82F6"/></Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value></Setter>
         </Style>
-        <Style x:Key="UrdfPoseSlider" TargetType="Slider">
-            <Setter Property="FocusVisualStyle" Value="{StaticResource StudioFocusVisual}"/>
+        <Style x:Key="StudioVerticalScrollThumb" TargetType="Thumb">
+            <Setter Property="MinHeight" Value="28"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template"><Setter.Value>
-                <ControlTemplate TargetType="Slider">
-                    <Grid x:Name="SliderSurface" Background="Transparent">
-                        <Border x:Name="Rail" Height="8" Margin="9,0" VerticalAlignment="Center"
-                                Background="#DEE5EF" CornerRadius="4" IsHitTestVisible="False"/>
-                        <Track x:Name="PART_Track" Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
-                               Value="{TemplateBinding Value}" Orientation="{TemplateBinding Orientation}"
-                               IsDirectionReversed="{TemplateBinding IsDirectionReversed}">
-                            <Track.DecreaseRepeatButton>
-                                <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Style="{StaticResource UrdfSliderTrackButton}"/>
-                            </Track.DecreaseRepeatButton>
-                            <Track.Thumb><Thumb Style="{StaticResource UrdfSliderThumb}"/></Track.Thumb>
-                            <Track.IncreaseRepeatButton>
-                                <RepeatButton Command="{x:Static Slider.IncreaseLarge}" Style="{StaticResource UrdfSliderTrackButton}"/>
-                            </Track.IncreaseRepeatButton>
-                        </Track>
-                    </Grid>
+                <ControlTemplate TargetType="Thumb">
+                    <Border x:Name="Handle" Margin="3,2" Background="#60A5FA"
+                            BorderBrush="#A9D0FF" BorderThickness="1" CornerRadius="7">
+                        <Border Width="2" Margin="2,8,0,8" HorizontalAlignment="Left"
+                                Background="#B9DBFF" CornerRadius="1" Opacity="0.45"/>
+                    </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="Orientation" Value="Vertical">
-                            <Setter TargetName="Rail" Property="Height" Value="Auto"/>
-                            <Setter TargetName="Rail" Property="Width" Value="8"/>
-                            <Setter TargetName="Rail" Property="Margin" Value="0,9"/>
-                            <Setter TargetName="Rail" Property="VerticalAlignment" Value="Stretch"/>
-                            <Setter TargetName="Rail" Property="HorizontalAlignment" Value="Center"/>
-                        </Trigger>
-                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="Rail" Property="Background" Value="#C3D8F3"/>
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="SliderSurface" Property="Opacity" Value="0.45"/>
-                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Handle" Property="Background" Value="#79B5FF"/></Trigger>
+                        <Trigger Property="IsDragging" Value="True"><Setter TargetName="Handle" Property="Background" Value="#3B82F6"/></Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value></Setter>
         </Style>
+        <ControlTemplate x:Key="StudioHorizontalScrollBarTemplate" TargetType="ScrollBar">
+            <Border x:Name="Rail" Background="#111720" BorderBrush="{DynamicResource DividerBrush}"
+                    BorderThickness="1" CornerRadius="7">
+                <Track x:Name="PART_Track" Margin="1" Orientation="Horizontal"
+                       Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
+                       Value="{TemplateBinding Value}" ViewportSize="{TemplateBinding ViewportSize}"
+                       IsDirectionReversed="False">
+                    <Track.DecreaseRepeatButton>
+                        <RepeatButton Command="{x:Static ScrollBar.PageLeftCommand}" Style="{StaticResource StudioScrollPageButton}"/>
+                    </Track.DecreaseRepeatButton>
+                    <Track.Thumb><Thumb Style="{StaticResource StudioHorizontalScrollThumb}"/></Track.Thumb>
+                    <Track.IncreaseRepeatButton>
+                        <RepeatButton Command="{x:Static ScrollBar.PageRightCommand}" Style="{StaticResource StudioScrollPageButton}"/>
+                    </Track.IncreaseRepeatButton>
+                </Track>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Rail" Property="BorderBrush" Value="{DynamicResource ControlBorder}"/></Trigger>
+                <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Rail" Property="Opacity" Value="0.42"/></Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+        <ControlTemplate x:Key="StudioVerticalScrollBarTemplate" TargetType="ScrollBar">
+            <Border x:Name="Rail" Background="#111720" BorderBrush="{DynamicResource DividerBrush}"
+                    BorderThickness="1" CornerRadius="7">
+                <Track x:Name="PART_Track" Margin="1" Orientation="Vertical"
+                       Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
+                       Value="{TemplateBinding Value}" ViewportSize="{TemplateBinding ViewportSize}"
+                       IsDirectionReversed="True">
+                    <Track.DecreaseRepeatButton>
+                        <RepeatButton Command="{x:Static ScrollBar.PageUpCommand}" Style="{StaticResource StudioScrollPageButton}"/>
+                    </Track.DecreaseRepeatButton>
+                    <Track.Thumb><Thumb Style="{StaticResource StudioVerticalScrollThumb}"/></Track.Thumb>
+                    <Track.IncreaseRepeatButton>
+                        <RepeatButton Command="{x:Static ScrollBar.PageDownCommand}" Style="{StaticResource StudioScrollPageButton}"/>
+                    </Track.IncreaseRepeatButton>
+                </Track>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Rail" Property="BorderBrush" Value="{DynamicResource ControlBorder}"/></Trigger>
+                <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Rail" Property="Opacity" Value="0.42"/></Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+        <Style x:Key="StudioScrollBar" TargetType="ScrollBar">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Width" Value="14"/>
+            <Setter Property="Template" Value="{StaticResource StudioVerticalScrollBarTemplate}"/>
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Horizontal">
+                    <Setter Property="Width" Value="Auto"/>
+                    <Setter Property="Height" Value="14"/>
+                    <Setter Property="Template" Value="{StaticResource StudioHorizontalScrollBarTemplate}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style TargetType="ScrollBar" BasedOn="{StaticResource StudioScrollBar}"/>
+
+        <!-- Notched value sliders: a compact servo-scale rail, active fill,
+             regular tick rhythm, and a square blue handle. -->
+        <Style x:Key="StudioSliderTrackButton" TargetType="RepeatButton">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Template"><Setter.Value>
+                <ControlTemplate TargetType="RepeatButton"><Border Background="Transparent"/></ControlTemplate>
+            </Setter.Value></Setter>
+        </Style>
+        <Style x:Key="StudioSliderDecreaseButton" TargetType="RepeatButton" BasedOn="{StaticResource StudioSliderTrackButton}">
+            <Setter Property="Template"><Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Border Height="6" VerticalAlignment="Center" Background="{DynamicResource SequenceAccent}" CornerRadius="3"/>
+                </ControlTemplate>
+            </Setter.Value></Setter>
+        </Style>
+        <Style x:Key="StudioVerticalSliderDecreaseButton" TargetType="RepeatButton" BasedOn="{StaticResource StudioSliderTrackButton}">
+            <Setter Property="Template"><Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Border Width="6" HorizontalAlignment="Center" Background="{DynamicResource SequenceAccent}" CornerRadius="3"/>
+                </ControlTemplate>
+            </Setter.Value></Setter>
+        </Style>
+        <Style x:Key="StudioHorizontalSliderThumb" TargetType="Thumb">
+            <Setter Property="Width" Value="18"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template"><Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Border x:Name="Handle" Background="#60A5FA" BorderBrush="#EAF0F7"
+                            BorderThickness="2" CornerRadius="5"/>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Handle" Property="Background" Value="#79B5FF"/></Trigger>
+                        <Trigger Property="IsDragging" Value="True"><Setter TargetName="Handle" Property="Background" Value="#3B82F6"/></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value></Setter>
+        </Style>
+        <Style x:Key="StudioVerticalSliderThumb" TargetType="Thumb" BasedOn="{StaticResource StudioHorizontalSliderThumb}">
+            <Setter Property="Width" Value="20"/>
+            <Setter Property="Height" Value="18"/>
+        </Style>
+        <ControlTemplate x:Key="StudioHorizontalValueSliderTemplate" TargetType="Slider">
+            <Grid x:Name="SliderSurface" Background="Transparent" MinHeight="20">
+                <Border Height="6" Margin="9,0" VerticalAlignment="Center"
+                        Background="#111720" BorderBrush="{DynamicResource DividerBrush}"
+                        BorderThickness="1" CornerRadius="3"/>
+                <Rectangle Height="14" Margin="9,0" VerticalAlignment="Center" IsHitTestVisible="False" Opacity="0.62">
+                    <Rectangle.Fill>
+                        <DrawingBrush TileMode="Tile" Viewport="0,0,24,14" ViewportUnits="Absolute"
+                                      Viewbox="0,0,24,14" ViewboxUnits="Absolute">
+                            <DrawingBrush.Drawing>
+                                <GeometryDrawing Geometry="M 12,1 L 12,5 M 12,9 L 12,13">
+                                    <GeometryDrawing.Pen><Pen Brush="#6C7F97" Thickness="1"/></GeometryDrawing.Pen>
+                                </GeometryDrawing>
+                            </DrawingBrush.Drawing>
+                        </DrawingBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+                <Track x:Name="PART_Track" Margin="9,0" Orientation="Horizontal"
+                       Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
+                       Value="{TemplateBinding Value}" IsDirectionReversed="{TemplateBinding IsDirectionReversed}">
+                    <Track.DecreaseRepeatButton>
+                        <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Style="{StaticResource StudioSliderDecreaseButton}"/>
+                    </Track.DecreaseRepeatButton>
+                    <Track.Thumb><Thumb Style="{StaticResource StudioHorizontalSliderThumb}"/></Track.Thumb>
+                    <Track.IncreaseRepeatButton>
+                        <RepeatButton Command="{x:Static Slider.IncreaseLarge}" Style="{StaticResource StudioSliderTrackButton}"/>
+                    </Track.IncreaseRepeatButton>
+                </Track>
+            </Grid>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsEnabled" Value="False"><Setter TargetName="SliderSurface" Property="Opacity" Value="0.45"/></Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+        <ControlTemplate x:Key="StudioVerticalValueSliderTemplate" TargetType="Slider">
+            <Grid x:Name="SliderSurface" Background="Transparent" MinWidth="20">
+                <Border Width="6" Margin="0,9" HorizontalAlignment="Center"
+                        Background="#111720" BorderBrush="{DynamicResource DividerBrush}"
+                        BorderThickness="1" CornerRadius="3"/>
+                <Rectangle Width="14" Margin="0,9" HorizontalAlignment="Center" IsHitTestVisible="False" Opacity="0.62">
+                    <Rectangle.Fill>
+                        <DrawingBrush TileMode="Tile" Viewport="0,0,14,24" ViewportUnits="Absolute"
+                                      Viewbox="0,0,14,24" ViewboxUnits="Absolute">
+                            <DrawingBrush.Drawing>
+                                <GeometryDrawing Geometry="M 1,12 L 5,12 M 9,12 L 13,12">
+                                    <GeometryDrawing.Pen><Pen Brush="#6C7F97" Thickness="1"/></GeometryDrawing.Pen>
+                                </GeometryDrawing>
+                            </DrawingBrush.Drawing>
+                        </DrawingBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+                <Track x:Name="PART_Track" Margin="0,9" Orientation="Vertical"
+                       Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
+                       Value="{TemplateBinding Value}" IsDirectionReversed="{TemplateBinding IsDirectionReversed}">
+                    <Track.DecreaseRepeatButton>
+                        <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Style="{StaticResource StudioVerticalSliderDecreaseButton}"/>
+                    </Track.DecreaseRepeatButton>
+                    <Track.Thumb><Thumb Style="{StaticResource StudioVerticalSliderThumb}"/></Track.Thumb>
+                    <Track.IncreaseRepeatButton>
+                        <RepeatButton Command="{x:Static Slider.IncreaseLarge}" Style="{StaticResource StudioSliderTrackButton}"/>
+                    </Track.IncreaseRepeatButton>
+                </Track>
+            </Grid>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsEnabled" Value="False"><Setter TargetName="SliderSurface" Property="Opacity" Value="0.45"/></Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+        <Style x:Key="StudioValueSlider" TargetType="Slider">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource StudioFocusVisual}"/>
+            <Setter Property="Template" Value="{StaticResource StudioHorizontalValueSliderTemplate}"/>
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Vertical">
+                    <Setter Property="Template" Value="{StaticResource StudioVerticalValueSliderTemplate}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style TargetType="Slider" BasedOn="{StaticResource StudioValueSlider}"/>
+        <Style x:Key="UrdfPoseSlider" TargetType="Slider" BasedOn="{StaticResource StudioValueSlider}"/>
         <Style x:Key="StudioPlayButton" TargetType="Button" BasedOn="{StaticResource StudioTransportButton}">
             <Setter Property="MinWidth" Value="112"/>
             <Setter Property="Background" Value="{DynamicResource SequenceAccentSurface}"/>

@@ -2,7 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Edit Commands"
-        Width="1030" SizeToContent="Height" MaxHeight="640"
+        Width="1030" Height="640" MinHeight="360"
+        ResizeMode="CanResize"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource PanelBackground}">
 
@@ -109,7 +110,17 @@
                                           ToolTipService.ShowOnDisabled="True"/>
                                 <ComboBox Grid.Column="2" Margin="0,0,6,0"
                                           ItemsSource="{Binding ServoPickOptions}"
-                                          SelectedItem="{Binding SelectedServoItem}"/>
+                                          SelectedItem="{Binding SelectedServoItem}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Image Source="{Binding IconSource}" Width="18" Height="18"
+                                                       Margin="0,0,7,0" Stretch="Uniform"/>
+                                                <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
                             </Grid>
 
                             <!-- NUMERIC value slider: range bound per servo;
@@ -120,7 +131,7 @@
                                     VerticalAlignment="Center" Margin="0,0,6,0"
                                     Value="{Binding Value, Mode=TwoWay}">
                                 <Slider.Style>
-                                    <Style TargetType="Slider">
+                                    <Style TargetType="Slider" BasedOn="{StaticResource StudioValueSlider}">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsTextServo}" Value="True">
                                                 <Setter Property="Visibility" Value="Collapsed"/>

@@ -17,15 +17,24 @@ public sealed class FocusControlWindow : Window
         scroll.SetResourceReference(BackgroundProperty, "AppBackground"); Content = scroll;
         panel.Children.Add(new TextBlock { Text = "Focus Control", FontSize = 24, FontWeight = FontWeights.SemiBold });
         panel.Children.Add(new TextBlock { Text = "Allow control while the Animation Editor is out of focus", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 18) });
-        CheckBox Choice(string label, bool value)
+        CheckBox Choice(string label, bool value, FrameworkElement icon = null)
         {
-            var box = new CheckBox { Content = label, IsChecked = value, FontSize = 16, Margin = new Thickness(0, 6, 0, 6) };
+            object content = label;
+            if (icon != null)
+            {
+                icon.Margin = new Thickness(0, 0, 8, 0);
+                var row = new StackPanel { Orientation = Orientation.Horizontal };
+                row.Children.Add(icon);
+                row.Children.Add(new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center });
+                content = row;
+            }
+            var box = new CheckBox { Content = content, IsChecked = value, FontSize = 16, Margin = new Thickness(0, 6, 0, 6) };
             box.SetResourceReference(ForegroundProperty, "PrimaryText"); panel.Children.Add(box); return box;
         }
-        var xbox = Choice("X-Box Controller", settings.XboxController);
+        var xbox = Choice("X-Box Controller", settings.XboxController, DeviceIconFactory.Xbox());
         var xboxUrdf = Choice("Drive URDF model", settings.XboxUrdf); xboxUrdf.Margin = new Thickness(26, 4, 0, 4);
         var xboxPhysical = Choice("Drive Physical Model", settings.XboxPhysical); xboxPhysical.Margin = new Thickness(26, 4, 0, 12);
-        var steam = Choice("Steam Controller", settings.SteamController);
+        var steam = Choice("Steam Controller", settings.SteamController, DeviceIconFactory.Steam());
         var steamUrdf = Choice("Drive URDF model", settings.SteamUrdf); steamUrdf.Margin = new Thickness(26, 4, 0, 4);
         var steamPhysical = Choice("Drive Physical Model", settings.SteamPhysical); steamPhysical.Margin = new Thickness(26, 4, 0, 12);
         void RefreshChoices()
@@ -35,8 +44,8 @@ public sealed class FocusControlWindow : Window
         }
         xbox.Checked += (_, _) => RefreshChoices(); xbox.Unchecked += (_, _) => RefreshChoices();
         steam.Checked += (_, _) => RefreshChoices(); steam.Unchecked += (_, _) => RefreshChoices(); RefreshChoices();
-        var movie = Choice("Movie Playback", settings.MoviePlayback);
-        var deck = Choice("Stream Deck / Library API", settings.StreamDeck);
+        var movie = Choice("Movie Playback", settings.MoviePlayback, DeviceIconFactory.Keyboard());
+        var deck = Choice("Stream Deck / Library API", settings.StreamDeck, DeviceIconFactory.StreamDeck());
         var deckUrdf = Choice("Drive URDF model", settings.StreamDeckUrdf); deckUrdf.Margin = new Thickness(26, 4, 0, 4);
         var deckPhysical = Choice("Drive Physical Model", settings.StreamDeckPhysical); deckPhysical.Margin = new Thickness(26, 4, 0, 12);
         void RefreshDeck() => deckUrdf.IsEnabled = deckPhysical.IsEnabled = deck.IsChecked == true;

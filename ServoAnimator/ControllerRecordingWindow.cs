@@ -72,7 +72,8 @@ internal sealed class ControllerRecordingWindow : Window
         };
         foreach (var servo in Enum.GetValues<ServoNames>().Where(s => !ServoCommand.IsTextValued(s) && s is not (ServoNames.NeckTiltRight or ServoNames.LeftEyePop or ServoNames.RightEyePop)))
         {
-            var check = new CheckBox { Content = servo == ServoNames.NeckNodUp ? "Neck nod / tilt" : servo == ServoNames.BothEyePop ? "Eye pop (both sides)" : servo.ToString(), IsChecked = true, Width = 245, Margin = new Thickness(0, 3, 0, 3) };
+            string label = servo == ServoNames.NeckNodUp ? "Neck nod / tilt" : servo == ServoNames.BothEyePop ? "Eye pop (both sides)" : servo.ToString();
+            var check = new CheckBox { Content = ServoLabel(servo, label), IsChecked = true, Width = 245, Margin = new Thickness(0, 3, 0, 3) };
             check.SetResourceReference(Control.ForegroundProperty, "PrimaryText");
             _controls[servo] = check;
             var group = new StackPanel { Width = 245, Margin = new Thickness(0, 0, 0, 5) }; group.Children.Add(check); list.Children.Add(group);
@@ -81,7 +82,7 @@ internal sealed class ControllerRecordingWindow : Window
             group.Children.Add(childPanel);
             foreach (var control in ServoConfiguration.ControlsFor(servo).Distinct().Where(_ => ServoConfiguration.ControlsFor(servo).Distinct().Count() > 1))
             {
-                var child = new CheckBox { Content = control.ToString(), Margin = new Thickness(0, 3, 0, 3) };
+                var child = new CheckBox { Content = ServoLabel(servo, control.ToString()), Margin = new Thickness(0, 3, 0, 3) };
                 child.SetResourceReference(Control.ForegroundProperty, "PrimaryText");
                 _children[(servo, control)] = child; childPanel.Children.Add(child);
                 child.Checked += (_, _) => check.IsChecked = false;
@@ -117,6 +118,14 @@ internal sealed class ControllerRecordingWindow : Window
             if (_hasTake && !_accepted && MessageBox.Show(this, "Discard this recorded take?", "Controller recording", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes) e.Cancel = true;
         };
         SetStatus("");
+    }
+    private static FrameworkElement ServoLabel(ServoNames servo, string label)
+    {
+        var content = new StackPanel { Orientation = Orientation.Horizontal };
+        content.Children.Add(new Image { Source = ServoIconProvider.For(servo), Width = 18, Height = 18,
+            Stretch = Stretch.Uniform, Margin = new Thickness(0, 0, 6, 0) });
+        content.Children.Add(new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center });
+        return content;
     }
     internal void Begin()
     { Armed = false; Recording = true; _setup.IsEnabled = false; _processing.IsEnabled = false; _record.IsEnabled = false; _keep.IsEnabled = false; }

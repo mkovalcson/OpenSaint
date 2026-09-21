@@ -97,15 +97,35 @@
                                     <ColumnDefinition Width="55"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="{Binding GangName}"
-                                           Foreground="{DynamicResource WarningText}" FontWeight="Bold"
-                                           FontSize="14" VerticalAlignment="Center"/>
+                                <Grid Grid.Column="0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding GangName}"
+                                               Foreground="{DynamicResource WarningText}" FontWeight="Bold"
+                                               FontSize="14" VerticalAlignment="Center"/>
+                                    <ItemsControl Grid.Column="1" ItemsSource="{Binding IconSources}"
+                                                  HorizontalAlignment="Right" VerticalAlignment="Center">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Image Source="{Binding}" Width="48" Height="48"
+                                                       Stretch="Uniform" Margin="4,0,0,0"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
                                 <Slider Grid.Column="1" VerticalAlignment="Center"
                                         Minimum="{Binding GangMin}"
                                         Maximum="{Binding GangMax}"
                                         Value="{Binding GangValue, Mode=TwoWay}">
                                     <Slider.Style>
-                                        <Style TargetType="Slider">
+                                        <Style TargetType="Slider" BasedOn="{StaticResource StudioValueSlider}">
                                             <Setter Property="Visibility" Value="Collapsed"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding HasGangSlider}" Value="True">

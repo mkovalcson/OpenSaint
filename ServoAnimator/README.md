@@ -6,6 +6,15 @@ format.
 
 ## Build & run
 
+Version 1.31 adds status messages in the right side of the Movie controls,
+a global Escape stop while Live Drive is enabled, remembered control defaults
+for new commands, and a 0.1×–2× sequence/movie playback-speed slider (default 1×).
+Audio pitch follows the playback speed. Escape stops playback and recording,
+disables servos, and turns Live Drive off; re-enable it deliberately to resume.
+
+Version 1.30.1 removes Time from the main Command List, places Speed before
+Value, and right-aligns the heading as “N Commands at T sec”.
+
 Starting with version 1.29.13, command groups have sequential numbers and distinct
 triangle colors. **Hide Group** temporarily excludes a group from the timeline
 and playback; matching **Show Group #** buttons restore it from the Sequence bar.

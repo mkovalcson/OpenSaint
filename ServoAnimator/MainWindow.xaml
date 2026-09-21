@@ -81,10 +81,13 @@
                     </StackPanel>
                     </Border>
                     <Grid Grid.Column="2" Margin="8,0,0,0" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                         <TextBlock Grid.Row="0" x:Name="MovieFileText"
                                    Text="(unsaved)* — 0 s" Foreground="{DynamicResource WarningText}"
                                    VerticalAlignment="Center" FontFamily="Consolas" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="1" Grid.RowSpan="2" x:Name="MovieStatusText" Margin="12,0,0,0"
+                                   Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center" TextWrapping="Wrap" MaxHeight="48" TextTrimming="CharacterEllipsis"/>
                         <TextBlock Grid.Row="1" x:Name="MovieDescriptionText" Foreground="{DynamicResource PrimaryText}"
                                    TextWrapping="Wrap" VerticalAlignment="Center"><Run x:Name="MovieDescriptionRun"/><Run Text="  "/><Hyperlink
                                 x:Name="MovieDescriptionEditButton" FontSize="11" FontWeight="Bold" TextDecorations="{x:Null}"
@@ -142,6 +145,13 @@
                         <ComboBoxItem Content="Combined"/>
                     </ComboBox>
                     <Button Content="?" Width="30" Height="30" Margin="6,0,0,0" ToolTip="Controls and hotkeys • wheel zoom • middle-drag pan • right-click actions" Click="HelpControls_Click"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="10,2,0,2" VerticalAlignment="Center">
+                    <TextBlock Text="PLAYBACK SPEED" Style="{StaticResource SectionCaption}" VerticalAlignment="Center"/>
+                    <Slider x:Name="PlaybackSpeedSlider" Minimum="0.1" Maximum="2" Value="1" Width="110" Margin="6,0"
+                            TickFrequency="0.1" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="PlaybackSpeed_Changed"
+                            ToolTip="Sequence/movie playback speed · 0.1×–2× (audio pitch follows speed)"/>
+                    <TextBlock x:Name="PlaybackSpeedText" Text="100%" Width="48" Foreground="#FFFFFF" FontWeight="SemiBold" VerticalAlignment="Center"/>
                 </StackPanel>
                 <WrapPanel x:Name="HiddenGroupButtons" Margin="8,2,0,2"/>
             </WrapPanel>
@@ -451,7 +461,7 @@
                 <DockPanel x:Name="CommandsAtPointContent">
                     <Grid DockPanel.Dock="Top" Margin="8,4,8,2">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="3" x:Name="CommandsAtPointHeader" Text="Commands at cursor: (none)"
+                        <TextBlock Grid.Column="3" x:Name="CommandsAtPointHeader" Text="0 Commands at 0.000 sec" TextAlignment="Right"
                                    Foreground="{DynamicResource HeaderText}" FontWeight="Bold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="8,0,0,0"/>
                         <Button Grid.Column="0" Content="+ Add" Margin="4,0" Click="CommandsAtPointAdd_Click"/>
                         <Button x:Name="CommandsAtPointEditButton" Grid.Column="1" Content="Edit" Margin="4,0" Click="CommandsAtPointEdit_Click"/>
@@ -460,13 +470,12 @@
                                 Visibility="Collapsed" ToolTip="Dock the detached URDF beside Commands" Click="DockUrdf_Click"/>
                     </Grid>
                     <Grid DockPanel.Dock="Top" Margin="19,7,23,3">
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="30*"/><ColumnDefinition Width="38"/><ColumnDefinition Width="42"/><ColumnDefinition Width="50*"/><ColumnDefinition Width="36"/><ColumnDefinition Width="48"/></Grid.ColumnDefinitions>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="30*"/><ColumnDefinition Width="38"/><ColumnDefinition Width="42"/><ColumnDefinition Width="46"/><ColumnDefinition Width="50*"/></Grid.ColumnDefinitions>
                         <TextBlock Text="CONTROL" Style="{StaticResource SectionCaption}"/>
                         <TextBlock Grid.Column="1" Text="Spline" FontSize="10" TextAlignment="Center" Foreground="{DynamicResource SecondaryText}"/>
                         <TextBlock Grid.Column="2" Text="Break&#10;Spline" FontSize="10" TextAlignment="Center" Foreground="{DynamicResource SecondaryText}"/>
-                        <TextBlock Grid.Column="3" Text="VALUE" Style="{StaticResource SectionCaption}"/>
-                        <TextBlock Grid.Column="4" Text="SPEED" Style="{StaticResource SectionCaption}"/>
-                        <TextBlock Grid.Column="5" Text="TIME (s)" Style="{StaticResource SectionCaption}" TextAlignment="Right"/>
+                        <TextBlock Grid.Column="4" Text="VALUE" Style="{StaticResource SectionCaption}"/>
+                        <TextBlock Grid.Column="3" Text="SPEED" Style="{StaticResource SectionCaption}"/>
                     </Grid>
                     <ListBox x:Name="CommandsAtPointList" Margin="8,2,8,6" SelectionMode="Single"
                              SelectionChanged="CommandsAtPointList_SelectionChanged"
@@ -477,18 +486,21 @@
                         <ListBox.Resources><BooleanToVisibilityConverter x:Key="CommandFlagVisibility"/></ListBox.Resources>
                         <ListBox.ItemTemplate><DataTemplate>
                             <Grid ToolTip="{Binding Details}" MinHeight="23">
-                                <Grid.ColumnDefinitions><ColumnDefinition Width="30*"/><ColumnDefinition Width="38"/><ColumnDefinition Width="42"/><ColumnDefinition Width="50*"/><ColumnDefinition Width="36"/><ColumnDefinition Width="48"/></Grid.ColumnDefinitions>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="30*"/><ColumnDefinition Width="38"/><ColumnDefinition Width="42"/><ColumnDefinition Width="46"/><ColumnDefinition Width="50*"/></Grid.ColumnDefinitions>
                                 <Border Width="3" CornerRadius="1.5" Height="17" Background="{Binding AccentBrush}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="0" Text="{Binding NameText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" FontWeight="SemiBold" Margin="12,0,7,0"/>
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="12,0,7,0" VerticalAlignment="Center">
+                                    <Image Source="{Binding IconSource}" Width="18" Height="18" Margin="0,0,7,0" Stretch="Uniform"/>
+                                    <TextBlock Text="{Binding NameText}" TextTrimming="CharacterEllipsis"
+                                               VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                </StackPanel>
                                 <CheckBox Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" IsChecked="{Binding SplineEnabled, Mode=OneWay}" IsEnabled="{Binding CanSpline}" Click="CommandSpline_Click" ToolTip="Enable this control's spline for the sequence" Visibility="{Binding IsCommandRow, Converter={StaticResource CommandFlagVisibility}}"/>
                                 <CheckBox Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" IsChecked="{Binding BreakSpline, Mode=OneWay}" IsEnabled="{Binding CanBreak}" Click="CommandBreak_Click" ToolTip="Hide the outgoing spline line" Visibility="{Binding IsCommandRow, Converter={StaticResource CommandFlagVisibility}}"/>
-                                <TextBlock Grid.Column="3" Text="{Binding ValueText}" TextWrapping="Wrap" FontFamily="Consolas" VerticalAlignment="Center" Margin="0,0,5,0" Visibility="{Binding IsCommandRow, Converter={StaticResource CommandFlagVisibility}}"/>
-                                <WrapPanel Grid.Column="1" Grid.ColumnSpan="3" VerticalAlignment="Center">
+                                <TextBlock Grid.Column="4" Text="{Binding ValueText}" TextWrapping="Wrap" FontFamily="Consolas" VerticalAlignment="Center" Margin="0,0,5,0" Visibility="{Binding IsCommandRow, Converter={StaticResource CommandFlagVisibility}}"/>
+                                <WrapPanel Grid.Column="1" Grid.ColumnSpan="4" VerticalAlignment="Center">
                                     <Button Content="Clear Breaks" Padding="5,2" Margin="2" FontSize="11" Click="ModifiedBreaks_Click" Tag="Clear" Visibility="{Binding CanClearBreaks, Converter={StaticResource CommandFlagVisibility}}"/>
                                     <Button Content="Set Breaks" Padding="5,2" Margin="2" FontSize="11" Click="ModifiedBreaks_Click" Tag="Set" Visibility="{Binding CanSetBreaks, Converter={StaticResource CommandFlagVisibility}}"/>
                                 </WrapPanel>
-                                <TextBlock Grid.Column="4" Text="{Binding SpeedText}" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="5" Text="{Binding TimeText}" TextTrimming="CharacterEllipsis" FontFamily="Consolas" Foreground="{DynamicResource SecondaryText}" TextAlignment="Right" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" Text="{Binding SpeedText}" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
                             </Grid>
                         </DataTemplate></ListBox.ItemTemplate>
                     </ListBox>

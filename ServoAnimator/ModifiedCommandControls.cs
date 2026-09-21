@@ -14,6 +14,7 @@ namespace ServoAnimator
         public string SpeedText => "—";
         public string TimeText => "all";
         public System.Windows.Media.Brush AccentBrush => MainWindow.BrushFor(Servo);
+        public System.Windows.Media.ImageSource IconSource => ServoIconProvider.For(Servo);
         public string Details => $"{NameText}\nSelect to highlight every matching command triangle.";
         public override string ToString() => Control.HasValue ? $"{Servo} [{Control}]" : Servo.ToString();
         public bool Includes(ServoCommand command) => command.Servo == Servo &&

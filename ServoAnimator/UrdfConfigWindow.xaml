@@ -110,8 +110,24 @@
                                 Background="{DynamicResource PanelBackground}" CornerRadius="7"
                                 Margin="0,0,0,9" Padding="8,6">
                             <StackPanel>
-                                <TextBlock Text="{Binding GroupName}" FontWeight="SemiBold" FontSize="14"
-                                           Foreground="{DynamicResource HeaderText}" Margin="2,0,0,5"/>
+                                <StackPanel Orientation="Horizontal" Margin="2,0,0,5">
+                                    <TextBlock Text="{Binding GroupName}" FontWeight="SemiBold" FontSize="14"
+                                               Foreground="{DynamicResource HeaderText}" VerticalAlignment="Center"/>
+                                    <ItemsControl ItemsSource="{Binding IconSources}"
+                                                  VerticalAlignment="Center">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Image Source="{Binding}" Width="48" Height="48"
+                                                       Stretch="Uniform" Margin="6,0,0,0"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
 
                                 <ItemsControl ItemsSource="{Binding Servos}">
                                     <ItemsControl.ItemTemplate>

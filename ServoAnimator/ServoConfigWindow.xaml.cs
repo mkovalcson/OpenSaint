@@ -23,6 +23,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using Microsoft.Win32;
 
 namespace ServoAnimator
@@ -165,7 +166,7 @@ namespace ServoAnimator
                 var (min, max) = ServoCommand.RangeFor(gang);
                 groups.Add(new GangGroupVM(gang.ToString(), vms,
                     gangServo: controls.Length > 1 ? gang : null,
-                    min, max, _driveGang));
+                    min, max, _driveGang, new[] { gang }));
             }
 
             void AddTitle(string title, params ServoNames[] singles)
@@ -182,7 +183,7 @@ namespace ServoAnimator
                         _allConfigVms.Add(vm);
                     }
                 if (vms.Count > 0)
-                    groups.Add(new GangGroupVM(title, vms, null, 0, 0, null));
+                    groups.Add(new GangGroupVM(title, vms, null, 0, 0, null, singles));
             }
 
             // Ganged ServoNames - separate lines for the two neck gangs.
@@ -301,7 +302,8 @@ namespace ServoAnimator
 
         public GangGroupVM(string name, ObservableCollection<ServoConfigVM> controls,
                            ServoNames? gangServo, int min, int max,
-                           Action<ServoNames, int> driveGang)
+                           Action<ServoNames, int> driveGang,
+                           IEnumerable<ServoNames> iconServos)
         {
             GangName = name;
             Controls = controls;
@@ -310,6 +312,8 @@ namespace ServoAnimator
             GangMin = min;
             GangMax = max;
             _gangValue = Math.Clamp(0, min, max);
+            IconSources = new ObservableCollection<ImageSource>(
+                iconServos.Select(ServoIconProvider.For).Where(icon => icon != null));
 
             foreach (var vm in Controls)
                 vm.PropertyChanged += (_, e) =>
@@ -325,6 +329,7 @@ namespace ServoAnimator
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         public string GangName { get; }
+        public ObservableCollection<ImageSource> IconSources { get; }
         public ObservableCollection<ServoConfigVM> Controls { get; }
         public bool HasGangSlider => _gangServo.HasValue;
         public bool HasGangSpeedSettings => _gangServo.HasValue && Controls.Count > 0;

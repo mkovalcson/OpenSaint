@@ -101,7 +101,7 @@
         "TriggerButton": ""
       },
       "A": {
-        "Target": "Servo:FlapsOpen",
+        "Target": "",
         "Mode": "Set",
         "Low": -100,
         "High": -100,

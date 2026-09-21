@@ -1,4 +1,9 @@
 {
+  "commandGroupNumbers": {
+    "6da3fa3ff2fe48a7b0b9df8c6a908900": 1,
+    "2f5289555bde462997785c752a69472e": 2,
+    "33f0f4b108af4699b2eef6974748c53f": 3
+  },
   "description": "A full description of what I\u0027m trying to do with this animation sequence including any notes I may care about.",
   "audioFiles": "LightningRound.mp3|LR7_Expressive.mp3",
   "audioFile": "LightningRound.mp3",
@@ -686,231 +691,264 @@
       "servo": "NeckTurn",
       "value": 0,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 40.979,
       "servo": "NeckTurn",
       "value": 5,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 41.109,
       "servo": "NeckTurn",
       "value": 28,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 41.228,
       "servo": "NeckTurn",
       "value": 52,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 41.421,
       "servo": "NeckTurn",
       "value": 61,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 41.572,
       "servo": "NeckTurn",
       "value": 72,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 41.696,
       "servo": "NeckTurn",
       "value": 73,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 41.758,
       "servo": "NeckTurn",
       "value": 70,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 41.996,
       "servo": "NeckTurn",
       "value": 40,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 42.244,
       "servo": "NeckTurn",
       "value": -6,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 42.369,
       "servo": "NeckTurn",
       "value": -26,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 42.437,
       "servo": "NeckTurn",
       "value": -32,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 42.588,
       "servo": "NeckTurn",
       "value": -30,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 42.652,
       "servo": "NeckTurn",
       "value": -21,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 42.812,
       "servo": "NeckTurn",
       "value": 12,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 42.845,
       "servo": "NeckTurn",
       "value": 16,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 42.996,
       "servo": "NeckTurn",
       "value": 17,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 43.091,
       "servo": "NeckTurn",
       "value": 9,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 43.245,
       "servo": "NeckTurn",
       "value": -26,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 43.305,
       "servo": "NeckTurn",
       "value": -36,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 43.373,
       "servo": "NeckTurn",
       "value": -40,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 43.557,
       "servo": "NeckTurn",
       "value": -40,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 43.62,
       "servo": "NeckTurn",
       "value": -34,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 43.684,
       "servo": "NeckTurn",
       "value": -22,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
-      "offsetSeconds": 43.812,
+      "offsetSeconds": 43.918,
       "servo": "NeckTurn",
       "value": 14,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "2f5289555bde462997785c752a69472e"
     },
     {
-      "offsetSeconds": 43.9,
+      "offsetSeconds": 44.006,
       "servo": "NeckTurn",
       "value": 46,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "2f5289555bde462997785c752a69472e"
     },
     {
-      "offsetSeconds": 43.931,
+      "offsetSeconds": 44.037,
       "servo": "NeckTurn",
       "value": 49,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "2f5289555bde462997785c752a69472e"
     },
     {
-      "offsetSeconds": 44.089,
+      "offsetSeconds": 44.195,
       "servo": "NeckTurn",
       "value": 49,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "2f5289555bde462997785c752a69472e"
     },
     {
-      "offsetSeconds": 44.16,
+      "offsetSeconds": 44.266,
       "servo": "NeckTurn",
       "value": 44,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "2f5289555bde462997785c752a69472e"
     },
     {
-      "offsetSeconds": 44.274,
+      "offsetSeconds": 44.38,
       "servo": "NeckTurn",
       "value": 22,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "2f5289555bde462997785c752a69472e"
     },
     {
-      "offsetSeconds": 44.43,
+      "offsetSeconds": 44.536,
       "servo": "NeckTurn",
       "value": -15,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "2f5289555bde462997785c752a69472e"
     },
     {
-      "offsetSeconds": 44.461,
+      "offsetSeconds": 44.567,
       "servo": "NeckTurn",
       "value": -18,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "2f5289555bde462997785c752a69472e"
     },
     {
       "offsetSeconds": 45.393,
       "servo": "NeckTurn",
       "value": -19,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 45.833,
@@ -918,7 +956,8 @@
       "value": 100,
       "speed": "Default",
       "reason": "Controller recording",
-      "breakSpline": true
+      "breakSpline": true,
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
       "offsetSeconds": 45.833,
@@ -926,343 +965,392 @@
       "value": 0,
       "speed": "Default",
       "reason": "Controller recording",
-      "breakSpline": true
+      "breakSpline": true,
+      "groupId": "33f0f4b108af4699b2eef6974748c53f"
     },
     {
-      "offsetSeconds": 46.342,
+      "offsetSeconds": 46.329,
       "servo": "FlapTiltUp",
       "value": 7,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 46.443,
+      "offsetSeconds": 46.43,
       "servo": "FlapTiltUp",
       "value": 11,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 46.508,
+      "offsetSeconds": 46.495,
       "servo": "FlapTiltUp",
       "value": 14,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 46.819,
+      "offsetSeconds": 46.806,
       "servo": "FlapTiltUp",
       "value": 10,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 46.851,
+      "offsetSeconds": 46.838,
       "servo": "FlapTiltUp",
       "value": 7,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 46.883,
+      "offsetSeconds": 46.87,
       "servo": "FlapTiltUp",
       "value": 4,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 46.915,
+      "offsetSeconds": 46.902,
       "servo": "FlapTiltUp",
       "value": -6,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 46.947,
+      "offsetSeconds": 46.934,
       "servo": "FlapTiltUp",
       "value": -28,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 46.98,
+      "offsetSeconds": 46.967,
       "servo": "FlapTiltUp",
       "value": -60,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 47.013,
+      "offsetSeconds": 47,
       "servo": "FlapsOpen",
       "value": 98,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 47.013,
+      "offsetSeconds": 47,
       "servo": "FlapTiltUp",
       "value": -88,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 47.044,
+      "offsetSeconds": 47.031,
       "servo": "FlapTiltUp",
       "value": -100,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 47.075,
+      "offsetSeconds": 47.062,
       "servo": "FlapsOpen",
       "value": 88,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 47.107,
+      "offsetSeconds": 47.094,
       "servo": "FlapsOpen",
       "value": 79,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 47.323,
+      "offsetSeconds": 47.31,
       "servo": "FlapsOpen",
       "value": 4,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 47.455,
+      "offsetSeconds": 47.442,
       "servo": "FlapsOpen",
       "value": -4,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 47.601,
+      "offsetSeconds": 47.588,
       "servo": "FlapsOpen",
       "value": -51,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 47.731,
+      "offsetSeconds": 47.718,
       "servo": "FlapsOpen",
       "value": -58,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 47.851,
+      "offsetSeconds": 47.838,
       "servo": "FlapsOpen",
       "value": -57,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 47.916,
+      "offsetSeconds": 47.903,
       "servo": "FlapsOpen",
       "value": -50,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 47.947,
+      "offsetSeconds": 47.934,
       "servo": "FlapTiltUp",
       "value": -97,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 48.011,
+      "offsetSeconds": 47.998,
       "servo": "FlapTiltUp",
       "value": -94,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 48.163,
+      "offsetSeconds": 48.15,
       "servo": "FlapsOpen",
       "value": -2,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 48.195,
+      "offsetSeconds": 48.182,
       "servo": "FlapTiltUp",
       "value": -98,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 48.287,
+      "offsetSeconds": 48.274,
       "servo": "FlapsOpen",
       "value": 39,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 48.349,
+      "offsetSeconds": 48.336,
       "servo": "FlapsOpen",
       "value": 44,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 48.443,
+      "offsetSeconds": 48.43,
       "servo": "FlapsOpen",
       "value": 40,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 48.507,
+      "offsetSeconds": 48.494,
       "servo": "FlapsOpen",
       "value": 28,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 48.603,
+      "offsetSeconds": 48.59,
       "servo": "FlapsOpen",
       "value": 2,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 48.667,
+      "offsetSeconds": 48.654,
       "servo": "FlapsOpen",
       "value": -10,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 48.791,
+      "offsetSeconds": 48.778,
       "servo": "FlapsOpen",
       "value": -24,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 48.819,
+      "offsetSeconds": 48.806,
       "servo": "FlapTiltUp",
       "value": -95,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 48.852,
+      "offsetSeconds": 48.839,
       "servo": "FlapTiltUp",
       "value": -90,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 48.883,
+      "offsetSeconds": 48.87,
       "servo": "FlapTiltUp",
       "value": -86,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 48.913,
+      "offsetSeconds": 48.9,
       "servo": "FlapTiltUp",
       "value": -80,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 48.943,
+      "offsetSeconds": 48.93,
       "servo": "FlapsOpen",
       "value": -23,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 48.943,
+      "offsetSeconds": 48.93,
       "servo": "FlapTiltUp",
       "value": -76,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 48.979,
+      "offsetSeconds": 48.966,
       "servo": "FlapTiltUp",
       "value": -70,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 49.011,
+      "offsetSeconds": 48.998,
       "servo": "FlapTiltUp",
       "value": -66,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 49.043,
+      "offsetSeconds": 49.03,
       "servo": "FlapTiltUp",
       "value": -62,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 49.195,
+      "offsetSeconds": 49.182,
       "servo": "FlapsOpen",
       "value": -4,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 49.227,
+      "offsetSeconds": 49.214,
       "servo": "FlapTiltUp",
       "value": -70,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 49.259,
+      "offsetSeconds": 49.246,
       "servo": "FlapTiltUp",
       "value": -77,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 49.291,
+      "offsetSeconds": 49.278,
       "servo": "FlapTiltUp",
       "value": -86,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 49.321,
+      "offsetSeconds": 49.308,
       "servo": "FlapTiltUp",
       "value": -94,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 49.355,
+      "offsetSeconds": 49.342,
       "servo": "FlapsOpen",
       "value": -4,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 49.355,
+      "offsetSeconds": 49.342,
       "servo": "FlapTiltUp",
       "value": -100,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     },
     {
-      "offsetSeconds": 49.48,
+      "offsetSeconds": 49.467,
       "servo": "FlapsOpen",
       "value": -9,
       "speed": "Default",
-      "reason": "Controller recording"
+      "reason": "Controller recording",
+      "groupId": "6da3fa3ff2fe48a7b0b9df8c6a908900"
     }
   ]
 }

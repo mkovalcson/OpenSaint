@@ -19,6 +19,7 @@ public partial class MainWindow
     private void InitializeFocusControl()
     {
         _backgroundMovieKeys = new BackgroundMovieKeys(this, BackgroundMovieArrow);
+        _backgroundMovieKeys.EscapePressed = StopLiveDriveFromEscape;
         _focusControlTimer.Tick += (_, _) => { UpdateBackgroundMovieKeys(); RefreshStreamDeckConnection(); };
         Activated += (_, _) => { RefreshControllerOutputPermissions(); UpdateBackgroundMovieKeys(); };
         Deactivated += (_, _) => { RefreshControllerOutputPermissions(); UpdateBackgroundMovieKeys(); };
@@ -98,6 +99,7 @@ public partial class MainWindow
         if (_backgroundMovieKeys == null) return;
         if (_movieBackgroundArmed && (_movieBackgroundPath != _moviePath || _movieItems.Count == 0)) EndMovieBackgroundControl();
         _backgroundMovieKeys.SetEnabled(ShouldUseBackgroundMovieKeys());
+        _backgroundMovieKeys.SetEscapeEnabled(LiveDrive);
         if (_backgroundMovieKeys.Error != null && _backgroundMovieKeys.Error != _movieHotkeyError) ShowStatus(_backgroundMovieKeys.Error);
         _movieHotkeyError = _backgroundMovieKeys.Error;
         FocusControlButton.ToolTip = _backgroundMovieKeys.Enabled ? "Focus Control · movie background arrows are active" : "Configure out-of-focus controller and movie control";

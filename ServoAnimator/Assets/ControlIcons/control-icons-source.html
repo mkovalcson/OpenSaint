@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Servo control icons</title>
+<style>
+  html,body{margin:0;background:transparent;font-family:"Segoe UI",sans-serif}
+  .sheet{width:1040px;padding:30px;background:#191e27;color:#eaf0f7;box-sizing:border-box}
+  h1{margin:0 0 8px;font-size:26px;font-weight:600}
+  .subtitle{margin:0 0 24px;color:#b0bdcf;font-size:15px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .card{display:flex;align-items:center;gap:12px;min-height:78px;padding:12px;background:#222a35;border:1px solid #344152;border-radius:8px;box-sizing:border-box}
+  .label{font-size:14px;overflow-wrap:anywhere}
+  .asset{width:48px;height:48px;flex:0 0 48px;color:#84b5f0;overflow:visible}
+  .asset *{vector-effect:non-scaling-stroke}
+  .line{fill:none;stroke:#84b5f0;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+  .soft{fill:#35577f;stroke:#84b5f0;stroke-width:2}
+  .light{fill:none;stroke:#eaf0f7;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  .sheet.export{background:transparent}
+  .sheet.export .card{background:transparent;border-color:transparent}
+  .sheet.export h1,.sheet.export .subtitle,.sheet.export .label{visibility:hidden}
+</style>
+</head>
+<body>
+<main class="sheet">
+  <h1>ServoNames · button icon set</h1>
+  <p class="subtitle">48 × 48 px transparent PNG assets · Graphite blue line language</p>
+  <div class="grid">
+    <div class="card"><svg class="asset" data-name="neck-turn" viewBox="0 0 48 48"><path class="soft" d="M17 12h14l3 9-4 7H18l-4-7z"/><path class="line" d="M20 28v8h8v-8M8 18c3-7 9-11 16-11M8 18l1-7m-1 7 7-1M40 18c-3-7-9-11-16-11m16 11-1-7m1 7-7-1"/></svg><span class="label">NeckTurn</span></div>
+    <div class="card"><svg class="asset" data-name="neck-nod-up" viewBox="0 0 48 48"><path class="soft" d="M16 10h16l3 10-5 7H18l-5-7z"/><path class="line" d="M20 27v10h8V27M38 33V10m0 0-5 6m5-6 5 6"/></svg><span class="label">NeckNodUp</span></div>
+    <div class="card"><svg class="asset" data-name="neck-tilt-right" viewBox="0 0 48 48"><g transform="rotate(14 24 21)"><path class="soft" d="M16 10h16l3 10-5 7H18l-5-7z"/><path class="line" d="M20 27v10h8V27"/></g><path class="line" d="M37 11c5 5 6 11 3 17m-3-17 6 1m-6-1 1 6"/></svg><span class="label">NeckTiltRight</span></div>
+    <div class="card"><svg class="asset" data-name="flaps-open" viewBox="0 0 48 48"><circle class="soft" cx="24" cy="24" r="5"/><path class="soft" d="M19 17 8 8l-3 9 10 5M29 17 40 8l3 9-10 5M19 31 8 40l-3-9 10-5M29 31l11 9 3-9-10-5"/></svg><span class="label">FlapsOpen</span></div>
+    <div class="card"><svg class="asset" data-name="flap-tilt-up" viewBox="0 0 48 48"><path class="soft" d="M7 28h14l-3 10H9zM27 28h14l-2 10H29z"/><path class="line" d="M14 24V8m0 0-5 6m5-6 5 6M34 24V8m0 0-5 6m5-6 5 6"/></svg><span class="label">FlapTiltUp</span></div>
+    <div class="card"><svg class="asset" data-name="iris-close" viewBox="0 0 48 48"><path class="line" d="M5 24s7-11 19-11 19 11 19 11-7 11-19 11S5 24 5 24Z"/><circle class="soft" cx="24" cy="24" r="8"/><path class="light" d="m24 16 4 4-1 7-6 3-5-4 1-7z"/></svg><span class="label">IrisClose</span></div>
+    <div class="card"><svg class="asset" data-name="eyes-vertical-up" viewBox="0 0 48 48"><path class="line" d="M4 28s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6Zm20 0s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6Z"/><circle class="soft" cx="14" cy="27" r="3"/><circle class="soft" cx="34" cy="27" r="3"/><path class="line" d="M24 19V6m0 0-5 6m5-6 5 6"/></svg><span class="label">EyesVerticalUp</span></div>
+    <div class="card"><svg class="asset" data-name="eyes-horizontal-right" viewBox="0 0 48 48"><path class="line" d="M3 27s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6Zm20 0s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6Z"/><circle class="soft" cx="15" cy="27" r="3"/><circle class="soft" cx="35" cy="27" r="3"/><path class="line" d="M14 12h25m0 0-6-5m6 5-6 5"/></svg><span class="label">EyesHorizontalRight</span></div>
+    <div class="card"><svg class="asset" data-name="vents-open" viewBox="0 0 48 48"><path class="soft" d="M8 12h13v25H8zM27 12h13v25H27z"/><path class="light" d="m11 18 7-3m-7 9 7-3m-7 9 7-3m19-9-7-3m7 9-7-3m7 9-7-3"/><path class="line" d="M5 24H1m4 0-3-3m3 3-3 3m41-3h4m-4 0 3-3m-3 3 3 3"/></svg><span class="label">VentsOpen</span></div>
+    <div class="card"><svg class="asset" data-name="nose-body" viewBox="0 0 48 48"><path class="soft" d="m24 7 12 10-4 20H16l-4-20z"/><path class="light" d="M18 30h12M20 35h8"/><path class="line" d="M24 5V1m0 40v5"/></svg><span class="label">NoseBody</span></div>
+    <div class="card"><svg class="asset" data-name="nose-basket" viewBox="0 0 48 48"><path class="soft" d="M10 14h28l-4 25H14z"/><path class="light" d="M16 15v23m8-23v23m8-23v23M12 22h24m-23 8h22"/><path class="line" d="M18 9h12"/></svg><span class="label">NoseBasket</span></div>
+    <div class="card"><svg class="asset" data-name="mfr-up-down" viewBox="0 0 48 48"><path class="soft" d="M9 18h20v15H9z"/><circle class="light" cx="15" cy="25" r="3"/><path class="line" d="M29 25h8M38 8v32m0-32-5 6m5-6 5 6m-5 26-5-6m5 6 5-6"/></svg><span class="label">MFR_UpDown</span></div>
+    <div class="card"><svg class="asset" data-name="mfr-rotate" viewBox="0 0 48 48"><path class="soft" d="M10 18h20v15H10z"/><circle class="light" cx="16" cy="25" r="3"/><path class="line" d="M31 25h6M36 12a15 15 0 1 1-7-4m7 4-1-7m1 7-7-1"/></svg><span class="label">MFR_Rotate</span></div>
+    <div class="card"><svg class="asset" data-name="microphone-raise-lower" viewBox="0 0 48 48"><rect class="soft" x="14" y="5" width="13" height="24" rx="7"/><path class="line" d="M9 20v2a12 12 0 0 0 24 0v-2M21 34v8m-7 0h14M40 7v34m0-34-5 6m5-6 5 6m-5 28-5-6m5 6 5-6"/></svg><span class="label">Microphone_RaiseLower</span></div>
+    <div class="card"><svg class="asset" data-name="whip-antenna-raise-lower" viewBox="0 0 48 48"><path class="line" d="M17 41h14M20 35h8M24 35V8m0 0-4 6m4-6 4 6M38 7v34m0-34-5 6m5-6 5 6m-5 28-5-6m5 6 5-6"/><circle class="soft" cx="24" cy="7" r="3"/></svg><span class="label">Whip_Antenna_RaiseLower</span></div>
+    <div class="card"><svg class="asset" data-name="whip-antenna-rotate" viewBox="0 0 48 48"><path class="line" d="M17 41h14M20 35h8M24 35V10"/><circle class="soft" cx="24" cy="8" r="3"/><path class="line" d="M38 24a14 14 0 1 1-8-13m8 13-1-7m1 7-7-1"/></svg><span class="label">Whip_Antenna_Rotate</span></div>
+    <div class="card"><svg class="asset" data-name="left-eye-pop" viewBox="0 0 48 48"><path class="line" d="M5 24s6-10 16-10 16 10 16 10-6 10-16 10S5 24 5 24Z"/><circle class="soft" cx="21" cy="24" r="6"/><path class="line" d="M30 9 40 4m0 0-6-1m6 1-2 6"/></svg><span class="label">LeftEyePop</span></div>
+    <div class="card"><svg class="asset" data-name="right-eye-pop" viewBox="0 0 48 48"><path class="line" d="M11 24s6-10 16-10 16 10 16 10-6 10-16 10-16-10-16-10Z"/><circle class="soft" cx="27" cy="24" r="6"/><path class="line" d="M18 9 8 4m0 0 6-1M8 4l2 6"/></svg><span class="label">RightEyePop</span></div>
+    <div class="card"><svg class="asset" data-name="both-eye-pop" viewBox="0 0 48 48"><path class="line" d="M3 26s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Zm22 0s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle class="soft" cx="13" cy="26" r="4"/><circle class="soft" cx="35" cy="26" r="4"/><path class="line" d="M13 14 8 6m0 0 0 6M8 6l6 2m21 6 5-8m0 0v6m0-6-6 2"/></svg><span class="label">BothEyePop</span></div>
+    <div class="card"><svg class="asset" data-name="rgb-command" viewBox="0 0 48 48"><rect class="line" x="7" y="10" width="34" height="28" rx="7"/><circle cx="17" cy="24" r="5" fill="#f06068"/><circle cx="24" cy="24" r="5" fill="#83d2a4"/><circle cx="31" cy="24" r="5" fill="#84b5f0"/><path class="light" d="M13 15h22"/></svg><span class="label">RGBCommand</span></div>
+  </div>
+</main>
+</body>
+</html>

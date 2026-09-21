@@ -43,6 +43,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Assets\ControlIcons\*.png"
+              Exclude="Assets\ControlIcons\control-icons-preview.png" />
     <None Update="Models\johnny5_head.urdf" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Models\servo_joint_map.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Models\Meshes\**\*.obj" CopyToOutputDirectory="PreserveNewest" />

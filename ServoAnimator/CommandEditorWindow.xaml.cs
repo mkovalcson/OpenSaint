@@ -112,11 +112,12 @@ namespace ServoAnimator
         /// <summary>Append a new command at the same time point and show it.</summary>
         private void AddCommand_Click(object sender, RoutedEventArgs e)
         {
-            // New rows default to the TOP of the Servo picklist.
+            var previous = _items.LastOrDefault()?.Command;
             var cmd = new ServoCommand
             {
                 OffsetSeconds = _timeKey,
-                Servo = CommandVM.ServoPickOptions[0].Servo,
+                Servo = previous?.Servo ?? CommandVM.ServoPickOptions[0].Servo,
+                Control = previous?.Control,
                 NumericValue = 0,
                 Speed = ServoSpeed.NoChange,
             };
@@ -554,6 +555,7 @@ namespace ServoAnimator
     {
         public ServoNames Servo { get; }
         public RobotControls? Control { get; }
+        public ImageSource IconSource => ServoIconProvider.For(Servo);
         private readonly string _display;
 
         public ServoPickItem(ServoNames servo, RobotControls? control)

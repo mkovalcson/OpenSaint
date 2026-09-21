@@ -51,7 +51,7 @@ public sealed partial class ControllerDiagram
     {
         // Inner-column values face the controller; outer-column values face
         // away from it. Reserve margins so neither outer column is clipped.
-        bool onRight = left != IsOuter(id);
+        bool onRight = Kind == ControllerKind.Xbox ? !left : left != IsOuter(id);
         double width = Kind == ControllerKind.Steam ? 100 : 78;
         double x = onRight ? card.Right + 5 : card.Left - width - 5;
         var box = new Rect(x, card.Y + 1, width, MappingCardHeight - 2);

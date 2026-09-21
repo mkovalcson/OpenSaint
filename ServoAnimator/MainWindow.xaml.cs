@@ -1070,7 +1070,8 @@ namespace ServoAnimator
             _outputTimelineOrigin = src.Start + _reader.CurrentTime.TotalSeconds;
 
             _waveOut = new WaveOutEvent { DesiredLatency = 100, Volume = _playbackVolume };
-            _waveOut.Init(_reader);
+            _waveOut.Init(new NAudio.Wave.SampleProviders.WdlResamplingSampleProvider(
+                new RateSampleProvider(_reader, _playbackClock.Rate), _reader.WaveFormat.SampleRate));
             _waveOut.Play();
             Debug.WriteLine($"[audio] {(src.IsPrimary ? "primary" : src.Path)} " +
                             $"at {t - src.Start:F3}s (state={_waveOut.PlaybackState})");
@@ -1234,7 +1235,7 @@ namespace ServoAnimator
                 try
                 {
                     outputTime = _outputTimelineOrigin +
-                        _waveOut.GetPosition() / (double)_waveOut.OutputWaveFormat.AverageBytesPerSecond;
+                        _waveOut.GetPosition() / (double)_waveOut.OutputWaveFormat.AverageBytesPerSecond * _playbackClock.Rate;
                 }
                 catch { /* The monotonic clock continues if the driver is unavailable. */ }
             }
@@ -2275,6 +2276,7 @@ namespace ServoAnimator
 
         private void LiveDrive_Changed(object sender, RoutedEventArgs e)
         {
+            _backgroundMovieKeys?.SetEscapeEnabled(LiveDrive);
             ResetControllerMotion();
             if (!LiveDrive)
                 _hardwarePlaybackQueue.ClearPending();
@@ -2443,9 +2445,7 @@ namespace ServoAnimator
             int keep = CommandsAtPointList.SelectedIndex;
             CommandsAtPointList.Items.Clear();
 
-            CommandsAtPointHeader.Text = cmds.Count == 0
-                ? $"Commands at cursor {_cursorTime:F3} s: (none)"
-                : $"Commands at cursor {_cursorTime:F3} s: {cmds.Count} command(s)";
+            CommandsAtPointHeader.Text = $"{cmds.Count} Command{(cmds.Count == 1 ? "" : "s")} at {_cursorTime:F3} sec";
 
             foreach (var c in cmds)
                 CommandsAtPointList.Items.Add(new CommandInspectorRow(
@@ -2723,7 +2723,8 @@ namespace ServoAnimator
             var cmd = new ServoCommand
             {
                 OffsetSeconds = ServoCommand.TimeKey(_cursorTime),
-                Servo = ServoNames.NeckTurn,
+                Servo = _lastInsertedServo,
+                Control = _lastInsertedChild,
                 NumericValue = 0,
                 Speed = ServoSpeed.NoChange,
             };
@@ -2770,6 +2771,9 @@ namespace ServoAnimator
                                                          _doc.Commands.Zip(commands).All(p => CommandConflicts.SameContent(p.First, p.Second)))
                                                          return true;
                                                      PushUndo($"Edit commands at {editTime:F3} s");
+                                                     var added = commands.LastOrDefault(c => !_doc.Commands.Any(old => old.Servo == c.Servo && old.Control == c.Control && ServoCommand.TimeKey(old.OffsetSeconds) == ServoCommand.TimeKey(c.OffsetSeconds)));
+                                                     if (added != null)
+                                                     { _lastInsertedServo = added.Servo; _lastInsertedChild = added.Control; }
                                                      _doc.Commands = commands;
                                                      ApplySplineSettings(splines);
                                                      return true;
@@ -4256,6 +4260,7 @@ namespace ServoAnimator
         private void ShowStatus(string text)
         {
             Debug.WriteLine(text);
+            if (MovieStatusText != null) { MovieStatusText.Text = text; MovieStatusText.ToolTip = text; }
         }
 
         #endregion
@@ -6153,6 +6158,7 @@ namespace ServoAnimator
         /// </summary>
         private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
         {
+            if (LiveDrive && e.Key == Key.Escape) { StopLiveDriveFromEscape(); e.Handled = true; return; }
             if (_recordingWindow == null && e.Key == Key.Delete && Waveform.SelectedMarkers.Count > 0 && IsWaveformMouseSource(Keyboard.FocusedElement as DependencyObject))
             { DeleteSelectedCommandGroup(); e.Handled = true; return; }
             if (_recordingWindow != null)

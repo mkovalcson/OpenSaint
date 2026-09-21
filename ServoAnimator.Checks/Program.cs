@@ -18,7 +18,12 @@ internal static partial class Program
     {
         try
         {
-            if (args.Contains("--mapping-files"))
+            if (args.Contains("--playback-controls"))
+            {
+                PlaybackControlsChecks();
+                Console.WriteLine($"PASS: {_checks} playback control assertions.");
+            }
+            else if (args.Contains("--mapping-files"))
             {
                 MappingFileChecks();
                 Console.WriteLine($"PASS: {_checks} controller mapping file assertions.");

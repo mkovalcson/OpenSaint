@@ -8,10 +8,11 @@ namespace ServoAnimator
     {
         private readonly Stopwatch _watch = new();
         private double _time, _lastElapsed, _lastDevice = double.NaN;
+        public double Rate { get; set; } = 1;
 
         // Read-only interpolation between render ticks for input recording.
         // Reading it must not consume time or skip timeline command dispatch.
-        internal double EstimatedTime => _time + Math.Max(0, _watch.Elapsed.TotalSeconds - _lastElapsed);
+        internal double EstimatedTime => _time + Math.Max(0, _watch.Elapsed.TotalSeconds - _lastElapsed) * Rate;
 
         public void Start(double time)
         {
@@ -26,7 +27,7 @@ namespace ServoAnimator
 
         internal double AdvanceTo(double elapsed, double? outputTime)
         {
-            double dt = Math.Max(0, elapsed - _lastElapsed);
+            double dt = Math.Max(0, elapsed - _lastElapsed) * Rate;
             _lastElapsed = elapsed;
             double advance = dt;
             // Only correct on a fresh device observation. A repeated output

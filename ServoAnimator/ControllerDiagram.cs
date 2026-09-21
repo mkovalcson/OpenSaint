@@ -23,14 +23,14 @@ public sealed partial class ControllerDiagram : FrameworkElement
     private readonly Brush _edge = new SolidColorBrush(Color.FromRgb(88, 107, 130));
     private readonly Brush _button = new SolidColorBrush(Color.FromRgb(54, 71, 94));
     private readonly Brush _accent = new SolidColorBrush(Color.FromRgb(0, 135, 135));
-    internal double MappingCardWidth => Kind == ControllerKind.Steam ? 109.125 : 145.5;
-    private const double MappingCardHeight = 36;
+    internal double MappingCardWidth => Kind == ControllerKind.Steam ? 109.125 : 180;
+    private double MappingCardHeight => Kind == ControllerKind.Steam ? 36 : 54;
     private double InnerColumnX => 139.625;
     private double OriginX => Kind == ControllerKind.Steam ? 317.25 : 171.5;
     private const double OriginY = 20;
     public ControllerDiagram(ControllerKind kind, bool showLiveValues = false)
     {
-        Kind = kind; ShowLiveValues = showLiveValues; Width = ArtworkWidth + LiveMargin * 2; Height = kind == ControllerKind.Steam ? 860 : 610; Focusable = true;
+        Kind = kind; ShowLiveValues = showLiveValues; Width = ArtworkWidth + LiveMargin * 2; Height = kind == ControllerKind.Steam ? 860 : 650; Focusable = true;
         MouseLeftButtonDown += (_, e) => { if (ReadOnly) return; string id = Hit(e.GetPosition(this)); if (id == null) return; Focus(); InputSelected?.Invoke(id); e.Handled = true; };
         MouseMove += (_, e) =>
         {
@@ -149,7 +149,7 @@ public sealed partial class ControllerDiagram : FrameworkElement
         foreach (bool outer in Kind == ControllerKind.Steam ? new[] { false, true } : new[] { false })
         {
             var inputs = ControllerCatalog.Inputs(Kind, NoMux).Where(i => OnLeft(i.Id) == left && IsOuter(i.Id) == outer && _anchors.ContainsKey(i.Id)).OrderBy(i => _anchors[i.Id].Y).ToArray();
-            double gap = Kind == ControllerKind.Steam ? 39 : 43;
+            double gap = Kind == ControllerKind.Steam ? 39 : 59;
             double[] ys = inputs.Select(i => Math.Clamp(_anchors[i.Id].Y - 16, 10, Height - 44)).ToArray();
             for (int i = 1; i < ys.Length; i++) ys[i] = Math.Max(ys[i], ys[i - 1] + gap);
             if (ys.Length > 0) ys[^1] = Math.Min(ys[^1], Height - 44);
@@ -197,25 +197,25 @@ public sealed partial class ControllerDiagram : FrameworkElement
                 for (int i = 0; i < inputs.Length; i++)
                     ys[i] = inputs[i].Id switch
                     {
-                        "LeftTrigger" or "RightTrigger" => 51,
-                        "Guide" => 132,
-                        "LeftClick" => 178,
-                        "LeftX" => 221,
-                        "LeftY" => 264,
-                        "Back" => 322,
-                        "DpadUp" => 416,
-                        "DpadLeft" => 459,
-                        "DpadRight" => 502,
-                        "DpadDown" => 545,
-                        "Y" => 160,
-                        "B" => 203,
-                        "X" => 246,
-                        "A" => 289,
-                        "Start" => 347,
-                        "Share" => 390,
-                        "RightClick" => 458,
-                        "RightX" => 501,
-                        "RightY" => 544,
+                        "LeftTrigger" or "RightTrigger" => 20,
+                        "Guide" => 79,
+                        "LeftClick" => 138,
+                        "LeftX" => 197,
+                        "LeftY" => 256,
+                        "Back" => 315,
+                        "DpadUp" => 374,
+                        "DpadLeft" => 433,
+                        "DpadRight" => 492,
+                        "DpadDown" => 551,
+                        "Y" => 79,
+                        "B" => 138,
+                        "X" => 197,
+                        "A" => 256,
+                        "Start" => 315,
+                        "Share" => 374,
+                        "RightClick" => 433,
+                        "RightX" => 492,
+                        "RightY" => 551,
                         _ => ys[i]
                     };
             }
@@ -254,9 +254,18 @@ public sealed partial class ControllerDiagram : FrameworkElement
             _hits[new Rect(card.Rect.X + LiveMargin, card.Rect.Y, card.Rect.Width, card.Rect.Height)] = card.Input.Id;
             bool live = IsLive(card.Input.Id);
             dc.DrawRoundedRectangle(live ? Brushes.DarkGreen : selected ? _body : new SolidColorBrush(Color.FromRgb(27, 35, 46)), new Pen(live ? Brushes.LimeGreen : selected ? Brushes.Turquoise : _edge, selected || live ? 1.5 : 0.6), card.Rect, 5, 5);
-            Label(dc, card.Input.Label, card.Rect.X + 5, card.Rect.Y + 1, 12, Brushes.LightSlateGray, card.Rect.Width - 10);
+            ImageSource icon = MappingIcon(card.Input.Id);
+            double iconSize = Kind == ControllerKind.Steam ? 18 : 48;
+            double textX = card.Rect.X + 5;
+            if (icon != null)
+            {
+                double iconY = Kind == ControllerKind.Steam ? card.Rect.Y + 16 : card.Rect.Y + 3;
+                dc.DrawImage(icon, new Rect(card.Rect.X + 4, iconY, iconSize, iconSize));
+                textX += iconSize + 4;
+            }
+            Label(dc, card.Input.Label, textX, card.Rect.Y + (Kind == ControllerKind.Steam ? 1 : 7), 12, Brushes.LightSlateGray, card.Rect.Right - textX - 5);
             bool recording = Mappings?.TryGetValue(card.Input.Id, out var mapped) == true && mapped.Target == ControllerCatalog.RecordingTarget;
-            Label(dc, MappingText(card.Input.Id), card.Rect.X + 5, card.Rect.Y + 16, 14, recording ? Brushes.Tomato : live ? Brushes.White : selected ? Brushes.Turquoise : Brushes.WhiteSmoke, card.Rect.Width - 10);
+            Label(dc, MappingText(card.Input.Id), textX, card.Rect.Y + (Kind == ControllerKind.Steam ? 16 : 27), 14, recording ? Brushes.Tomato : live ? Brushes.White : selected ? Brushes.Turquoise : Brushes.WhiteSmoke, card.Rect.Right - textX - 5);
             if (ShowLiveValues && card.Input.Analog) DrawLiveValue(dc, card.Input.Id, card.Rect, card.Left);
         }
         if (ReadOnly && cards.Count > 0)
@@ -275,6 +284,12 @@ public sealed partial class ControllerDiagram : FrameworkElement
         if (binding.Target == ControllerCatalog.RecordingTarget) return "REC" + gate;
         if (ControllerTargets.IsLibrary(binding.Target)) return (binding.Target == "Library:pose" ? "Pose: " : "Sequence: ") + binding.LibraryName + (binding.Loop ? " ↻" : "") + gate;
         return binding.Target.Replace("Servo:", "").Replace("Action:", "").Replace("Child:", "").Replace(":", " · ") + gate;
+    }
+    private ImageSource MappingIcon(string id)
+    {
+        if (Mappings?.TryGetValue(id, out var binding) != true ||
+            !ControllerTargets.TryServo(binding.Target, out var servo, out _)) return null;
+        return ServoIconProvider.For(servo);
     }
     private void Label(DrawingContext dc, string text, double x, double y, double size, Brush brush, double width)
     {

@@ -9,6 +9,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace ServoAnimator
 {
@@ -374,10 +375,15 @@ namespace ServoAnimator
         {
             GroupName = groupName;
             Servos = new ObservableCollection<UrdfMotionGroupVM>(servos);
+            IconSources = new ObservableCollection<ImageSource>(Servos
+                .Select(servo => ServoIconProvider.For(servo.Servo))
+                .Where(icon => icon != null)
+                .Distinct());
         }
 
         public string GroupName { get; }
         public ObservableCollection<UrdfMotionGroupVM> Servos { get; }
+        public ObservableCollection<ImageSource> IconSources { get; }
     }
 
     /// <summary>One logical URDF calibration gang. Test Position is shared by
@@ -428,6 +434,7 @@ namespace ServoAnimator
         }
 
         public string ServoName => _displayName ?? _servo.ToString();
+        public ServoNames Servo => _servo;
         public string InputRangeText => InputMin < 0 ? "Input -100 … +100" : "Input 0 … 100";
         public string Unit => First.Unit;
         public double InputMin { get; }

@@ -29,6 +29,8 @@ namespace ServoAnimator
         string TimeText, Brush AccentBrush, string Details)
     {
         public ServoCommand Command { get; init; }
+        public ServoNames Servo => Command.Servo;
+        public ImageSource IconSource => ServoIconProvider.For(Servo);
         public bool IsCommandRow => true;
         public bool SplineEnabled { get; init; }
         public bool CanSpline => SplineBreakOperations.SupportsSpline(Command);
